@@ -1,5 +1,6 @@
 'use client';
 
+import { usePathname } from 'next/navigation';
 import {
   Home,
   Users,
@@ -17,16 +18,18 @@ import {
 const userRole = 'admin'; // 'superadmin', 'admin', or 'comun'
 
 export function MainNav() {
+  const pathname = usePathname();
+
   return (
     <SidebarMenu>
       <SidebarMenuItem>
-        <SidebarMenuButton href="#" isActive tooltip="Dashboard">
+        <SidebarMenuButton href="/" isActive={pathname === '/'} tooltip="Dashboard">
           <Home />
           <span>Dashboard</span>
         </SidebarMenuButton>
       </SidebarMenuItem>
       <SidebarMenuItem>
-        <SidebarMenuButton href="#" tooltip="Tareas">
+        <SidebarMenuButton href="/tasks" isActive={pathname === '/tasks'} tooltip="Tareas">
           <ClipboardList />
           <span>Tareas</span>
         </SidebarMenuButton>
@@ -35,13 +38,13 @@ export function MainNav() {
       {(userRole === 'admin' || userRole === 'superadmin') && (
         <>
           <SidebarMenuItem>
-            <SidebarMenuButton href="#" tooltip="Usuarios">
+            <SidebarMenuButton href="/users" isActive={pathname === '/users'} tooltip="Usuarios">
               <Users />
               <span>Usuarios</span>
             </SidebarMenuButton>
           </SidebarMenuItem>
           <SidebarMenuItem>
-            <SidebarMenuButton href="#" tooltip="Estadísticas">
+            <SidebarMenuButton href="/stats" isActive={pathname === '/stats'} tooltip="Estadísticas">
               <AreaChart />
               <span>Estadísticas</span>
             </SidebarMenuButton>
@@ -51,7 +54,7 @@ export function MainNav() {
 
       {userRole === 'superadmin' && (
         <SidebarMenuItem>
-          <SidebarMenuButton href="#" tooltip="Configuración">
+          <SidebarMenuButton href="/settings" isActive={pathname === '/settings'} tooltip="Configuración">
             <Settings />
             <span>Configuración</span>
           </SidebarMenuButton>
