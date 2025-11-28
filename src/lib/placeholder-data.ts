@@ -12,7 +12,7 @@ export const areas: Area[] = [
 export const users: User[] = [
   {
     userId: 'user-superadmin-1',
-    email: 'superadmin@comedor.com',
+    email: 'arvecladu@gmail.com',
     nombre: 'Super Admin',
     rol: 'superadmin',
     area: 'administracion',
