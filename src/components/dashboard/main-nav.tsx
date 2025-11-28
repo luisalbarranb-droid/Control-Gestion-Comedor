@@ -26,25 +26,25 @@ export function MainNav() {
         </SidebarMenuButton>
       </SidebarMenuItem>
       <SidebarMenuItem>
-        <SidebarMenuButton href="/tasks" isActive={pathname === '/tasks'} tooltip="Tareas">
+        <SidebarMenuButton href="/tasks" isActive={pathname.startsWith('/tasks')} tooltip="Tareas">
           <ClipboardList />
           <span>Tareas</span>
         </SidebarMenuButton>
       </SidebarMenuItem>
       <SidebarMenuItem>
-        <SidebarMenuButton href="/users" isActive={pathname === '/users'} tooltip="Usuarios">
+        <SidebarMenuButton href="/users" isActive={pathname.startsWith('/users')} tooltip="Usuarios">
           <Users />
           <span>Usuarios</span>
         </SidebarMenuButton>
       </SidebarMenuItem>
       <SidebarMenuItem>
-        <SidebarMenuButton href="/stats" isActive={pathname === '/stats'} tooltip="Estadísticas">
+        <SidebarMenuButton href="/stats" isActive={pathname.startsWith('/stats')} tooltip="Estadísticas">
           <AreaChart />
           <span>Estadísticas</span>
         </SidebarMenuButton>
       </SidebarMenuItem>
       <SidebarMenuItem>
-        <SidebarMenuButton href="/settings" isActive={pathname === '/settings'} tooltip="Configuración">
+        <SidebarMenuButton href="/settings" isActive={pathname.startsWith('/settings')} tooltip="Configuración">
           <Settings />
           <span>Configuración</span>
         </SidebarMenuButton>
