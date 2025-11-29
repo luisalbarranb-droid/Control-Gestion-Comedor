@@ -3,7 +3,6 @@ import {
   SidebarContent,
   SidebarHeader,
   SidebarInset,
-  SidebarRail,
 } from '@/components/ui/sidebar';
 import { Header } from '@/components/dashboard/header';
 import { MainNav } from '@/components/dashboard/main-nav';
@@ -12,7 +11,7 @@ import { SquareCheck } from 'lucide-react';
 export default function UsersPage() {
   return (
     <div className="min-h-screen w-full">
-      <Sidebar collapsible="offcanvas">
+      <Sidebar>
         <SidebarHeader className="p-4 justify-center flex items-center gap-2">
           <SquareCheck className="size-8 text-primary" />
           <h1 className="font-headline text-2xl font-bold">Comedor</h1>
