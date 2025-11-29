@@ -13,6 +13,7 @@ import {
   SidebarMenuItem,
   SidebarMenuButton,
 } from '@/components/ui/sidebar';
+import Link from 'next/link';
 
 export function MainNav() {
   const pathname = usePathname();
@@ -20,33 +21,63 @@ export function MainNav() {
   return (
     <SidebarMenu>
       <SidebarMenuItem>
-        <SidebarMenuButton href="/" isActive={pathname === '/'} tooltip="Dashboard">
-          <Home />
-          <span>Dashboard</span>
+        <SidebarMenuButton
+          asChild
+          isActive={pathname === '/'}
+          tooltip="Dashboard"
+        >
+          <Link href="/">
+            <Home />
+            <span>Dashboard</span>
+          </Link>
         </SidebarMenuButton>
       </SidebarMenuItem>
       <SidebarMenuItem>
-        <SidebarMenuButton href="/tasks" isActive={pathname.startsWith('/tasks')} tooltip="Tareas">
-          <ClipboardList />
-          <span>Tareas</span>
+        <SidebarMenuButton
+          asChild
+          isActive={pathname.startsWith('/tasks')}
+          tooltip="Tareas"
+        >
+          <Link href="/tasks">
+            <ClipboardList />
+            <span>Tareas</span>
+          </Link>
         </SidebarMenuButton>
       </SidebarMenuItem>
       <SidebarMenuItem>
-        <SidebarMenuButton href="/users" isActive={pathname.startsWith('/users')} tooltip="Usuarios">
-          <Users />
-          <span>Usuarios</span>
+        <SidebarMenuButton
+          asChild
+          isActive={pathname.startsWith('/users')}
+          tooltip="Usuarios"
+        >
+          <Link href="/users">
+            <Users />
+            <span>Usuarios</span>
+          </Link>
         </SidebarMenuButton>
       </SidebarMenuItem>
       <SidebarMenuItem>
-        <SidebarMenuButton href="/stats" isActive={pathname.startsWith('/stats')} tooltip="Estadísticas">
-          <AreaChart />
-          <span>Estadísticas</span>
+        <SidebarMenuButton
+          asChild
+          isActive={pathname.startsWith('/stats')}
+          tooltip="Estadísticas"
+        >
+          <Link href="/stats">
+            <AreaChart />
+            <span>Estadísticas</span>
+          </Link>
         </SidebarMenuButton>
       </SidebarMenuItem>
       <SidebarMenuItem>
-        <SidebarMenuButton href="/settings" isActive={pathname.startsWith('/settings')} tooltip="Configuración">
-          <Settings />
-          <span>Configuración</span>
+        <SidebarMenuButton
+          asChild
+          isActive={pathname.startsWith('/settings')}
+          tooltip="Configuración"
+        >
+          <Link href="/settings">
+            <Settings />
+            <span>Configuración</span>
+          </Link>
         </SidebarMenuButton>
       </SidebarMenuItem>
     </SidebarMenu>
