@@ -17,17 +17,14 @@ import { Button } from '@/components/ui/button';
 export default function Dashboard() {
   return (
     <div className="min-h-screen w-full">
-      <Sidebar variant="sidebar" collapsible="icon">
+      <Sidebar collapsible="offcanvas">
         <SidebarHeader className="p-4 justify-center flex items-center gap-2">
           <SquareCheck className="size-8 text-primary" />
-          <h1 className="font-headline text-2xl font-bold group-data-[collapsible=icon]:hidden">
-            Comedor
-          </h1>
+          <h1 className="font-headline text-2xl font-bold">Comedor</h1>
         </SidebarHeader>
         <SidebarContent>
           <MainNav />
         </SidebarContent>
-        <SidebarRail />
       </Sidebar>
       <SidebarInset>
         <Header />
