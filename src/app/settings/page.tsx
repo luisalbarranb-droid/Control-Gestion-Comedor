@@ -78,7 +78,7 @@ export default function SettingsPage() {
                     <CardDescription>
                       Gestiona las áreas de trabajo de tu equipo. (Solo Admins)
                     </CardDescription>
-                  </Header>
+                  </CardHeader>
                   <CardContent>
                     <p className="text-sm text-muted-foreground">Aquí se mostrará la gestión de áreas.</p>
                   </CardContent>
