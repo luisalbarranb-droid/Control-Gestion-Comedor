@@ -250,7 +250,7 @@ export function CreateTaskForm({ onTaskCreate }: CreateTaskFormProps) {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Asignado a</FormLabel>
-                    <Select onValuechange={field.onChange} defaultValue={field.value}>
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
                       <FormControl>
                         <SelectTrigger>
                           <SelectValue placeholder="Selecciona un usuario" />
