@@ -51,7 +51,7 @@ const formSchema = z.object({
   fechaVencimiento: z.date({ required_error: 'Debes seleccionar una fecha de vencimiento.' }),
   tiempoEstimado: z.coerce.number().int().positive('El tiempo debe ser un número positivo.').optional(),
   evidencia: z.any()
-    .refine((files) => files?.length <= 1, "Solo puedes subir un archivo.")
+    .refine((files) => !files || files?.length <= 1, "Solo puedes subir un archivo.")
     .refine((files) => !files || files?.[0]?.size <= MAX_FILE_SIZE, `El tamaño máximo es de 5MB.`)
     .refine(
       (files) => !files || ACCEPTED_IMAGE_TYPES.includes(files?.[0]?.type),
