@@ -7,6 +7,11 @@ import {
 import { Header } from '@/components/dashboard/header';
 import { MainNav } from '@/components/dashboard/main-nav';
 import { SquareCheck } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 
 export default function SettingsPage() {
   return (
@@ -28,16 +33,99 @@ export default function SettingsPage() {
               Configuración
             </h1>
           </div>
-          <div className="flex flex-1 items-center justify-center rounded-lg border border-dashed shadow-sm">
-            <div className="flex flex-col items-center gap-1 text-center">
-              <h3 className="text-2xl font-bold tracking-tight">
-                Página de Configuración
-              </h3>
-              <p className="text-sm text-muted-foreground">
-                Aquí se mostrará la configuración.
-              </p>
-            </div>
-          </div>
+          
+          <Tabs defaultValue="profile" className="flex-1">
+            <TabsList className="grid w-full grid-cols-4">
+              <TabsTrigger value="profile">Perfil</TabsTrigger>
+              <TabsTrigger value="appearance">Apariencia</TabsTrigger>
+              <TabsTrigger value="areas">Áreas</TabsTrigger>
+              <TabsTrigger value="notifications">Notificaciones</TabsTrigger>
+            </TabsList>
+            <TabsContent value="profile">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Perfil de Usuario</CardTitle>
+                  <CardDescription>
+                    Gestiona la información de tu cuenta personal.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                   <div className="space-y-2">
+                    <Label htmlFor="name">Nombre</Label>
+                    <Input id="name" defaultValue="Super Admin" />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="email">Email</Label>
+                    <Input id="email" type="email" defaultValue="arvecladu@gmail.com" disabled />
+                  </div>
+                   <div className="space-y-2">
+                    <Label htmlFor="current-password">Contraseña Actual</Label>
+                    <Input id="current-password" type="password" />
+                  </div>
+                   <div className="space-y-2">
+                    <Label htmlFor="new-password">Nueva Contraseña</Label>
+                    <Input id="new-password" type="password" />
+                  </div>
+                </CardContent>
+                <CardFooter>
+                  <Button>Guardar Cambios</Button>
+                </CardFooter>
+              </Card>
+            </TabsContent>
+            <TabsContent value="appearance">
+               <Card>
+                <CardHeader>
+                  <CardTitle>Apariencia</CardTitle>
+                  <CardDescription>
+                    Personaliza el aspecto de la aplicación.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="space-y-2">
+                    <Label>Tema</Label>
+                     <p className="text-sm text-muted-foreground">Selecciona el tema para el dashboard.</p>
+                     {/* Aquí irá el selector de tema (claro/oscuro) */}
+                  </div>
+                </CardContent>
+                 <CardFooter>
+                  <Button>Guardar Preferencias</Button>
+                </CardFooter>
+              </Card>
+            </TabsContent>
+            <TabsContent value="areas">
+               <Card>
+                <CardHeader>
+                  <CardTitle>Áreas de Trabajo</CardTitle>
+                  <CardDescription>
+                    Gestiona las áreas de trabajo de tu equipo. (Solo Admins)
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-sm text-muted-foreground">Aquí se mostrará la gestión de áreas.</p>
+                </CardContent>
+                 <CardFooter>
+                  <Button>Añadir Área</Button>
+                </CardFooter>
+              </Card>
+            </TabsContent>
+            <TabsContent value="notifications">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Notificaciones</CardTitle>
+                  <CardDescription>
+                    Elige cómo quieres recibir notificaciones.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                   <p className="text-sm text-muted-foreground">Aquí se mostrará la configuración de notificaciones.</p>
+                </CardContent>
+                 <CardFooter>
+                  <Button>Guardar Ajustes</Button>
+                </CardFooter>
+              </Card>
+            </TabsContent>
+          </Tabs>
+
         </main>
       </SidebarInset>
     </div>
