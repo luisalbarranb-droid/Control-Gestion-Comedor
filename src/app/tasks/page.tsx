@@ -8,11 +8,7 @@ import {
 } from '@/components/ui/sidebar';
 import { Header } from '@/components/dashboard/header';
 import { MainNav } from '@/components/dashboard/main-nav';
-import {
-  SquareCheck,
-  PlusCircle,
-  MoreHorizontal,
-} from 'lucide-react';
+import { SquareCheck, MoreHorizontal } from 'lucide-react';
 import {
   Table,
   TableBody,
@@ -43,6 +39,7 @@ import { tasks, users, areas } from '@/lib/placeholder-data';
 import type { TaskPriority, TaskStatus } from '@/lib/types';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
+import { CreateTaskForm } from '@/components/tasks/create-task-form';
 
 const priorityVariant: Record<TaskPriority, string> = {
   baja: 'bg-green-100 text-green-800 border-green-200 dark:bg-green-900/50 dark:text-green-300 dark:border-green-700',
@@ -83,10 +80,7 @@ export default function TasksPage() {
             <h1 className="font-headline text-2xl font-bold md:text-3xl">
               Gestión de Tareas
             </h1>
-            <Button>
-              <PlusCircle className="mr-2 h-4 w-4" />
-              Crear Tarea
-            </Button>
+            <CreateTaskForm />
           </div>
 
           <Card>
@@ -123,13 +117,20 @@ export default function TasksPage() {
                         <TableCell>
                           <div className="font-medium">{task.titulo}</div>
                           <div className="text-sm text-muted-foreground">
-                            Vence: {format(task.fechaVencimiento, 'dd/MM/yyyy')}
+                            Vence:{' '}
+                            {format(
+                              new Date(task.fechaVencimiento),
+                              'dd/MM/yyyy'
+                            )}
                           </div>
                         </TableCell>
                         <TableCell>
                           <Badge
                             variant="secondary"
-                            className={cn(statusVariant[task.estado], 'capitalize')}
+                            className={cn(
+                              statusVariant[task.estado],
+                              'capitalize'
+                            )}
                           >
                             {task.estado.replace('-', ' ')}
                           </Badge>
@@ -153,7 +154,10 @@ export default function TasksPage() {
                             <Avatar className="h-8 w-8">
                               <AvatarImage src={user?.avatarUrl} />
                               <AvatarFallback>
-                                {user?.nombre.split(' ').map((n) => n[0]).join('')}
+                                {user?.nombre
+                                  .split(' ')
+                                  .map((n) => n[0])
+                                  .join('')}
                               </AvatarFallback>
                             </Avatar>
                             <span>{user?.nombre}</span>
