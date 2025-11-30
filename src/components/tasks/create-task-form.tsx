@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -183,7 +184,7 @@ export function CreateTaskForm({ onTaskCreate }: CreateTaskFormProps) {
                 </FormItem>
               )}
             />
-             <FormField
+            <FormField
               control={form.control}
               name="evidencia"
               render={() => (
@@ -191,7 +192,7 @@ export function CreateTaskForm({ onTaskCreate }: CreateTaskFormProps) {
                   <FormLabel>Foto de Evidencia (Opcional)</FormLabel>
                   <FormControl>
                     <div className="relative flex justify-center w-full px-6 py-10 border-2 border-dashed rounded-md border-input">
-                       <Input
+                      <Input
                         type="file"
                         className="absolute inset-0 z-10 w-full h-full opacity-0 cursor-pointer"
                         accept={ACCEPTED_IMAGE_TYPES.join(',')}
@@ -210,7 +211,7 @@ export function CreateTaskForm({ onTaskCreate }: CreateTaskFormProps) {
                             <p className="text-sm text-muted-foreground">
                               <span className="font-semibold text-primary">Haz clic para subir</span> o arrastra y suelta
                             </p>
-                             <p className="text-xs text-muted-foreground">PNG, JPG, WEBP (max. 5MB)</p>
+                            <p className="text-xs text-muted-foreground">PNG, JPG, WEBP (max. 5MB)</p>
                           </>
                         )}
                       </div>
@@ -243,7 +244,7 @@ export function CreateTaskForm({ onTaskCreate }: CreateTaskFormProps) {
                   </FormItem>
                 )}
               />
-               <FormField
+              <FormField
                 control={form.control}
                 name="asignadoA"
                 render={({ field }) => (
@@ -253,7 +254,7 @@ export function CreateTaskForm({ onTaskCreate }: CreateTaskFormProps) {
                       <FormControl>
                         <SelectTrigger>
                           <SelectValue placeholder="Selecciona un usuario" />
-                        </Trigger>
+                        </SelectTrigger>
                       </FormControl>
                       <SelectContent>
                         {users.map(user => (
@@ -265,7 +266,7 @@ export function CreateTaskForm({ onTaskCreate }: CreateTaskFormProps) {
                   </FormItem>
                 )}
               />
-               <FormField
+              <FormField
                 control={form.control}
                 name="prioridad"
                 render={({ field }) => (
@@ -275,7 +276,7 @@ export function CreateTaskForm({ onTaskCreate }: CreateTaskFormProps) {
                       <FormControl>
                         <SelectTrigger>
                           <SelectValue placeholder="Selecciona una prioridad" />
-                        </Trigger>
+                        </SelectTrigger>
                       </FormControl>
                       <SelectContent>
                         {priorities.map(p => (
@@ -299,7 +300,7 @@ export function CreateTaskForm({ onTaskCreate }: CreateTaskFormProps) {
                 )}
               />
             </div>
-             <FormField
+            <FormField
               control={form.control}
               name="tiempoEstimado"
               render={({ field }) => (
