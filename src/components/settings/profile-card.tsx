@@ -12,7 +12,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 
-export const ProfileCard = () => {
+export function ProfileCard() {
   return (
     <Card>
       <CardHeader>
@@ -49,4 +49,4 @@ export const ProfileCard = () => {
       </CardFooter>
     </Card>
   );
-};
+}
