@@ -39,19 +39,19 @@ import { stats as placeholderStats } from '@/lib/placeholder-data';
 
 
 const efficiencyByAreaData = [
-    { name: 'Cocina', efficiency: 88, fill: 'var(--color-chart-1)' },
-    { name: 'Servicio', efficiency: 92, fill: 'var(--color-chart-2)' },
-    { name: 'Limpieza', efficiency: 85, fill: 'var(--color-chart-3)' },
-    { name: 'Almacén', efficiency: 95, fill: 'var(--color-chart-4)' },
-    { name: 'Equipos', efficiency: 80, fill: 'var(--color-chart-5)' },
+    { name: 'Cocina', efficiency: 88, fill: '#1d4ed8' },
+    { name: 'Servicio', efficiency: 92, fill: '#2563eb' },
+    { name: 'Limpieza', efficiency: 85, fill: '#3b82f6' },
+    { name: 'Almacén', efficiency: 95, fill: '#60a5fa' },
+    { name: 'Equipos', efficiency: 80, fill: '#93c5fd' },
 ]
 
 const workloadByUserData = [
-    { name: 'Carlos R.', tasks: 15, fill: 'var(--color-chart-1)' },
-    { name: 'María F.', tasks: 12, fill: 'var(--color-chart-2)' },
-    { name: 'José M.', tasks: 18, fill: 'var(--color-chart-3)' },
-    { name: 'Ana G.', tasks: 8, fill: 'var(--color-chart-4)' },
-    { name: 'Luis P.', tasks: 10, fill: 'var(--color-chart-5)' },
+    { name: 'Carlos R.', tasks: 15, fill: '#1d4ed8' },
+    { name: 'María F.', tasks: 12, fill: '#2563eb' },
+    { name: 'José M.', tasks: 18, fill: '#3b82f6' },
+    { name: 'Ana G.', tasks: 8, fill: '#60a5fa' },
+    { name: 'Luis P.', tasks: 10, fill: '#93c5fd' },
 ]
 
 const KPI_CARDS = [
@@ -177,6 +177,7 @@ export default function StatsPage() {
                         <BarChart data={efficiencyByAreaData} margin={{ top: 20, right: 20, bottom: 5, left: -20 }}>
                            <CartesianGrid vertical={false} />
                             <XAxis dataKey="name" tickLine={false} axisLine={false} stroke="#888888" fontSize={12} />
+                            <YAxis stroke="#888888" fontSize={12} tickLine={false} axisLine={false} tickFormatter={(value) => `${value}%`} />
                             <ChartTooltip cursor={false} content={<ChartTooltipContent indicator="dot" />} />
                             <Bar dataKey="efficiency" radius={[4, 4, 0, 0]}>
                                 {efficiencyByAreaData.map(entry => (
