@@ -16,7 +16,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useUserRole } from '@/hooks/use-user-role';
 
-function ProfileCard() {
+const ProfileCard = () => {
   return (
     <Card>
       <CardHeader>
