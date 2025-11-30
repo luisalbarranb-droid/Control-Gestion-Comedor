@@ -12,6 +12,7 @@ import { tasks, users, areas } from '@/lib/placeholder-data';
 import type { TaskPriority, TaskStatus } from '@/lib/types';
 import { cn } from '@/lib/utils';
 import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
+import { format } from 'date-fns';
 
 
 const priorityVariant: Record<TaskPriority, string> = {
@@ -61,7 +62,7 @@ export function RecentTasks() {
                         <TableCell>
                             <div className="font-medium">{task.titulo}</div>
                             <div className="hidden text-sm text-muted-foreground md:inline">
-                                Vence: {task.fechaVencimiento.toLocaleDateString()}
+                                Vence: {format(task.fechaVencimiento, 'dd/MM/yyyy')}
                             </div>
                         </TableCell>
                          <TableCell className="hidden sm:table-cell">{area?.nombre}</TableCell>
