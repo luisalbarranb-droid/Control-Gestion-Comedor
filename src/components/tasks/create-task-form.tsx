@@ -65,7 +65,6 @@ type CreateTaskFormProps = {
     onTaskCreate: (task: Omit<Task, 'taskId' | 'creadoPor' | 'fechaCreacion' | 'estado' | 'checklist' | 'comentarios' | 'tags' | 'recurrente' | 'periodicidad'>) => void;
 };
 
-
 export function CreateTaskForm({ onTaskCreate }: CreateTaskFormProps) {
   const [isOpen, setIsOpen] = useState(false);
   const { toast } = useToast();
@@ -228,7 +227,7 @@ export function CreateTaskForm({ onTaskCreate }: CreateTaskFormProps) {
                       <FormControl>
                         <SelectTrigger>
                           <SelectValue placeholder="Selecciona un área" />
-                        </Trigger>
+                        </SelectTrigger>
                       </FormControl>
                       <SelectContent>
                         {areas.map(area => (
