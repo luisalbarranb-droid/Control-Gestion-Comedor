@@ -16,7 +16,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useUserRole } from '@/hooks/use-user-role';
 
-const ProfileCard = () => {
+function ProfileCard() {
   return (
     <Card>
       <CardHeader>
@@ -48,8 +48,7 @@ const ProfileCard = () => {
       </CardFooter>
     </Card>
   );
-};
-
+}
 
 export default function SettingsPage() {
   const { role } = useUserRole();
