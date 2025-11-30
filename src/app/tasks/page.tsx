@@ -41,6 +41,8 @@ import type { Task, TaskPriority, TaskStatus } from '@/lib/types';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import { CreateTaskForm } from '@/components/tasks/create-task-form';
+import { TaskDetails } from '@/components/tasks/task-details';
+
 
 const priorityVariant: Record<TaskPriority, string> = {
   baja: 'bg-green-100 text-green-800 border-green-200 dark:bg-green-900/50 dark:text-green-300 dark:border-green-700',
@@ -61,19 +63,19 @@ const statusVariant: Record<TaskStatus, string> = {
 
 export default function TasksPage() {
   const [tasks, setTasks] = useState<Task[]>(initialTasks);
+  const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const getUser = (userId: string) => users.find((u) => u.userId === userId);
   const getArea = (areaId: string) => areas.find((a) => a.id === areaId);
 
-  const handleTaskCreate = (newTask: Omit<Task, 'taskId' | 'creadoPor' | 'fechaCreacion' | 'estado' | 'checklist' | 'evidencias' | 'comentarios' | 'tags' | 'recurrente' | 'periodicidad'>) => {
+  const handleTaskCreate = (newTaskData: Omit<Task, 'taskId' | 'creadoPor' | 'fechaCreacion' | 'estado' | 'checklist' | 'comentarios' | 'tags' | 'recurrente' | 'periodicidad'>) => {
     const fullyNewTask: Task = {
-      ...newTask,
+      ...newTaskData,
       taskId: `task-${Date.now()}`,
       creadoPor: 'user-superadmin-1', // Placeholder for current user
       fechaCreacion: new Date(),
       estado: 'pendiente',
       periodicidad: 'unica',
       checklist: [],
-      evidencias: [],
       comentarios: [],
       tags: [],
       recurrente: false,
@@ -94,126 +96,130 @@ export default function TasksPage() {
       </Sidebar>
       <SidebarInset>
         <Header />
-        <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
-          <div className="flex items-center justify-between">
-            <h1 className="font-headline text-2xl font-bold md:text-3xl">
-              Gestión de Tareas
-            </h1>
-            <CreateTaskForm onTaskCreate={handleTaskCreate} />
-          </div>
+        <main className="flex flex-1">
+          <div className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
+            <div className="flex items-center justify-between">
+              <h1 className="font-headline text-2xl font-bold md:text-3xl">
+                Gestión de Tareas
+              </h1>
+              <CreateTaskForm onTaskCreate={handleTaskCreate} />
+            </div>
 
-          <Card>
-            <CardHeader>
-              <CardTitle>Todas las Tareas</CardTitle>
-              <CardDescription>
-                Visualiza y gestiona todas las tareas del sistema.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Tarea</TableHead>
-                    <TableHead>Estado</TableHead>
-                    <TableHead className="hidden md:table-cell">
-                      Prioridad
-                    </TableHead>
-                    <TableHead className="hidden sm:table-cell">Área</TableHead>
-                    <TableHead className="hidden lg:table-cell">
-                      Asignado a
-                    </TableHead>
-                    <TableHead>
-                      <span className="sr-only">Acciones</span>
-                    </TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {tasks.map((task) => {
-                    const user = getUser(task.asignadoA);
-                    const area = getArea(task.area);
-                    return (
-                      <TableRow key={task.taskId}>
-                        <TableCell>
-                          <div className="font-medium">{task.titulo}</div>
-                          <div className="text-sm text-muted-foreground">
-                            Vence:{' '}
-                            {format(
-                              new Date(task.fechaVencimiento),
-                              'dd/MM/yyyy'
-                            )}
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <Badge
-                            variant="secondary"
-                            className={cn(
-                              statusVariant[task.estado],
-                              'capitalize'
-                            )}
-                          >
-                            {task.estado.replace('-', ' ')}
-                          </Badge>
-                        </TableCell>
-                        <TableCell className="hidden md:table-cell">
-                          <Badge
-                            variant="outline"
-                            className={cn(
-                              priorityVariant[task.prioridad],
-                              'capitalize'
-                            )}
-                          >
-                            {task.prioridad}
-                          </Badge>
-                        </TableCell>
-                        <TableCell className="hidden sm:table-cell">
-                          {area?.nombre}
-                        </TableCell>
-                        <TableCell className="hidden lg:table-cell">
-                          <div className="flex items-center gap-2">
-                            <Avatar className="h-8 w-8">
-                              <AvatarImage src={user?.avatarUrl} />
-                              <AvatarFallback>
-                                {user?.nombre
-                                  .split(' ')
-                                  .map((n) => n[0])
-                                  .join('')}
-                              </AvatarFallback>
-                            </Avatar>
-                            <span>{user?.nombre}</span>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button
-                                aria-haspopup="true"
-                                size="icon"
-                                variant="ghost"
-                              >
-                                <MoreHorizontal className="h-4 w-4" />
-                                <span className="sr-only">Toggle menu</span>
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
-                              <DropdownMenuLabel>Acciones</DropdownMenuLabel>
-                              <DropdownMenuItem>Editar</DropdownMenuItem>
-                              <DropdownMenuItem>
-                                Marcar como completada
-                              </DropdownMenuItem>
-                              <DropdownMenuSeparator />
-                              <DropdownMenuItem className="text-red-600">
-                                Eliminar
-                              </DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
-                        </TableCell>
-                      </TableRow>
-                    );
-                  })}
-                </TableBody>
-              </Table>
-            </CardContent>
-          </Card>
+            <Card>
+              <CardHeader>
+                <CardTitle>Todas las Tareas</CardTitle>
+                <CardDescription>
+                  Visualiza y gestiona todas las tareas del sistema.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Tarea</TableHead>
+                      <TableHead>Estado</TableHead>
+                      <TableHead className="hidden md:table-cell">
+                        Prioridad
+                      </TableHead>
+                      <TableHead className="hidden sm:table-cell">Área</TableHead>
+                      <TableHead className="hidden lg:table-cell">
+                        Asignado a
+                      </TableHead>
+                      <TableHead>
+                        <span className="sr-only">Acciones</span>
+                      </TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {tasks.map((task) => {
+                      const user = getUser(task.asignadoA);
+                      const area = getArea(task.area);
+                      return (
+                        <TableRow key={task.taskId} onClick={() => setSelectedTask(task)} className="cursor-pointer">
+                          <TableCell>
+                            <div className="font-medium">{task.titulo}</div>
+                            <div className="text-sm text-muted-foreground">
+                              Vence:{' '}
+                              {format(
+                                new Date(task.fechaVencimiento),
+                                'dd/MM/yyyy'
+                              )}
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <Badge
+                              variant="secondary"
+                              className={cn(
+                                statusVariant[task.estado],
+                                'capitalize'
+                              )}
+                            >
+                              {task.estado.replace('-', ' ')}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="hidden md:table-cell">
+                            <Badge
+                              variant="outline"
+                              className={cn(
+                                priorityVariant[task.prioridad],
+                                'capitalize'
+                              )}
+                            >
+                              {task.prioridad}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="hidden sm:table-cell">
+                            {area?.nombre}
+                          </TableCell>
+                          <TableCell className="hidden lg:table-cell">
+                            <div className="flex items-center gap-2">
+                              <Avatar className="h-8 w-8">
+                                <AvatarImage src={user?.avatarUrl} />
+                                <AvatarFallback>
+                                  {user?.nombre
+                                    .split(' ')
+                                    .map((n) => n[0])
+                                    .join('')}
+                                </AvatarFallback>
+                              </Avatar>
+                              <span>{user?.nombre}</span>
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button
+                                  aria-haspopup="true"
+                                  size="icon"
+                                  variant="ghost"
+                                  onClick={(e) => e.stopPropagation()}
+                                >
+                                  <MoreHorizontal className="h-4 w-4" />
+                                  <span className="sr-only">Toggle menu</span>
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end">
+                                <DropdownMenuLabel>Acciones</DropdownMenuLabel>
+                                <DropdownMenuItem>Editar</DropdownMenuItem>
+                                <DropdownMenuItem>
+                                  Marcar como completada
+                                </DropdownMenuItem>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem className="text-red-600">
+                                  Eliminar
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
+                  </TableBody>
+                </Table>
+              </CardContent>
+            </Card>
+          </div>
+          <TaskDetails task={selectedTask} onClose={() => setSelectedTask(null)} />
         </main>
       </SidebarInset>
     </div>
