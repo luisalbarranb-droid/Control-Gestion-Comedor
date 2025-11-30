@@ -1,3 +1,5 @@
+'use client';
+
 import {
   Sidebar,
   SidebarContent,
@@ -12,8 +14,47 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter }
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { useUserRole } from '@/hooks/use-user-role';
+
+function ProfileCard() {
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Perfil de Usuario</CardTitle>
+        <CardDescription>
+          Gestiona la información de tu cuenta personal.
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-4">
+          <div className="space-y-2">
+          <Label htmlFor="name">Nombre</Label>
+          <Input id="name" defaultValue="Carlos Ruiz" />
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="email">Email</Label>
+          <Input id="email" type="email" defaultValue="carlos@comedor.com" disabled />
+        </div>
+          <div className="space-y-2">
+          <Label htmlFor="current-password">Contraseña Actual</Label>
+          <Input id="current-password" type="password" />
+        </div>
+          <div className="space-y-2">
+          <Label htmlFor="new-password">Nueva Contraseña</Label>
+          <Input id="new-password" type="password" />
+        </div>
+      </CardContent>
+      <CardFooter>
+        <Button>Guardar Cambios</Button>
+      </CardFooter>
+    </Card>
+  );
+}
+
 
 export default function SettingsPage() {
+  const { role } = useUserRole();
+  const isAdmin = role === 'admin' || role === 'superadmin';
+
   return (
     <div className="min-h-screen w-full">
       <Sidebar>
@@ -34,97 +75,73 @@ export default function SettingsPage() {
             </h1>
           </div>
           
-          <Tabs defaultValue="profile" className="flex-1">
-            <TabsList className="grid w-full grid-cols-4">
-              <TabsTrigger value="profile">Perfil</TabsTrigger>
-              <TabsTrigger value="appearance">Apariencia</TabsTrigger>
-              <TabsTrigger value="areas">Áreas</TabsTrigger>
-              <TabsTrigger value="notifications">Notificaciones</TabsTrigger>
-            </TabsList>
-            <TabsContent value="profile">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Perfil de Usuario</CardTitle>
-                  <CardDescription>
-                    Gestiona la información de tu cuenta personal.
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                   <div className="space-y-2">
-                    <Label htmlFor="name">Nombre</Label>
-                    <Input id="name" defaultValue="Super Admin" />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="email">Email</Label>
-                    <Input id="email" type="email" defaultValue="arvecladu@gmail.com" disabled />
-                  </div>
-                   <div className="space-y-2">
-                    <Label htmlFor="current-password">Contraseña Actual</Label>
-                    <Input id="current-password" type="password" />
-                  </div>
-                   <div className="space-y-2">
-                    <Label htmlFor="new-password">Nueva Contraseña</Label>
-                    <Input id="new-password" type="password" />
-                  </div>
-                </CardContent>
-                <CardFooter>
-                  <Button>Guardar Cambios</Button>
-                </CardFooter>
-              </Card>
-            </TabsContent>
-            <TabsContent value="appearance">
-               <Card>
-                <CardHeader>
-                  <CardTitle>Apariencia</CardTitle>
-                  <CardDescription>
-                    Personaliza el aspecto de la aplicación.
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="space-y-2">
-                    <Label>Tema</Label>
-                     <p className="text-sm text-muted-foreground">Selecciona el tema para el dashboard.</p>
-                     {/* Aquí irá el selector de tema (claro/oscuro) */}
-                  </div>
-                </CardContent>
-                 <CardFooter>
-                  <Button>Guardar Preferencias</Button>
-                </CardFooter>
-              </Card>
-            </TabsContent>
-            <TabsContent value="areas">
-               <Card>
-                <CardHeader>
-                  <CardTitle>Áreas de Trabajo</CardTitle>
-                  <CardDescription>
-                    Gestiona las áreas de trabajo de tu equipo. (Solo Admins)
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-sm text-muted-foreground">Aquí se mostrará la gestión de áreas.</p>
-                </CardContent>
-                 <CardFooter>
-                  <Button>Añadir Área</Button>
-                </CardFooter>
-              </Card>
-            </TabsContent>
-            <TabsContent value="notifications">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Notificaciones</CardTitle>
-                  <CardDescription>
-                    Elige cómo quieres recibir notificaciones.
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                   <p className="text-sm text-muted-foreground">Aquí se mostrará la configuración de notificaciones.</p>
-                </CardContent>
-                 <CardFooter>
-                  <Button>Guardar Ajustes</Button>
-                </CardFooter>
-              </Card>
-            </TabsContent>
-          </Tabs>
+          {isAdmin ? (
+            <Tabs defaultValue="profile" className="flex-1">
+              <TabsList className="grid w-full grid-cols-4">
+                <TabsTrigger value="profile">Perfil</TabsTrigger>
+                <TabsTrigger value="appearance">Apariencia</TabsTrigger>
+                <TabsTrigger value="areas">Áreas</TabsTrigger>
+                <TabsTrigger value="notifications">Notificaciones</TabsTrigger>
+              </TabsList>
+              <TabsContent value="profile">
+                <ProfileCard />
+              </TabsContent>
+              <TabsContent value="appearance">
+                 <Card>
+                  <CardHeader>
+                    <CardTitle>Apariencia</CardTitle>
+                    <CardDescription>
+                      Personaliza el aspecto de la aplicación.
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="space-y-2">
+                      <Label>Tema</Label>
+                       <p className="text-sm text-muted-foreground">Selecciona el tema para el dashboard.</p>
+                       {/* Aquí irá el selector de tema (claro/oscuro) */}
+                    </div>
+                  </CardContent>
+                   <CardFooter>
+                    <Button>Guardar Preferencias</Button>
+                  </CardFooter>
+                </Card>
+              </TabsContent>
+              <TabsContent value="areas">
+                 <Card>
+                  <CardHeader>
+                    <CardTitle>Áreas de Trabajo</CardTitle>
+                    <CardDescription>
+                      Gestiona las áreas de trabajo de tu equipo. (Solo Admins)
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-sm text-muted-foreground">Aquí se mostrará la gestión de áreas.</p>
+                  </CardContent>
+                   <CardFooter>
+                    <Button>Añadir Área</Button>
+                  </CardFooter>
+                </Card>
+              </TabsContent>
+              <TabsContent value="notifications">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Notificaciones</CardTitle>
+                    <CardDescription>
+                      Elige cómo quieres recibir notificaciones.
+                    </CardDescription>
+                  </Header>
+                  <CardContent>
+                     <p className="text-sm text-muted-foreground">Aquí se mostrará la configuración de notificaciones.</p>
+                  </CardContent>
+                   <CardFooter>
+                    <Button>Guardar Ajustes</Button>
+                  </CardFooter>
+                </Card>
+              </TabsContent>
+            </Tabs>
+          ) : (
+             <ProfileCard />
+          )}
 
         </main>
       </SidebarInset>

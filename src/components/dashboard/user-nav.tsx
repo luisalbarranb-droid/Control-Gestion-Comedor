@@ -15,11 +15,13 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { users } from '@/lib/placeholder-data';
 import Link from 'next/link';
+import { useUserRole } from '@/hooks/use-user-role';
 
 export function UserNav() {
+  const { role } = useUserRole();
   // In a real app, you'd get the current user from an auth hook
-  // We simulate a 'comun' user for demonstration
-  const currentUser = users.find((u) => u.rol === 'comun');
+  // We simulate a user based on the role for demonstration
+  const currentUser = users.find((u) => u.rol === (role || 'comun'));
 
   if (!currentUser) {
     return null;
@@ -51,9 +53,15 @@ export function UserNav() {
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
         <DropdownMenuGroup>
-          <DropdownMenuItem>Perfil</DropdownMenuItem>
-          <DropdownMenuItem>Facturación</DropdownMenuItem>
-          <DropdownMenuItem>Ajustes</DropdownMenuItem>
+          <DropdownMenuItem asChild>
+            <Link href="/settings">Perfil</Link>
+          </DropdownMenuItem>
+          {role === 'superadmin' && (
+            <DropdownMenuItem>Facturación</DropdownMenuItem>
+          )}
+          <DropdownMenuItem asChild>
+            <Link href="/settings">Ajustes</Link>
+          </DropdownMenuItem>
         </DropdownMenuGroup>
         <DropdownMenuSeparator />
         <DropdownMenuItem asChild>
