@@ -13,53 +13,12 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
-import { Input } from '@/components/ui/input';
-
-// Componente de Perfil Aislado para evitar conflictos
-function ProfileCard() {
-  return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Perfil de Usuario</CardTitle>
-        <CardDescription>
-          Gestiona la información de tu cuenta personal.
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        <div className="space-y-2">
-          <Label htmlFor="name">Nombre</Label>
-          <Input id="name" defaultValue="Carlos Ruiz" />
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="email">Email</Label>
-          <Input
-            id="email"
-            type="email"
-            defaultValue="carlos@comedor.com"
-            disabled
-          />
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="current-password">Contraseña Actual</Label>
-          <Input id="current-password" type="password" />
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="new-password">Nueva Contraseña</Label>
-          <Input id="new-password" type="password" />
-        </div>
-      </CardContent>
-      <CardFooter>
-        <Button>Guardar Cambios</Button>
-      </CardFooter>
-    </Card>
-  );
-}
-
+import { useUserRole } from '@/hooks/use-user-role';
+import { ProfileCard } from '@/components/settings/profile-card';
 
 export default function SettingsPage() {
-  // La lógica del rol se simplifica para evitar errores.
-  // En un caso real, esto provendría de un hook de autenticación fiable.
-  const isAdmin = true;
+  const { role } = useUserRole();
+  const isAdmin = role === 'admin' || role === 'superadmin';
 
   return (
     <div className="min-h-screen w-full">
@@ -82,7 +41,7 @@ export default function SettingsPage() {
           </div>
           
           <Tabs defaultValue="profile" className="flex-1">
-            <TabsList className="grid w-full grid-cols-4">
+            <TabsList className={isAdmin ? "grid w-full grid-cols-4" : "grid w-full grid-cols-3"}>
               <TabsTrigger value="profile">Perfil</TabsTrigger>
               <TabsTrigger value="appearance">Apariencia</TabsTrigger>
               {isAdmin && <TabsTrigger value="areas">Áreas</TabsTrigger>}
@@ -135,7 +94,7 @@ export default function SettingsPage() {
                   <CardDescription>
                     Elige cómo quieres recibir notificaciones.
                   </CardDescription>
-                </Header>
+                </CardHeader>
                 <CardContent>
                    <p className="text-sm text-muted-foreground">Aquí se mostrará la configuración de notificaciones.</p>
                 </CardContent>
