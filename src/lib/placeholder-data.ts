@@ -199,10 +199,10 @@ export const stats = {
     { name: 'Ana G.', eficiencia: 95 },
   ],
   pieData: [
-    { name: 'Cocina', value: 8, fill: 'var(--color-chart-1)' },
-    { name: 'Servicio', value: 6, fill: 'var(--color-chart-2)' },
-    { name: 'Limpieza', value: 5, fill: 'var(--color-chart-3)' },
-    { name: 'Almacén', value: 4, fill: 'var(--color-chart-4)' },
-    { name: 'Equipos', value: 2, fill: 'var(--color-chart-5)' },
+    { name: 'Cocina', value: 8, fill: 'hsl(var(--chart-1))' },
+    { name: 'Servicio', value: 6, fill: 'hsl(var(--chart-2))' },
+    { name: 'Limpieza', value: 5, fill: 'hsl(var(--chart-3))' },
+    { name: 'Almacén', value: 4, fill: 'hsl(var(--chart-4))' },
+    { name: 'Equipos', value: 2, fill: 'hsl(var(--chart-5))' },
   ],
 };

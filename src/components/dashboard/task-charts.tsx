@@ -102,7 +102,16 @@ export function TaskCharts() {
                 <Tooltip
                   content={<ChartTooltipContent nameKey="name" hideLabel />}
                 />
-                <Pie data={stats.pieData} dataKey="value" nameKey="name">
+                <Pie data={stats.pieData} dataKey="value" nameKey="name" innerRadius={50} outerRadius={80} paddingAngle={2} labelLine={false} label={({ cx, cy, midAngle, innerRadius, outerRadius, percent, index }) => {
+                    const radius = innerRadius + (outerRadius - innerRadius) * 1.2;
+                    const x = cx + radius * Math.cos(-midAngle * (Math.PI / 180));
+                    const y = cy + radius * Math.sin(-midAngle * (Math.PI / 180));
+                    return (
+                        <text x={x} y={y} fill="currentColor" textAnchor={x > cx ? 'start' : 'end'} dominantBaseline="central" className="text-xs">
+                        {`${(percent * 100).toFixed(0)}%`}
+                        </text>
+                    );
+                }}>
                   {stats.pieData.map((entry, index) => (
                     <Cell key={`cell-${index}`} fill={entry.fill} />
                   ))}
