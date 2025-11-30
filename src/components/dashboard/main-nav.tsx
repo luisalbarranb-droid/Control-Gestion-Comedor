@@ -27,7 +27,6 @@ export function MainNav() {
         <SidebarMenuButton
           asChild
           isActive={pathname === '/'}
-          tooltip="Dashboard"
         >
           <Link href="/">
             <Home />
@@ -39,7 +38,6 @@ export function MainNav() {
         <SidebarMenuButton
           asChild
           isActive={pathname.startsWith('/tasks')}
-          tooltip="Tareas"
         >
           <Link href="/tasks">
             <ClipboardList />
@@ -53,7 +51,6 @@ export function MainNav() {
             <SidebarMenuButton
               asChild
               isActive={pathname.startsWith('/users')}
-              tooltip="Usuarios"
             >
               <Link href="/users">
                 <Users />
@@ -65,7 +62,6 @@ export function MainNav() {
             <SidebarMenuButton
               asChild
               isActive={pathname.startsWith('/stats')}
-              tooltip="Estadísticas"
             >
               <Link href="/stats">
                 <AreaChart />
@@ -79,7 +75,6 @@ export function MainNav() {
         <SidebarMenuButton
           asChild
           isActive={pathname.startsWith('/settings')}
-          tooltip="Configuración"
         >
           <Link href="/settings">
             <Settings />
