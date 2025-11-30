@@ -78,6 +78,10 @@ export function CreateTaskForm({ onTaskCreate }: CreateTaskFormProps) {
       descripcion: '',
       tiempoEstimado: undefined,
       evidencia: undefined,
+      area: undefined,
+      asignadoA: undefined,
+      prioridad: undefined,
+      fechaVencimiento: undefined,
     },
   });
 
