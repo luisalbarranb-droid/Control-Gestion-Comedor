@@ -37,35 +37,36 @@ import { useToast } from '@/hooks/use-toast';
 import { users, areas } from '@/lib/placeholder-data';
 import type { Task, TaskPriority, AreaId, Evidence } from '@/lib/types';
 
+
 const priorities: TaskPriority[] = ['baja', 'media', 'alta', 'urgente'];
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
 const ACCEPTED_IMAGE_TYPES = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
-
-const formSchema = z.object({
-  titulo: z.string().min(3, 'El título debe tener al menos 3 caracteres.'),
-  descripcion: z.string().optional(),
-  area: z.string({ required_error: 'Debes seleccionar un área.' }),
-  asignadoA: z.string({ required_error: 'Debes asignar la tarea a un usuario.' }),
-  prioridad: z.string({ required_error: 'Debes seleccionar una prioridad.' }),
-  fechaVencimiento: z.date({ required_error: 'Debes seleccionar una fecha de vencimiento.' }),
-  tiempoEstimado: z.coerce.number().int().positive('El tiempo debe ser un número positivo.').optional(),
-  evidencia: z.any()
-    .refine((files) => !files || files?.length <= 1, "Solo puedes subir un archivo.")
-    .refine((files) => !files || files?.[0]?.size <= MAX_FILE_SIZE, `El tamaño máximo es de 5MB.`)
-    .refine(
-      (files) => !files || ACCEPTED_IMAGE_TYPES.includes(files?.[0]?.type),
-      "Solo se aceptan formatos .jpg, .jpeg, .png y .webp."
-    ).optional(),
-});
-
-type FormValues = z.infer<typeof formSchema>;
 
 type CreateTaskFormProps = {
     onTaskCreate: (task: Omit<Task, 'taskId' | 'creadoPor' | 'fechaCreacion' | 'estado' | 'checklist' | 'comentarios' | 'tags' | 'recurrente' | 'periodicidad'>) => void;
 };
 
 export function CreateTaskForm({ onTaskCreate }: CreateTaskFormProps) {
+  const formSchema = z.object({
+    titulo: z.string().min(3, 'El título debe tener al menos 3 caracteres.'),
+    descripcion: z.string().optional(),
+    area: z.string({ required_error: 'Debes seleccionar un área.' }),
+    asignadoA: z.string({ required_error: 'Debes asignar la tarea a un usuario.' }),
+    prioridad: z.string({ required_error: 'Debes seleccionar una prioridad.' }),
+    fechaVencimiento: z.date({ required_error: 'Debes seleccionar una fecha de vencimiento.' }),
+    tiempoEstimado: z.coerce.number().int().positive('El tiempo debe ser un número positivo.').optional(),
+    evidencia: z.any()
+      .refine((files) => !files || files?.length <= 1, "Solo puedes subir un archivo.")
+      .refine((files) => !files || files?.[0]?.size <= MAX_FILE_SIZE, `El tamaño máximo es de 5MB.`)
+      .refine(
+        (files) => !files || ACCEPTED_IMAGE_TYPES.includes(files?.[0]?.type),
+        "Solo se aceptan formatos .jpg, .jpeg, .png y .webp."
+      ).optional(),
+  });
+
+  type FormValues = z.infer<typeof formSchema>;
+  
   const [isOpen, setIsOpen] = useState(false);
   const { toast } = useToast();
   const [preview, setPreview] = useState<string | null>(null);
