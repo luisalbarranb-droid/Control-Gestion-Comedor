@@ -37,9 +37,8 @@ import { useToast } from '@/hooks/use-toast';
 import { users, areas } from '@/lib/placeholder-data';
 import type { Task, TaskPriority, AreaId, Evidence } from '@/lib/types';
 
-
 type CreateTaskFormProps = {
-    onTaskCreate: (task: Omit<Task, 'taskId' | 'creadoPor' | 'fechaCreacion' | 'estado' | 'checklist' | 'comentarios' | 'tags' | 'recurrente' | 'periodicidad'>) => void;
+  onTaskCreate: (task: Omit<Task, 'taskId' | 'creadoPor' | 'fechaCreacion' | 'estado' | 'checklist' | 'comentarios' | 'tags' | 'recurrente' | 'periodicidad'>) => void;
 };
 
 export function CreateTaskForm({ onTaskCreate }: CreateTaskFormProps) {
@@ -86,6 +85,30 @@ export function CreateTaskForm({ onTaskCreate }: CreateTaskFormProps) {
 
   const fileRef = form.register("evidencia");
 
+  const handleOpenChange = (open: boolean) => {
+    setIsOpen(open);
+    if (!open) {
+      form.reset();
+      if (preview) {
+        URL.revokeObjectURL(preview);
+      }
+      setPreview(null);
+    }
+  };
+  
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (preview) {
+      URL.revokeObjectURL(preview);
+    }
+    if (file) {
+      const newPreviewUrl = URL.createObjectURL(file);
+      setPreview(newPreviewUrl);
+    } else {
+      setPreview(null);
+    }
+  };
+
   function onSubmit(values: FormValues) {
     let evidencias: Evidence[] = [];
     if (values.evidencia && values.evidencia.length > 0) {
@@ -116,30 +139,6 @@ export function CreateTaskForm({ onTaskCreate }: CreateTaskFormProps) {
     
     handleOpenChange(false);
   }
-
-  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (preview) {
-      URL.revokeObjectURL(preview);
-    }
-    if (file) {
-      const newPreviewUrl = URL.createObjectURL(file);
-      setPreview(newPreviewUrl);
-    } else {
-      setPreview(null);
-    }
-  };
-  
-  const handleOpenChange = (open: boolean) => {
-    setIsOpen(open);
-    if (!open) {
-        form.reset();
-        if (preview) {
-          URL.revokeObjectURL(preview);
-        }
-        setPreview(null);
-    }
-  };
 
   return (
     <Dialog open={isOpen} onOpenChange={handleOpenChange}>
