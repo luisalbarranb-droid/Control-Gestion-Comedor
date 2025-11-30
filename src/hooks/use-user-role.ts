@@ -5,8 +5,8 @@ import { users } from "@/lib/placeholder-data";
 import { Role } from "@/lib/types";
 
 // Simulate getting the current logged-in user.
-// We'll just grab the first 'comun' user for this example.
-const currentUser = users.find(u => u.rol === 'comun');
+// We'll just grab the first 'superadmin' user for this example.
+const currentUser = users.find(u => u.rol === 'superadmin');
 
 export function useUserRole(): { role: Role | null } {
     // In a real scenario, you might have loading states, etc.
