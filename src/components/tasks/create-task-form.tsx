@@ -18,7 +18,6 @@ import {
 import {
   Form,
   FormControl,
-  FormDescription,
   FormField,
   FormItem,
   FormLabel,
@@ -37,7 +36,6 @@ import { DatePicker } from '@/components/ui/datepicker';
 import { useToast } from '@/hooks/use-toast';
 import { users, areas } from '@/lib/placeholder-data';
 import type { Task, TaskPriority, AreaId, Evidence } from '@/lib/types';
-import { cn } from '@/lib/utils';
 
 const priorities: TaskPriority[] = ['baja', 'media', 'alta', 'urgente'];
 
@@ -79,6 +77,7 @@ export function CreateTaskForm({ onTaskCreate }: CreateTaskFormProps) {
       titulo: '',
       descripcion: '',
       tiempoEstimado: undefined,
+      evidencia: undefined,
     },
   });
 
@@ -89,14 +88,14 @@ export function CreateTaskForm({ onTaskCreate }: CreateTaskFormProps) {
     if (values.evidencia && values.evidencia.length > 0) {
       const file = values.evidencia[0];
       evidencias.push({
-        url: URL.createObjectURL(file), // Create a temporary URL for preview
+        url: URL.createObjectURL(file),
         nombreArchivo: file.name,
         fechaSubida: new Date(),
         usuario: 'user-superadmin-1', // Placeholder
         descripcion: 'Evidencia inicial'
       });
     }
-
+    
     const taskData = {
         ...values,
         prioridad: values.prioridad as TaskPriority,
@@ -177,7 +176,7 @@ export function CreateTaskForm({ onTaskCreate }: CreateTaskFormProps) {
              <FormField
               control={form.control}
               name="evidencia"
-              render={({ field }) => (
+              render={() => (
                 <FormItem>
                   <FormLabel>Foto de Evidencia (Opcional)</FormLabel>
                   <FormControl>
@@ -187,7 +186,10 @@ export function CreateTaskForm({ onTaskCreate }: CreateTaskFormProps) {
                         className="absolute inset-0 z-10 w-full h-full opacity-0 cursor-pointer"
                         accept={ACCEPTED_IMAGE_TYPES.join(',')}
                         {...fileRef}
-                        onChange={handleFileChange}
+                        onChange={(e) => {
+                            fileRef.onChange(e);
+                            handleFileChange(e);
+                        }}
                       />
                       <div className="flex flex-col items-center gap-2 text-center">
                         {preview ? (
