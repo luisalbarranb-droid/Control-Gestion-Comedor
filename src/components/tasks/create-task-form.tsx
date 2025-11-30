@@ -310,5 +310,3 @@ export function CreateTaskForm({ onTaskCreate }: CreateTaskFormProps) {
     </Dialog>
   );
 }
-
-    
