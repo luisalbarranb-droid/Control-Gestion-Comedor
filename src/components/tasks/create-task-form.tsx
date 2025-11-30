@@ -38,16 +38,15 @@ import { users, areas } from '@/lib/placeholder-data';
 import type { Task, TaskPriority, AreaId, Evidence } from '@/lib/types';
 
 
-const priorities: TaskPriority[] = ['baja', 'media', 'alta', 'urgente'];
-
-const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
-const ACCEPTED_IMAGE_TYPES = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
-
 type CreateTaskFormProps = {
     onTaskCreate: (task: Omit<Task, 'taskId' | 'creadoPor' | 'fechaCreacion' | 'estado' | 'checklist' | 'comentarios' | 'tags' | 'recurrente' | 'periodicidad'>) => void;
 };
 
 export function CreateTaskForm({ onTaskCreate }: CreateTaskFormProps) {
+  const priorities: TaskPriority[] = ['baja', 'media', 'alta', 'urgente'];
+  const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
+  const ACCEPTED_IMAGE_TYPES = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
+
   const formSchema = z.object({
     titulo: z.string().min(3, 'El título debe tener al menos 3 caracteres.'),
     descripcion: z.string().optional(),
