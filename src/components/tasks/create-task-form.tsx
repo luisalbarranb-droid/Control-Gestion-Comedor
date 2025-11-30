@@ -35,7 +35,7 @@ import {
 import { DatePicker } from '@/components/ui/datepicker';
 import { useToast } from '@/hooks/use-toast';
 import { users, areas } from '@/lib/placeholder-data';
-import type { TaskPriority } from '@/lib/types';
+import type { Task, TaskPriority, AreaId } from '@/lib/types';
 
 const priorities: TaskPriority[] = ['baja', 'media', 'alta', 'urgente'];
 
@@ -49,11 +49,18 @@ const formSchema = z.object({
   tiempoEstimado: z.coerce.number().int().positive('El tiempo debe ser un número positivo.').optional(),
 });
 
-export function CreateTaskForm() {
+type FormValues = z.infer<typeof formSchema>;
+
+type CreateTaskFormProps = {
+    onTaskCreate: (task: Omit<Task, 'taskId' | 'creadoPor' | 'fechaCreacion' | 'estado' | 'checklist' | 'evidencias' | 'comentarios' | 'tags' | 'recurrente' | 'periodicidad'>) => void;
+};
+
+
+export function CreateTaskForm({ onTaskCreate }: CreateTaskFormProps) {
   const [isOpen, setIsOpen] = useState(false);
   const { toast } = useToast();
 
-  const form = useForm<z.infer<typeof formSchema>>({
+  const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       titulo: '',
@@ -62,11 +69,19 @@ export function CreateTaskForm() {
     },
   });
 
-  function onSubmit(values: z.infer<typeof formSchema>) {
-    console.log(values);
+  function onSubmit(values: FormValues) {
+    const taskData = {
+        ...values,
+        prioridad: values.prioridad as TaskPriority,
+        area: values.area as AreaId,
+        tiempoEstimado: values.tiempoEstimado || 0,
+        descripcion: values.descripcion || '',
+    };
+    onTaskCreate(taskData);
+    
     toast({
-      title: 'Tarea Creada (Simulación)',
-      description: 'La nueva tarea ha sido creada exitosamente.',
+      title: 'Tarea Creada',
+      description: 'La nueva tarea ha sido añadida a la lista.',
     });
     setIsOpen(false);
     form.reset();

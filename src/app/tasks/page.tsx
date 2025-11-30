@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import {
   Sidebar,
   SidebarContent,
@@ -35,8 +36,8 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { tasks, users, areas } from '@/lib/placeholder-data';
-import type { TaskPriority, TaskStatus } from '@/lib/types';
+import { tasks as initialTasks, users, areas } from '@/lib/placeholder-data';
+import type { Task, TaskPriority, TaskStatus } from '@/lib/types';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import { CreateTaskForm } from '@/components/tasks/create-task-form';
@@ -59,8 +60,26 @@ const statusVariant: Record<TaskStatus, string> = {
 };
 
 export default function TasksPage() {
+  const [tasks, setTasks] = useState<Task[]>(initialTasks);
   const getUser = (userId: string) => users.find((u) => u.userId === userId);
   const getArea = (areaId: string) => areas.find((a) => a.id === areaId);
+
+  const handleTaskCreate = (newTask: Omit<Task, 'taskId' | 'creadoPor' | 'fechaCreacion' | 'estado' | 'checklist' | 'evidencias' | 'comentarios' | 'tags' | 'recurrente' | 'periodicidad'>) => {
+    const fullyNewTask: Task = {
+      ...newTask,
+      taskId: `task-${Date.now()}`,
+      creadoPor: 'user-superadmin-1', // Placeholder for current user
+      fechaCreacion: new Date(),
+      estado: 'pendiente',
+      periodicidad: 'unica',
+      checklist: [],
+      evidencias: [],
+      comentarios: [],
+      tags: [],
+      recurrente: false,
+    };
+    setTasks(prevTasks => [fullyNewTask, ...prevTasks]);
+  };
 
   return (
     <div className="min-h-screen w-full">
@@ -80,7 +99,7 @@ export default function TasksPage() {
             <h1 className="font-headline text-2xl font-bold md:text-3xl">
               Gestión de Tareas
             </h1>
-            <CreateTaskForm />
+            <CreateTaskForm onTaskCreate={handleTaskCreate} />
           </div>
 
           <Card>
