@@ -122,20 +122,23 @@ export function CreateTaskForm({ onTaskCreate }: CreateTaskFormProps) {
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
-      setPreview(URL.createObjectURL(file));
+      const newPreviewUrl = URL.createObjectURL(file);
+      setPreview(newPreviewUrl);
     } else {
       setPreview(null);
     }
   };
-
-  return (
-    <Dialog open={isOpen} onOpenChange={(open) => {
-      setIsOpen(open);
-      if (!open) {
+  
+  const handleOpenChange = (open: boolean) => {
+    setIsOpen(open);
+    if (!open) {
         form.reset();
         setPreview(null);
-      }
-    }}>
+    }
+  };
+
+  return (
+    <Dialog open={isOpen} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
         <Button>
           <PlusCircle className="mr-2 h-4 w-4" />
