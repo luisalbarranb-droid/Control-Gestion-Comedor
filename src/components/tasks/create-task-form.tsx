@@ -113,13 +113,15 @@ export function CreateTaskForm({ onTaskCreate }: CreateTaskFormProps) {
       title: 'Tarea Creada',
       description: 'La nueva tarea ha sido añadida a la lista.',
     });
-    setIsOpen(false);
-    form.reset();
-    setPreview(null);
+    
+    handleOpenChange(false);
   }
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
+    if (preview) {
+      URL.revokeObjectURL(preview);
+    }
     if (file) {
       const newPreviewUrl = URL.createObjectURL(file);
       setPreview(newPreviewUrl);
@@ -132,6 +134,9 @@ export function CreateTaskForm({ onTaskCreate }: CreateTaskFormProps) {
     setIsOpen(open);
     if (!open) {
         form.reset();
+        if (preview) {
+          URL.revokeObjectURL(preview);
+        }
         setPreview(null);
     }
   };
@@ -309,7 +314,7 @@ export function CreateTaskForm({ onTaskCreate }: CreateTaskFormProps) {
               )}
             />
             <DialogFooter className='pt-4'>
-              <Button type="button" variant="outline" onClick={() => setIsOpen(false)}>Cancelar</Button>
+              <Button type="button" variant="outline" onClick={() => handleOpenChange(false)}>Cancelar</Button>
               <Button type="submit">Guardar Tarea</Button>
             </DialogFooter>
           </form>
