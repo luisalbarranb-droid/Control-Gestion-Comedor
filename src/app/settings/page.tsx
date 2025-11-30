@@ -18,6 +18,7 @@ import { ProfileCard } from '@/components/settings/profile-card';
 
 export default function SettingsPage() {
   const { role } = useUserRole();
+  const isAdmin = role === 'admin' || role === 'superadmin';
 
   return (
     <div className="min-h-screen w-full">
@@ -39,7 +40,7 @@ export default function SettingsPage() {
             </h1>
           </div>
           
-          {(role === 'admin' || role === 'superadmin') ? (
+          {isAdmin ? (
             <Tabs defaultValue="profile" className="flex-1">
               <TabsList className="grid w-full grid-cols-4">
                 <TabsTrigger value="profile">Perfil</TabsTrigger>
