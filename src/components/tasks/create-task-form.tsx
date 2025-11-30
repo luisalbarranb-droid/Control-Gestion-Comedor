@@ -35,7 +35,7 @@ import {
 import { DatePicker } from '@/components/ui/datepicker';
 import { useToast } from '@/hooks/use-toast';
 import { users, areas } from '@/lib/placeholder-data';
-import type { TaskPriority, AreaId } from '@/lib/types';
+import type { TaskPriority } from '@/lib/types';
 
 const priorities: TaskPriority[] = ['baja', 'media', 'alta', 'urgente'];
 
@@ -55,6 +55,11 @@ export function CreateTaskForm() {
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
+    defaultValues: {
+      titulo: '',
+      descripcion: '',
+      tiempoEstimado: undefined,
+    },
   });
 
   function onSubmit(values: z.infer<typeof formSchema>) {
@@ -194,7 +199,7 @@ export function CreateTaskForm() {
                 <FormItem>
                   <FormLabel>Tiempo Estimado (minutos)</FormLabel>
                   <FormControl>
-                    <Input type="number" placeholder="Ej: 60" {...field} />
+                    <Input type="number" placeholder="Ej: 60" {...field} value={field.value ?? ''} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
