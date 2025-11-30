@@ -14,9 +14,12 @@ import {
   SidebarMenuButton,
 } from '@/components/ui/sidebar';
 import Link from 'next/link';
+import { useUserRole } from '@/hooks/use-user-role'; // Import the new hook
 
 export function MainNav() {
   const pathname = usePathname();
+  const { role } = useUserRole(); // Get the user's role
+  const isAdmin = role === 'admin' || role === 'superadmin';
 
   return (
     <SidebarMenu>
@@ -44,30 +47,34 @@ export function MainNav() {
           </Link>
         </SidebarMenuButton>
       </SidebarMenuItem>
-      <SidebarMenuItem>
-        <SidebarMenuButton
-          asChild
-          isActive={pathname.startsWith('/users')}
-          tooltip="Usuarios"
-        >
-          <Link href="/users">
-            <Users />
-            <span>Usuarios</span>
-          </Link>
-        </SidebarMenuButton>
-      </SidebarMenuItem>
-      <SidebarMenuItem>
-        <SidebarMenuButton
-          asChild
-          isActive={pathname.startsWith('/stats')}
-          tooltip="Estadísticas"
-        >
-          <Link href="/stats">
-            <AreaChart />
-            <span>Estadísticas</span>
-          </Link>
-        </SidebarMenuButton>
-      </SidebarMenuItem>
+      {isAdmin && (
+        <>
+          <SidebarMenuItem>
+            <SidebarMenuButton
+              asChild
+              isActive={pathname.startsWith('/users')}
+              tooltip="Usuarios"
+            >
+              <Link href="/users">
+                <Users />
+                <span>Usuarios</span>
+              </Link>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+          <SidebarMenuItem>
+            <SidebarMenuButton
+              asChild
+              isActive={pathname.startsWith('/stats')}
+              tooltip="Estadísticas"
+            >
+              <Link href="/stats">
+                <AreaChart />
+                <span>Estadísticas</span>
+              </Link>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+        </>
+      )}
       <SidebarMenuItem>
         <SidebarMenuButton
           asChild

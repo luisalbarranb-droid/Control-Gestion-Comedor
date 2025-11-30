@@ -18,7 +18,8 @@ import Link from 'next/link';
 
 export function UserNav() {
   // In a real app, you'd get the current user from an auth hook
-  const currentUser = users.find((u) => u.rol === 'superadmin');
+  // We simulate a 'comun' user for demonstration
+  const currentUser = users.find((u) => u.rol === 'comun');
 
   if (!currentUser) {
     return null;
