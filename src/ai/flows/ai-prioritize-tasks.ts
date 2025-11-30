@@ -15,7 +15,7 @@ const AIPrioritizeTasksInputSchema = z.object({
   tasks: z.array(
     z.object({
       taskId: z.string().describe('Unique identifier for the task.'),
-      title: z.string().describe('Title of the task.'),
+      titulo: z.string().describe('Title of the task.'),
       description: z.string().describe('Detailed description of the task.'),
       area: z.string().describe('Area the task belongs to (e.g., cocina, servicio).'),
       asignadoA: z.string().describe('User ID assigned to the task.'),
@@ -69,7 +69,7 @@ const prompt = ai.definePrompt({
 Tasks:
 {{#each tasks}}
   - Task ID: {{taskId}}
-    Title: {{title}}
+    Title: {{titulo}}
     Description: {{description}}
     Area: {{area}}
     Assigned To: {{asignadoA}}
