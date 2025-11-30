@@ -221,7 +221,7 @@ export function CreateTaskForm({ onTaskCreate }: CreateTaskFormProps) {
                       <FormControl>
                         <SelectTrigger>
                           <SelectValue placeholder="Selecciona un área" />
-                        </SelectTrigger>
+                        </Trigger>
                       </FormControl>
                       <SelectContent>
                         {areas.map(area => (
