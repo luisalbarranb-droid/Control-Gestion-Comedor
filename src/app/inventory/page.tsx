@@ -37,11 +37,17 @@ import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import { InventoryHeader } from '@/components/inventory/inventory-header';
 import { InventoryForm } from '@/components/inventory/inventory-form';
+import { InventoryEntryForm } from '@/components/inventory/inventory-entry-form';
+import { InventoryExitForm } from '@/components/inventory/inventory-exit-form';
+import { useToast } from '@/hooks/use-toast';
 
 export default function InventoryPage() {
+  const { toast } = useToast();
   const [items, setItems] = useState<InventoryItem[]>(initialItems);
   const [selectedItem, setSelectedItem] = useState<InventoryItem | null>(null);
   const [isFormOpen, setFormOpen] = useState(false);
+  const [isEntryFormOpen, setEntryFormOpen] = useState(false);
+  const [isExitFormOpen, setExitFormOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [categoryFilter, setCategoryFilter] = useState<InventoryCategoryId | 'all'>('all');
 
@@ -65,6 +71,39 @@ export default function InventoryPage() {
     setFormOpen(false);
     setSelectedItem(null);
   };
+  
+  const handleStockEntry = (entryData: { items: { itemId: string, quantity: number }[] }) => {
+    setItems(prevItems => {
+        const updatedItems = [...prevItems];
+        entryData.items.forEach(entry => {
+            const itemIndex = updatedItems.findIndex(i => i.itemId === entry.itemId);
+            if (itemIndex > -1) {
+                updatedItems[itemIndex].cantidad += entry.quantity;
+                updatedItems[itemIndex].ultimaActualizacion = new Date();
+            }
+        });
+        return updatedItems;
+    });
+    setEntryFormOpen(false);
+    toast({ title: "Entrada registrada", description: "El stock ha sido actualizado." });
+  };
+
+  const handleStockExit = (exitData: { items: { itemId: string, quantity: number }[] }) => {
+     setItems(prevItems => {
+        const updatedItems = [...prevItems];
+        exitData.items.forEach(entry => {
+            const itemIndex = updatedItems.findIndex(i => i.itemId === entry.itemId);
+            if (itemIndex > -1) {
+                updatedItems[itemIndex].cantidad -= entry.quantity;
+                updatedItems[itemIndex].ultimaActualizacion = new Date();
+            }
+        });
+        return updatedItems;
+    });
+    setExitFormOpen(false);
+    toast({ title: "Salida registrada", description: "El stock ha sido actualizado." });
+  };
+
 
   const openForm = (item: InventoryItem | null = null) => {
     setSelectedItem(item);
@@ -95,6 +134,8 @@ export default function InventoryPage() {
         <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
           <InventoryHeader
             onAddItem={() => openForm()}
+            onAddEntry={() => setEntryFormOpen(true)}
+            onAddExit={() => setExitFormOpen(true)}
             onSearch={setSearchQuery}
             onFilterChange={setCategoryFilter}
             searchQuery={searchQuery}
@@ -149,9 +190,14 @@ export default function InventoryPage() {
                             <DropdownMenuContent align="end">
                               <DropdownMenuLabel>Acciones</DropdownMenuLabel>
                               <DropdownMenuItem onClick={() => openForm(item)}>
-                                Editar
+                                Editar Artículo
                               </DropdownMenuItem>
-                              <DropdownMenuItem>Ajustar Stock</DropdownMenuItem>
+                               <DropdownMenuItem onClick={() => setEntryFormOpen(true)}>
+                                Registrar Entrada
+                              </DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => setExitFormOpen(true)}>
+                                Registrar Salida
+                              </DropdownMenuItem>
                               <DropdownMenuItem>Ver Historial</DropdownMenuItem>
                             </DropdownMenuContent>
                           </DropdownMenu>
@@ -171,6 +217,20 @@ export default function InventoryPage() {
         onOpenChange={setFormOpen}
         onSave={selectedItem ? handleUpdate : handleCreate}
         item={selectedItem}
+      />
+
+      <InventoryEntryForm
+        isOpen={isEntryFormOpen}
+        onOpenChange={setEntryFormOpen}
+        onSave={handleStockEntry}
+        inventoryItems={items}
+      />
+
+      <InventoryExitForm
+        isOpen={isExitFormOpen}
+        onOpenChange={setExitFormOpen}
+        onSave={handleStockExit}
+        inventoryItems={items}
       />
     </div>
   );

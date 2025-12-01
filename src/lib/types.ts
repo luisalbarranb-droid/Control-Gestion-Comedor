@@ -111,3 +111,15 @@ export interface InventoryItem {
   ultimaActualizacion: Date;
   proveedor?: string;
 }
+
+export interface InventoryTransaction {
+  transactionId: string;
+  itemId: string;
+  type: 'entrada' | 'salida';
+  quantity: number;
+  date: Date;
+  documentNumber?: string;
+  supplier?: string;
+  reason?: string; // e.g., 'Uso en Producción', 'Vencimiento'
+  destinationArea?: AreaId;
+}

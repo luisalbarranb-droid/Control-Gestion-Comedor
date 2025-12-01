@@ -1,6 +1,6 @@
 'use client';
 
-import { PlusCircle, Search } from 'lucide-react';
+import { PlusCircle, Search, ChevronDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -10,11 +10,19 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { inventoryCategories } from '@/lib/placeholder-data';
 import { InventoryCategoryId } from '@/lib/types';
 
 interface InventoryHeaderProps {
   onAddItem: () => void;
+  onAddEntry: () => void;
+  onAddExit: () => void;
   onSearch: (query: string) => void;
   onFilterChange: (categoryId: InventoryCategoryId | 'all') => void;
   searchQuery: string;
@@ -23,6 +31,8 @@ interface InventoryHeaderProps {
 
 export function InventoryHeader({ 
     onAddItem, 
+    onAddEntry,
+    onAddExit,
     onSearch, 
     onFilterChange, 
     searchQuery, 
@@ -57,10 +67,18 @@ export function InventoryHeader({
             ))}
           </SelectContent>
         </Select>
-        <Button onClick={onAddItem} className="w-full md:w-auto">
-          <PlusCircle className="mr-2 h-4 w-4" />
-          Añadir Artículo
-        </Button>
+        <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+                <Button className="w-full md:w-auto">
+                    Acciones <ChevronDown className="ml-2 h-4 w-4" />
+                </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={onAddEntry}>Registrar Entrada</DropdownMenuItem>
+                <DropdownMenuItem onClick={onAddExit}>Registrar Salida</DropdownMenuItem>
+                <DropdownMenuItem onClick={onAddItem}>Añadir Nuevo Artículo</DropdownMenuItem>
+            </DropdownMenuContent>
+        </DropdownMenu>
       </div>
     </div>
   );
