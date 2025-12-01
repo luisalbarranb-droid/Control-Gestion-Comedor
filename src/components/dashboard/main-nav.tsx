@@ -24,63 +24,48 @@ export function MainNav() {
   return (
     <SidebarMenu>
       <SidebarMenuItem>
-        <SidebarMenuButton
-          asChild
-          isActive={pathname === '/'}
-        >
-          <Link href="/">
+        <Link href="/">
+          <SidebarMenuButton isActive={pathname === '/'}>
             <Home />
             <span>Dashboard</span>
-          </Link>
-        </SidebarMenuButton>
+          </SidebarMenuButton>
+        </Link>
       </SidebarMenuItem>
       <SidebarMenuItem>
-        <SidebarMenuButton
-          asChild
-          isActive={pathname.startsWith('/tasks')}
-        >
-          <Link href="/tasks">
+        <Link href="/tasks">
+          <SidebarMenuButton isActive={pathname.startsWith('/tasks')}>
             <ClipboardList />
             <span>Tareas</span>
-          </Link>
-        </SidebarMenuButton>
+          </SidebarMenuButton>
+        </Link>
       </SidebarMenuItem>
       {isAdmin && (
         <>
           <SidebarMenuItem>
-            <SidebarMenuButton
-              asChild
-              isActive={pathname.startsWith('/users')}
-            >
-              <Link href="/users">
+            <Link href="/users">
+              <SidebarMenuButton isActive={pathname.startsWith('/users')}>
                 <Users />
                 <span>Usuarios</span>
-              </Link>
-            </SidebarMenuButton>
+              </SidebarMenuButton>
+            </Link>
           </SidebarMenuItem>
           <SidebarMenuItem>
-            <SidebarMenuButton
-              asChild
-              isActive={pathname.startsWith('/stats')}
-            >
-              <Link href="/stats">
+            <Link href="/stats">
+              <SidebarMenuButton isActive={pathname.startsWith('/stats')}>
                 <AreaChart />
                 <span>Estadísticas</span>
-              </Link>
-            </SidebarMenuButton>
+              </SidebarMenuButton>
+            </Link>
           </SidebarMenuItem>
         </>
       )}
       <SidebarMenuItem>
-        <SidebarMenuButton
-          asChild
-          isActive={pathname.startsWith('/settings')}
-        >
-          <Link href="/settings">
+        <Link href="/settings">
+          <SidebarMenuButton isActive={pathname.startsWith('/settings')}>
             <Settings />
             <span>Configuración</span>
-          </Link>
-        </SidebarMenuButton>
+          </SidebarMenuButton>
+        </Link>
       </SidebarMenuItem>
     </SidebarMenu>
   );
