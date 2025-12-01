@@ -1,6 +1,6 @@
 'use client';
 
-import { FileSpreadsheet, Search, ChevronDown } from 'lucide-react';
+import { FileSpreadsheet, Search, ChevronDown, Upload } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -24,6 +24,7 @@ interface InventoryHeaderProps {
   onAddItem: () => void;
   onAddEntry: () => void;
   onAddExit: () => void;
+  onImport: () => void;
   onSearch: (query: string) => void;
   onFilterChange: (categoryId: InventoryCategoryId | 'all') => void;
   searchQuery: string;
@@ -34,6 +35,7 @@ export function InventoryHeader({
     onAddItem, 
     onAddEntry,
     onAddExit,
+    onImport,
     onSearch, 
     onFilterChange, 
     searchQuery, 
@@ -78,6 +80,10 @@ export function InventoryHeader({
             <FileSpreadsheet className="mr-2 h-4 w-4" />
             Reportes
           </Link>
+        </Button>
+         <Button variant="outline" onClick={onImport}>
+            <Upload className="mr-2 h-4 w-4" />
+            Importar desde Excel
         </Button>
         <DropdownMenu>
             <DropdownMenuTrigger asChild>

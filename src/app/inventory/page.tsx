@@ -32,13 +32,14 @@ import {
   inventoryItems as initialItems,
   inventoryCategories,
 } from '@/lib/placeholder-data';
-import type { InventoryItem, InventoryCategoryId } from '@/lib/types';
+import type { InventoryItem, InventoryCategoryId, UnitOfMeasure } from '@/lib/types';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import { InventoryHeader } from '@/components/inventory/inventory-header';
 import { InventoryForm } from '@/components/inventory/inventory-form';
 import { InventoryEntryForm } from '@/components/inventory/inventory-entry-form';
 import { InventoryExitForm } from '@/components/inventory/inventory-exit-form';
+import { InventoryImportDialog } from '@/components/inventory/inventory-import-dialog';
 import { useToast } from '@/hooks/use-toast';
 
 export default function InventoryPage() {
@@ -48,6 +49,7 @@ export default function InventoryPage() {
   const [isFormOpen, setFormOpen] = useState(false);
   const [isEntryFormOpen, setEntryFormOpen] = useState(false);
   const [isExitFormOpen, setExitFormOpen] = useState(false);
+  const [isImportOpen, setImportOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [categoryFilter, setCategoryFilter] = useState<InventoryCategoryId | 'all'>('all');
 
@@ -104,6 +106,57 @@ export default function InventoryPage() {
     toast({ title: "Salida registrada", description: "El stock ha sido actualizado." });
   };
 
+  const handleImport = (importedData: any[]) => {
+    setItems(prevItems => {
+      const updatedItems = [...prevItems];
+      let newItemsCount = 0;
+      let updatedItemsCount = 0;
+
+      importedData.forEach(importedItem => {
+        const existingItemIndex = updatedItems.findIndex(i => i.nombre.toLowerCase() === importedItem.nombre?.toLowerCase());
+        
+        const itemData = {
+            nombre: importedItem.nombre,
+            descripcion: importedItem.descripcion,
+            categoriaId: importedItem.categoriaId as InventoryCategoryId,
+            cantidad: Number(importedItem.cantidad) || 0,
+            unidad: importedItem.unidad as UnitOfMeasure,
+            stockMinimo: Number(importedItem.stockMinimo) || 0,
+            proveedor: importedItem.proveedor,
+            costoUnitario: Number(importedItem.costoUnitario) || 0,
+            ultimaActualizacion: new Date(),
+        };
+
+        if (existingItemIndex > -1) {
+          // Update existing item
+          updatedItems[existingItemIndex] = {
+            ...updatedItems[existingItemIndex],
+            ...itemData,
+            cantidad: updatedItems[existingItemIndex].cantidad + itemData.cantidad
+          };
+          updatedItemsCount++;
+        } else {
+          // Add new item
+          const newItem: InventoryItem = {
+            ...itemData,
+            itemId: `inv-${Date.now()}-${Math.random()}`,
+            fechaCreacion: new Date(),
+          };
+          updatedItems.push(newItem);
+          newItemsCount++;
+        }
+      });
+
+      return updatedItems;
+    });
+
+    toast({
+      title: "Importación Completada",
+      description: `${newItemsCount} artículos nuevos creados y ${updatedItemsCount} artículos actualizados.`,
+    });
+    setImportOpen(false);
+  };
+
 
   const openForm = (item: InventoryItem | null = null) => {
     setSelectedItem(item);
@@ -136,6 +189,7 @@ export default function InventoryPage() {
             onAddItem={() => openForm()}
             onAddEntry={() => setEntryFormOpen(true)}
             onAddExit={() => setExitFormOpen(true)}
+            onImport={() => setImportOpen(true)}
             onSearch={setSearchQuery}
             onFilterChange={setCategoryFilter}
             searchQuery={searchQuery}
@@ -231,6 +285,12 @@ export default function InventoryPage() {
         onOpenChange={setExitFormOpen}
         onSave={handleStockExit}
         inventoryItems={items}
+      />
+
+       <InventoryImportDialog
+        isOpen={isImportOpen}
+        onOpenChange={setImportOpen}
+        onImport={handleImport}
       />
     </div>
   );
