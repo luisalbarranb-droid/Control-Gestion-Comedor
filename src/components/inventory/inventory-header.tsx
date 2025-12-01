@@ -1,6 +1,6 @@
 'use client';
 
-import { PlusCircle, Search, ChevronDown } from 'lucide-react';
+import { PlusCircle, Search, ChevronDown, FileSpreadsheet } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -18,6 +18,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { inventoryCategories } from '@/lib/placeholder-data';
 import { InventoryCategoryId } from '@/lib/types';
+import Link from 'next/link';
 
 interface InventoryHeaderProps {
   onAddItem: () => void;
@@ -67,6 +68,12 @@ export function InventoryHeader({
             ))}
           </SelectContent>
         </Select>
+        <Button variant="outline" asChild>
+          <Link href="/inventory/reports">
+            <FileSpreadsheet className="mr-2 h-4 w-4" />
+            Ver Reportes
+          </Link>
+        </Button>
         <DropdownMenu>
             <DropdownMenuTrigger asChild>
                 <Button className="w-full md:w-auto">

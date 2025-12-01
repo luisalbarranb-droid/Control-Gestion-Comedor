@@ -228,6 +228,7 @@ export const inventoryItems: InventoryItem[] = [
     fechaCreacion: new Date(),
     ultimaActualizacion: new Date(),
     proveedor: 'Avícola La Granja',
+    costoUnitario: 5.50,
   },
   {
     itemId: 'inv-2',
@@ -238,6 +239,7 @@ export const inventoryItems: InventoryItem[] = [
     stockMinimo: 20,
     fechaCreacion: new Date(),
     ultimaActualizacion: new Date(),
+    costoUnitario: 1.20,
   },
   {
     itemId: 'inv-3',
@@ -249,6 +251,7 @@ export const inventoryItems: InventoryItem[] = [
     fechaCreacion: new Date(),
     ultimaActualizacion: new Date(),
     proveedor: 'Finca El Sol',
+    costoUnitario: 2.10,
   },
   {
     itemId: 'inv-4',
@@ -259,6 +262,7 @@ export const inventoryItems: InventoryItem[] = [
     stockMinimo: 10,
     fechaCreacion: new Date(),
     ultimaActualizacion: new Date(),
+    costoUnitario: 1.80,
   },
   {
     itemId: 'inv-5',
@@ -269,6 +273,7 @@ export const inventoryItems: InventoryItem[] = [
     stockMinimo: 5,
     fechaCreacion: new Date(),
     ultimaActualizacion: new Date(),
+    costoUnitario: 3.00,
   },
   {
     itemId: 'inv-6',
@@ -280,6 +285,7 @@ export const inventoryItems: InventoryItem[] = [
     fechaCreacion: new Date(),
     ultimaActualizacion: new Date(),
     proveedor: 'OficinaTotal',
+    costoUnitario: 25.00,
   },
    {
     itemId: 'inv-7',
@@ -290,5 +296,6 @@ export const inventoryItems: InventoryItem[] = [
     stockMinimo: 8,
     fechaCreacion: new Date(),
     ultimaActualizacion: new Date(),
+    costoUnitario: 7.20,
   },
 ];

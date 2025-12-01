@@ -110,6 +110,7 @@ export interface InventoryItem {
   fechaCreacion: Date;
   ultimaActualizacion: Date;
   proveedor?: string;
+  costoUnitario?: number;
 }
 
 export interface InventoryTransaction {
@@ -122,4 +123,17 @@ export interface InventoryTransaction {
   supplier?: string;
   reason?: string; // e.g., 'Uso en Producción', 'Vencimiento'
   destinationArea?: AreaId;
+}
+
+export interface InventoryReportData {
+  'ID de Artículo': string;
+  'Nombre': string;
+  'Categoría': string;
+  'Cantidad Actual': number;
+  'Unidad': string;
+  'Stock Mínimo': number;
+  'Costo Unitario'?: number;
+  'Valor Total': number;
+  'Estado': 'OK' | 'Bajo Stock';
+  'Última Actualización': string;
 }
