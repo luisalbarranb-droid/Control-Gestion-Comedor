@@ -68,12 +68,12 @@ export function InventoryHeader({
             ))}
           </SelectContent>
         </Select>
-         <Button variant="outline" asChild>
+         <Button variant="secondary" asChild>
           <Link href="/inventory/orders">
             Pedidos
           </Link>
         </Button>
-        <Button variant="outline" asChild>
+        <Button variant="secondary" asChild>
           <Link href="/inventory/reports">
             <FileSpreadsheet className="mr-2 h-4 w-4" />
             Reportes
