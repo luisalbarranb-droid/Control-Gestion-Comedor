@@ -1,4 +1,4 @@
-import type { User, Area, Task, AreaId, Role, InventoryItem, InventoryCategory } from './types';
+import type { User, Area, Task, AreaId, Role, InventoryItem, InventoryCategory, InventoryTransaction } from './types';
 
 export const areas: Area[] = [
   { id: 'servicio', nombre: 'Servicio', color: '#FF6B6B', responsable: 'user-admin-1', descripcion: 'Atención al cliente y servicio de mesas.', activa: true },
@@ -298,4 +298,22 @@ export const inventoryItems: InventoryItem[] = [
     ultimaActualizacion: new Date(),
     costoUnitario: 7.20,
   },
+];
+
+export const inventoryTransactions: InventoryTransaction[] = [
+  { transactionId: 'txn-1', itemId: 'inv-1', type: 'salida', quantity: 5, date: new Date(), reason: 'Uso en Producción', destinationArea: 'cocina' },
+  { transactionId: 'txn-2', itemId: 'inv-2', type: 'salida', quantity: 10, date: new Date(), reason: 'Uso en Producción', destinationArea: 'cocina' },
+  { transactionId: 'txn-3', itemId: 'inv-3', type: 'salida', quantity: 8, date: new Date(), reason: 'Uso en Producción', destinationArea: 'cocina' },
+  { transactionId: 'txn-4', itemId: 'inv-1', type: 'salida', quantity: 3, date: new Date(), reason: 'Uso en Producción', destinationArea: 'cocina' },
+  { transactionId: 'txn-5', itemId: 'inv-5', type: 'salida', quantity: 2, date: new Date(), reason: 'Uso en Producción', destinationArea: 'servicio' },
+  { transactionId: 'txn-6', itemId: 'inv-7', type: 'salida', quantity: 10, date: new Date(), reason: 'Uso en Producción', destinationArea: 'cocina' },
+  { transactionId: 'txn-7', itemId: 'inv-2', type: 'salida', quantity: 15, date: new Date(), reason: 'Uso en Producción', destinationArea: 'cocina' },
+  { transactionId: 'txn-8', itemId: 'inv-3', type: 'salida', quantity: 5, date: new Date(), reason: 'Vencimiento' },
+  { transactionId: 'txn-9', itemId: 'inv-4', type: 'salida', quantity: 12, date: new Date(), reason: 'Uso en Producción', destinationArea: 'servicio' },
+  { transactionId: 'txn-10', itemId: 'inv-1', type: 'salida', quantity: 4, date: new Date(), reason: 'Uso en Producción', destinationArea: 'cocina' },
+  { transactionId: 'txn-11', itemId: 'inv-5', type: 'salida', quantity: 3, date: new Date(), reason: 'Uso en Producción', destinationArea: 'servicio' },
+  { transactionId: 'txn-12', itemId: 'inv-6', type: 'salida', quantity: 1, date: new Date(), reason: 'Uso en Producción', destinationArea: 'administracion' },
+  { transactionId: 'txn-13', itemId: 'inv-7', type: 'salida', quantity: 5, date: new Date(), reason: 'Uso en Producción', destinationArea: 'cocina' },
+  { transactionId: 'txn-14', itemId: 'inv-2', type: 'salida', quantity: 20, date: new Date(), reason: 'Uso en Producción', destinationArea: 'cocina' },
+  { transactionId: 'txn-15', itemId: 'inv-3', type: 'salida', quantity: 2, date: new Date(), reason: 'Mal Estado / Daño' },
 ];
