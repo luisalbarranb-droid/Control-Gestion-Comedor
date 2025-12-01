@@ -166,7 +166,9 @@ export function OrderForm({ isOpen, onOpenChange, onSave, inventoryItems }: Orde
                             </FormControl>
                             <SelectContent>
                               {inventoryItems.map(item => (
-                                <SelectItem key={item.itemId} value={item.itemId}>{item.nombre}</SelectItem>
+                                <SelectItem key={item.itemId} value={item.itemId}>
+                                  {item.nombre} ({item.unidad})
+                                </SelectItem>
                               ))}
                             </SelectContent>
                           </Select>
