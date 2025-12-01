@@ -89,3 +89,25 @@ export interface Stats {
   areasCriticas: AreaId[];
   usuariosDestacados: string[]; // userIds
 }
+
+// INVENTORY TYPES
+export type InventoryCategoryId = 'carnes' | 'viveres' | 'verduras' | 'frutas' | 'descartables' | 'oficina';
+export type UnitOfMeasure = 'kg' | 'g' | 'lt' | 'ml' | 'unidad' | 'paquete' | 'caja';
+
+export interface InventoryCategory {
+  id: InventoryCategoryId;
+  nombre: string;
+}
+
+export interface InventoryItem {
+  itemId: string;
+  nombre: string;
+  descripcion?: string;
+  categoriaId: InventoryCategoryId;
+  cantidad: number;
+  unidad: UnitOfMeasure;
+  stockMinimo: number;
+  fechaCreacion: Date;
+  ultimaActualizacion: Date;
+  proveedor?: string;
+}

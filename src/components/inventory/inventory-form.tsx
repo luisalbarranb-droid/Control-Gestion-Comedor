@@ -1,0 +1,237 @@
+'use client';
+
+import { useEffect } from 'react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import * as z from 'zod';
+import { Button } from '@/components/ui/button';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from '@/components/ui/form';
+import { Input } from '@/components/ui/input';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { useToast } from '@/hooks/use-toast';
+import { inventoryCategories } from '@/lib/placeholder-data';
+import type { InventoryItem, InventoryCategoryId, UnitOfMeasure } from '@/lib/types';
+import { Textarea } from '../ui/textarea';
+
+const formSchema = z.object({
+  nombre: z.string().min(2, { message: 'El nombre debe tener al menos 2 caracteres.' }),
+  descripcion: z.string().optional(),
+  categoriaId: z.string({ required_error: 'Debes seleccionar una categoría.' }),
+  cantidad: z.coerce.number().min(0, 'La cantidad no puede ser negativa.'),
+  unidad: z.string({ required_error: 'Debes seleccionar una unidad de medida.' }),
+  stockMinimo: z.coerce.number().min(0, 'El stock mínimo no puede ser negativo.'),
+  proveedor: z.string().optional(),
+});
+
+type FormValues = z.infer<typeof formSchema>;
+
+interface InventoryFormProps {
+  isOpen: boolean;
+  onOpenChange: (isOpen: boolean) => void;
+  onSave: (item: any) => void;
+  item: InventoryItem | null;
+}
+
+const unitsOfMeasure: UnitOfMeasure[] = ['kg', 'g', 'lt', 'ml', 'unidad', 'paquete', 'caja'];
+
+export function InventoryForm({ isOpen, onOpenChange, onSave, item }: InventoryFormProps) {
+  const { toast } = useToast();
+  const form = useForm<FormValues>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      nombre: '',
+      descripcion: '',
+      cantidad: 0,
+      stockMinimo: 0,
+      proveedor: '',
+    },
+  });
+
+  useEffect(() => {
+    if (item) {
+      form.reset(item);
+    } else {
+      form.reset({
+        nombre: '',
+        descripcion: '',
+        categoriaId: undefined,
+        cantidad: 0,
+        unidad: undefined,
+        stockMinimo: 0,
+        proveedor: '',
+      });
+    }
+  }, [item, isOpen, form]);
+
+  const onSubmit = (values: FormValues) => {
+    const dataToSave = {
+      ...values,
+      categoriaId: values.categoriaId as InventoryCategoryId,
+      unidad: values.unidad as UnitOfMeasure,
+    };
+
+    if (item) {
+      onSave({ ...item, ...dataToSave });
+    } else {
+      onSave(dataToSave);
+    }
+
+    toast({
+      title: `Artículo ${item ? 'actualizado' : 'creado'}`,
+      description: `El artículo "${values.nombre}" ha sido guardado.`,
+    });
+  };
+
+  return (
+    <Dialog open={isOpen} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-xl">
+        <DialogHeader>
+          <DialogTitle>{item ? 'Editar Artículo' : 'Crear Nuevo Artículo'}</DialogTitle>
+          <DialogDescription>
+            {item ? 'Actualiza los detalles del artículo.' : 'Completa los detalles del nuevo artículo.'}
+          </DialogDescription>
+        </DialogHeader>
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="grid gap-4 py-4 max-h-[70vh] overflow-y-auto pr-6">
+            <FormField
+              control={form.control}
+              name="nombre"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Nombre del Artículo</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Ej: Pechuga de Pollo" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="descripcion"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Descripción (Opcional)</FormLabel>
+                  <FormControl>
+                    <Textarea placeholder="Detalles adicionales del artículo..." {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="categoriaId"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Categoría</FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Selecciona una categoría" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {inventoryCategories.map(cat => (
+                          <SelectItem key={cat.id} value={cat.id}>{cat.nombre}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+               <FormField
+                control={form.control}
+                name="cantidad"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Cantidad Actual</FormLabel>
+                    <FormControl>
+                      <Input type="number" placeholder="0" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+               <FormField
+                control={form.control}
+                name="unidad"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Unidad de Medida</FormLabel>
+                     <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Selecciona una unidad" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {unitsOfMeasure.map(unit => (
+                            <SelectItem key={unit} value={unit} className="uppercase">{unit}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+               <FormField
+                control={form.control}
+                name="stockMinimo"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Stock Mínimo</FormLabel>
+                    <FormControl>
+                      <Input type="number" placeholder="0" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+             <FormField
+              control={form.control}
+              name="proveedor"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Proveedor (Opcional)</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Nombre del proveedor" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <DialogFooter className="pt-4">
+              <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
+              <Button type="submit">Guardar</Button>
+            </DialogFooter>
+          </form>
+        </Form>
+      </DialogContent>
+    </Dialog>
+  );
+}

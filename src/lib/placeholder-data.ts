@@ -1,4 +1,4 @@
-import type { User, Area, Task, AreaId, Role } from './types';
+import type { User, Area, Task, AreaId, Role, InventoryItem, InventoryCategory } from './types';
 
 export const areas: Area[] = [
   { id: 'servicio', nombre: 'Servicio', color: '#FF6B6B', responsable: 'user-admin-1', descripcion: 'Atención al cliente y servicio de mesas.', activa: true },
@@ -206,3 +206,89 @@ export const stats = {
     { name: 'Equipos', value: 2, fill: 'hsl(var(--chart-5))' },
   ],
 };
+
+
+export const inventoryCategories: InventoryCategory[] = [
+  { id: 'carnes', nombre: 'Carnes' },
+  { id: 'viveres', nombre: 'Víveres' },
+  { id: 'verduras', nombre: 'Verduras' },
+  { id: 'frutas', nombre: 'Frutas' },
+  { id: 'descartables', nombre: 'Descartables' },
+  { id: 'oficina', nombre: 'Material de Oficina' },
+];
+
+export const inventoryItems: InventoryItem[] = [
+  {
+    itemId: 'inv-1',
+    nombre: 'Pechuga de Pollo',
+    categoriaId: 'carnes',
+    cantidad: 25,
+    unidad: 'kg',
+    stockMinimo: 10,
+    fechaCreacion: new Date(),
+    ultimaActualizacion: new Date(),
+    proveedor: 'Avícola La Granja',
+  },
+  {
+    itemId: 'inv-2',
+    nombre: 'Arroz Grano Largo',
+    categoriaId: 'viveres',
+    cantidad: 50,
+    unidad: 'kg',
+    stockMinimo: 20,
+    fechaCreacion: new Date(),
+    ultimaActualizacion: new Date(),
+  },
+  {
+    itemId: 'inv-3',
+    nombre: 'Tomates',
+    categoriaId: 'verduras',
+    cantidad: 15,
+    unidad: 'kg',
+    stockMinimo: 5,
+    fechaCreacion: new Date(),
+    ultimaActualizacion: new Date(),
+    proveedor: 'Finca El Sol',
+  },
+  {
+    itemId: 'inv-4',
+    nombre: 'Manzanas Fuji',
+    categoriaId: 'frutas',
+    cantidad: 30,
+    unidad: 'kg',
+    stockMinimo: 10,
+    fechaCreacion: new Date(),
+    ultimaActualizacion: new Date(),
+  },
+  {
+    itemId: 'inv-5',
+    nombre: 'Servilletas de Papel',
+    categoriaId: 'descartables',
+    cantidad: 10,
+    unidad: 'paquete',
+    stockMinimo: 5,
+    fechaCreacion: new Date(),
+    ultimaActualizacion: new Date(),
+  },
+  {
+    itemId: 'inv-6',
+    nombre: 'Resma de Papel Bond',
+    categoriaId: 'oficina',
+    cantidad: 5,
+    unidad: 'caja',
+    stockMinimo: 2,
+    fechaCreacion: new Date(),
+    ultimaActualizacion: new Date(),
+    proveedor: 'OficinaTotal',
+  },
+   {
+    itemId: 'inv-7',
+    nombre: 'Carne Molida de Res',
+    categoriaId: 'carnes',
+    cantidad: 20,
+    unidad: 'kg',
+    stockMinimo: 8,
+    fechaCreacion: new Date(),
+    ultimaActualizacion: new Date(),
+  },
+];
