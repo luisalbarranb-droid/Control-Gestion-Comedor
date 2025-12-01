@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import { format, formatDistanceToNow } from 'date-fns';
 import { es } from 'date-fns/locale';
 import {
@@ -12,6 +13,7 @@ import {
   Tag,
   Square,
   CheckSquare,
+  Upload,
 } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
@@ -21,6 +23,7 @@ import { users, areas } from '@/lib/placeholder-data';
 import type { Task, TaskPriority, TaskStatus } from '@/lib/types';
 import { cn } from '@/lib/utils';
 import Image from 'next/image';
+import { Input } from '../ui/input';
 
 const priorityConfig: Record<TaskPriority, { label: string, className: string }> = {
   baja: { label: 'Baja', className: 'bg-green-100 text-green-800' },
@@ -45,7 +48,45 @@ export function TaskDetails({
   task: Task | null;
   onClose: () => void;
 }) {
+  const [evidenceFile, setEvidenceFile] = useState<File | null>(null);
+  const [preview, setPreview] = useState<string | null>(null);
+
   if (!task) return null;
+
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (preview) {
+      URL.revokeObjectURL(preview);
+    }
+    if (file) {
+      setEvidenceFile(file);
+      const newPreviewUrl = URL.createObjectURL(file);
+      setPreview(newPreviewUrl);
+    } else {
+      setEvidenceFile(null);
+      setPreview(null);
+    }
+  };
+
+  const handleUpload = () => {
+    if (evidenceFile) {
+      // In a real app, you would upload the file to a server or cloud storage
+      // and update the task state. Here we just log it.
+      console.log('Uploading evidence:', evidenceFile.name);
+      
+      // Add evidence to task (this is a mock update)
+      task.evidencias.push({
+        url: URL.createObjectURL(evidenceFile),
+        nombreArchivo: evidenceFile.name,
+        fechaSubida: new Date(),
+        usuario: 'user-comun-1', // Placeholder for current user
+        descripcion: 'Evidencia de tarea completada'
+      });
+
+      setEvidenceFile(null);
+      setPreview(null);
+    }
+  };
 
   const assignedUser = users.find((u) => u.userId === task.asignadoA);
   const creatorUser = users.find((u) => u.userId === task.creadoPor);
@@ -128,17 +169,42 @@ export function TaskDetails({
                     </div>
                 </div>
             </div>
-
-            {task.evidencias && task.evidencias.length > 0 && (
-                <div>
-                    <h4 className="mb-2 font-semibold flex items-center gap-2"><Paperclip className="w-4 h-4"/> Evidencia</h4>
-                    <div className="relative aspect-video w-full overflow-hidden rounded-lg border">
-                        <Image src={task.evidencias[0].url} alt={task.evidencias[0].nombreArchivo} fill className="object-cover" />
-                    </div>
-                    <p className="text-xs text-muted-foreground mt-1 text-center">{task.evidencias[0].nombreArchivo}</p>
-                </div>
-            )}
             
+            <Separator />
+            
+            <div>
+              <h4 className="mb-2 font-semibold flex items-center gap-2">
+                <Paperclip className="w-4 h-4"/> Evidencia
+              </h4>
+              <div className="space-y-4">
+                {task.evidencias && task.evidencias.length > 0 && (
+                  <div className="space-y-2">
+                    {task.evidencias.map((ev, index) => (
+                      <div key={index} className="relative aspect-video w-full overflow-hidden rounded-lg border">
+                          <Image src={ev.url} alt={ev.nombreArchivo} fill className="object-cover" />
+                      </div>
+                    ))}
+                  </div>
+                )}
+                
+                <div className="space-y-2">
+                  <Label htmlFor="evidence-upload">Añadir Evidencia</Label>
+                  <div className="flex gap-2">
+                    <Input id="evidence-upload" type="file" onChange={handleFileChange} className="flex-1" />
+                    <Button onClick={handleUpload} disabled={!evidenceFile}>
+                      <Upload className="mr-2 h-4 w-4" />
+                      Subir
+                    </Button>
+                  </div>
+                   {preview && (
+                      <div className="relative aspect-video w-full mt-2 overflow-hidden rounded-lg border">
+                          <Image src={preview} alt="Vista previa de evidencia" fill className="object-cover" />
+                      </div>
+                   )}
+                </div>
+              </div>
+            </div>
+
             {task.checklist && task.checklist.length > 0 && (
                  <div>
                     <h4 className="mb-2 font-semibold">Checklist</h4>

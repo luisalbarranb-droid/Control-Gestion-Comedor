@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { FileUp, PlusCircle } from 'lucide-react';
+import { PlusCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -43,8 +43,6 @@ type CreateTaskFormProps = {
 
 export function CreateTaskForm({ onTaskCreate }: CreateTaskFormProps) {
   const priorities: TaskPriority[] = ['baja', 'media', 'alta', 'urgente'];
-  const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
-  const ACCEPTED_IMAGE_TYPES = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
 
   const formSchema = z.object({
     titulo: z.string().min(3, 'El título debe tener al menos 3 caracteres.'),
@@ -54,21 +52,12 @@ export function CreateTaskForm({ onTaskCreate }: CreateTaskFormProps) {
     prioridad: z.string({ required_error: 'Debes seleccionar una prioridad.' }),
     fechaVencimiento: z.date({ required_error: 'Debes seleccionar una fecha de vencimiento.' }),
     tiempoEstimado: z.coerce.number().int().positive('El tiempo debe ser un número positivo.').optional(),
-    evidencia: z.any()
-      .optional()
-      .refine((files) => !files || files?.length <= 1, "Solo puedes subir un archivo.")
-      .refine((files) => !files || files?.[0]?.size <= MAX_FILE_SIZE, `El tamaño máximo es de 5MB.`)
-      .refine(
-        (files) => !files || ACCEPTED_IMAGE_TYPES.includes(files?.[0]?.type),
-        "Solo se aceptan formatos .jpg, .jpeg, .png y .webp."
-      ),
   });
 
   type FormValues = z.infer<typeof formSchema>;
   
   const [isOpen, setIsOpen] = useState(false);
   const { toast } = useToast();
-  const [preview, setPreview] = useState<string | null>(null);
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -76,7 +65,6 @@ export function CreateTaskForm({ onTaskCreate }: CreateTaskFormProps) {
       titulo: '',
       descripcion: '',
       tiempoEstimado: undefined,
-      evidencia: undefined,
       area: undefined,
       asignadoA: undefined,
       prioridad: undefined,
@@ -84,52 +72,21 @@ export function CreateTaskForm({ onTaskCreate }: CreateTaskFormProps) {
     },
   });
 
-  const fileRef = form.register("evidencia");
-
   const handleOpenChange = (open: boolean) => {
     setIsOpen(open);
     if (!open) {
       form.reset();
-      if (preview) {
-        URL.revokeObjectURL(preview);
-      }
-      setPreview(null);
     }
   };
   
-  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (preview) {
-      URL.revokeObjectURL(preview);
-    }
-    if (file) {
-      const newPreviewUrl = URL.createObjectURL(file);
-      setPreview(newPreviewUrl);
-    } else {
-      setPreview(null);
-    }
-  };
-
   function onSubmit(values: FormValues) {
-    let evidencias: Evidence[] = [];
-    if (values.evidencia && values.evidencia.length > 0) {
-      const file = values.evidencia[0];
-      evidencias.push({
-        url: URL.createObjectURL(file),
-        nombreArchivo: file.name,
-        fechaSubida: new Date(),
-        usuario: 'user-superadmin-1', // Placeholder
-        descripcion: 'Evidencia inicial'
-      });
-    }
-    
     const taskData = {
         ...values,
         prioridad: values.prioridad as TaskPriority,
         area: values.area as AreaId,
         tiempoEstimado: values.tiempoEstimado || 0,
         descripcion: values.descripcion || '',
-        evidencias,
+        evidencias: [],
     };
     onTaskCreate(taskData);
     
@@ -179,43 +136,6 @@ export function CreateTaskForm({ onTaskCreate }: CreateTaskFormProps) {
                   <FormLabel>Descripción</FormLabel>
                   <FormControl>
                     <Textarea placeholder="Añade una descripción detallada de la tarea..." {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="evidencia"
-              render={() => (
-                <FormItem>
-                  <FormLabel>Foto de Evidencia (Opcional)</FormLabel>
-                  <FormControl>
-                    <div className="relative flex justify-center w-full px-6 py-10 border-2 border-dashed rounded-md border-input">
-                      <Input
-                        type="file"
-                        className="absolute inset-0 z-10 w-full h-full opacity-0 cursor-pointer"
-                        accept={ACCEPTED_IMAGE_TYPES.join(',')}
-                        {...fileRef}
-                        onChange={(e) => {
-                            fileRef.onChange(e);
-                            handleFileChange(e);
-                        }}
-                      />
-                      <div className="flex flex-col items-center gap-2 text-center">
-                        {preview ? (
-                          <img src={preview} alt="Vista previa" className="object-contain h-24 rounded-md" />
-                        ) : (
-                          <>
-                            <FileUp className="w-10 h-10 text-muted-foreground" />
-                            <p className="text-sm text-muted-foreground">
-                              <span className="font-semibold text-primary">Haz clic para subir</span> o arrastra y suelta
-                            </p>
-                            <p className="text-xs text-muted-foreground">PNG, JPG, WEBP (max. 5MB)</p>
-                          </>
-                        )}
-                      </div>
-                    </div>
                   </FormControl>
                   <FormMessage />
                 </FormItem>
