@@ -137,3 +137,24 @@ export interface InventoryReportData {
   'Estado': 'OK' | 'Bajo Stock';
   'Última Actualización': string;
 }
+
+export type OrderStatus = 'pendiente' | 'completado' | 'cancelado';
+
+export interface InventoryOrderItem {
+  itemId: string;
+  nombre: string;
+  quantity: number;
+  unit: UnitOfMeasure;
+  costo: number;
+}
+
+export interface InventoryOrder {
+  orderId: string;
+  fechaPedido: Date;
+  fechaEntregaEstimada: Date;
+  proveedor: string;
+  items: InventoryOrderItem[];
+  estado: OrderStatus;
+  costoTotal: number;
+  creadoPor: string; // userId
+}

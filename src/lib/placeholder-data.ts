@@ -1,4 +1,4 @@
-import type { User, Area, Task, AreaId, Role, InventoryItem, InventoryCategory, InventoryTransaction } from './types';
+import type { User, Area, Task, AreaId, Role, InventoryItem, InventoryCategory, InventoryTransaction, InventoryOrder, InventoryOrderItem } from './types';
 
 export const areas: Area[] = [
   { id: 'servicio', nombre: 'Servicio', color: '#FF6B6B', responsable: 'user-admin-1', descripcion: 'Atención al cliente y servicio de mesas.', activa: true },
@@ -239,6 +239,7 @@ export const inventoryItems: InventoryItem[] = [
     stockMinimo: 20,
     fechaCreacion: new Date(),
     ultimaActualizacion: new Date(),
+    proveedor: 'Distribuidora 24/7',
     costoUnitario: 1.20,
   },
   {
@@ -262,6 +263,7 @@ export const inventoryItems: InventoryItem[] = [
     stockMinimo: 10,
     fechaCreacion: new Date(),
     ultimaActualizacion: new Date(),
+    proveedor: 'Finca El Sol',
     costoUnitario: 1.80,
   },
   {
@@ -273,6 +275,7 @@ export const inventoryItems: InventoryItem[] = [
     stockMinimo: 5,
     fechaCreacion: new Date(),
     ultimaActualizacion: new Date(),
+    proveedor: 'Papelera Nacional',
     costoUnitario: 3.00,
   },
   {
@@ -296,6 +299,7 @@ export const inventoryItems: InventoryItem[] = [
     stockMinimo: 8,
     fechaCreacion: new Date(),
     ultimaActualizacion: new Date(),
+    proveedor: 'Carnicería Central',
     costoUnitario: 7.20,
   },
 ];
@@ -316,4 +320,33 @@ export const inventoryTransactions: InventoryTransaction[] = [
   { transactionId: 'txn-13', itemId: 'inv-7', type: 'salida', quantity: 5, date: new Date(), reason: 'Uso en Producción', destinationArea: 'cocina' },
   { transactionId: 'txn-14', itemId: 'inv-2', type: 'salida', quantity: 20, date: new Date(), reason: 'Uso en Producción', destinationArea: 'cocina' },
   { transactionId: 'txn-15', itemId: 'inv-3', type: 'salida', quantity: 2, date: new Date(), reason: 'Mal Estado / Daño' },
+];
+
+
+export const inventoryOrders: InventoryOrder[] = [
+  {
+    orderId: 'ord-1',
+    fechaPedido: new Date('2024-05-20'),
+    fechaEntregaEstimada: new Date('2024-05-25'),
+    proveedor: 'Avícola La Granja',
+    items: [
+      { itemId: 'inv-1', nombre: 'Pechuga de Pollo', quantity: 20, unit: 'kg', costo: 110.00 },
+      { itemId: 'inv-7', nombre: 'Carne Molida de Res', quantity: 15, unit: 'kg', costo: 108.00 },
+    ],
+    estado: 'completado',
+    costoTotal: 218.00,
+    creadoPor: 'user-admin-1',
+  },
+  {
+    orderId: 'ord-2',
+    fechaPedido: new Date('2024-05-28'),
+    fechaEntregaEstimada: new Date('2024-06-02'),
+    proveedor: 'Distribuidora 24/7',
+    items: [
+      { itemId: 'inv-2', nombre: 'Arroz Grano Largo', quantity: 50, unit: 'kg', costo: 60.00 },
+    ],
+    estado: 'pendiente',
+    costoTotal: 60.00,
+    creadoPor: 'user-admin-2',
+  },
 ];

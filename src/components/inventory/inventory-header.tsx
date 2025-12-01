@@ -1,6 +1,6 @@
 'use client';
 
-import { PlusCircle, Search, ChevronDown, FileSpreadsheet } from 'lucide-react';
+import { FileSpreadsheet, Search, ChevronDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -68,10 +68,15 @@ export function InventoryHeader({
             ))}
           </SelectContent>
         </Select>
+         <Button variant="outline" asChild>
+          <Link href="/inventory/orders">
+            Pedidos
+          </Link>
+        </Button>
         <Button variant="outline" asChild>
           <Link href="/inventory/reports">
             <FileSpreadsheet className="mr-2 h-4 w-4" />
-            Ver Reportes
+            Reportes
           </Link>
         </Button>
         <DropdownMenu>
