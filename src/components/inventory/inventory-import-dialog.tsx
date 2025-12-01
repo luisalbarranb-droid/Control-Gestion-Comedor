@@ -2,6 +2,7 @@
 
 import { useState, useCallback } from 'react';
 import * as XLSX from 'xlsx';
+import { saveAs } from 'file-saver';
 import { useDropzone } from 'react-dropzone';
 import { Button } from '@/components/ui/button';
 import {
@@ -13,7 +14,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
-import { UploadCloud, File, X } from 'lucide-react';
+import { UploadCloud, File, X, Download } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 
 interface InventoryImportDialogProps {
@@ -22,7 +23,7 @@ interface InventoryImportDialogProps {
   onImport: (data: any[]) => void;
 }
 
-const requiredColumns = ['nombre', 'categoriaId', 'cantidad', 'unidad', 'stockMinimo', 'proveedor', 'costoUnitario'];
+const requiredColumns = ['nombre', 'descripcion', 'categoriaId', 'cantidad', 'unidad', 'stockMinimo', 'proveedor', 'costoUnitario'];
 
 export function InventoryImportDialog({ isOpen, onOpenChange, onImport }: InventoryImportDialogProps) {
   const { toast } = useToast();
@@ -109,6 +110,43 @@ export function InventoryImportDialog({ isOpen, onOpenChange, onImport }: Invent
     onOpenChange(false);
   }
 
+  const handleDownloadTemplate = () => {
+    const templateData = [
+      {
+        nombre: 'Ej: Pechuga de Pollo',
+        descripcion: 'Ej: Fileteada y sin piel',
+        categoriaId: 'carnes',
+        cantidad: 10,
+        unidad: 'kg',
+        stockMinimo: 5,
+        proveedor: 'Ej: Avícola Central',
+        costoUnitario: 5.50
+      },
+       {
+        nombre: 'Ej: Arroz',
+        descripcion: '',
+        categoriaId: 'viveres',
+        cantidad: 100,
+        unidad: 'kg',
+        stockMinimo: 20,
+        proveedor: 'Ej: Distribuidora ABC',
+        costoUnitario: 1.20
+      }
+    ];
+
+    const worksheet = XLSX.utils.json_to_sheet(templateData);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Plantilla');
+    
+    // Auto-adjust column widths
+    worksheet["!cols"] = requiredColumns.map(col => ({ wch: col.length + 5 }));
+
+    const excelBuffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
+    const data = new Blob([excelBuffer], {type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;charset=UTF-8'});
+    saveAs(data, 'plantilla_inventario.xlsx');
+  };
+
+
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
       <DialogContent className="sm:max-w-4xl">
@@ -143,14 +181,18 @@ export function InventoryImportDialog({ isOpen, onOpenChange, onImport }: Invent
             {error && <p className="text-sm text-destructive">{error}</p>}
             
             <div className="space-y-2">
-                <h4 className="font-medium">Columnas Requeridas</h4>
+                <h4 className="font-medium">Instrucciones y Plantilla</h4>
                 <p className="text-sm text-muted-foreground">
                     Tu archivo de Excel debe contener las siguientes columnas (los nombres deben coincidir exactamente):
                 </p>
-                <div className="flex flex-wrap gap-2">
+                <div className="flex flex-wrap items-center gap-2">
                     {requiredColumns.map(col => (
                         <code key={col} className="text-xs font-mono bg-muted text-muted-foreground rounded px-2 py-1">{col}</code>
                     ))}
+                     <Button variant="link" size="sm" onClick={handleDownloadTemplate} className="text-sm">
+                        <Download className="mr-2 h-4 w-4" />
+                        Descargar plantilla de ejemplo
+                    </Button>
                 </div>
             </div>
 
