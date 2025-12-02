@@ -207,7 +207,7 @@ export function TaskDetails({
                 <div className="space-y-2">
                   <Label htmlFor="evidence-upload">Añadir Evidencia</Label>
                   <div className="flex gap-2">
-                    <Input id="evidence-upload" type="file" onChange={handleFileChange} className="flex-1" />
+                    <Input id="evidence-upload" type="file" accept="image/*" onChange={handleFileChange} className="flex-1" />
                     <Button onClick={handleUpload} disabled={!evidenceFile}>
                       <Upload className="mr-2 h-4 w-4" />
                       Subir
