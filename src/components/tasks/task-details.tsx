@@ -14,13 +14,14 @@ import {
   Square,
   CheckSquare,
   Upload,
+  Repeat,
 } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { users, areas } from '@/lib/placeholder-data';
-import type { Task, TaskPriority, TaskStatus } from '@/lib/types';
+import type { Task, TaskPriority, TaskStatus, TaskPeriodicity } from '@/lib/types';
 import { cn } from '@/lib/utils';
 import Image from 'next/image';
 import { Input } from '../ui/input';
@@ -38,6 +39,14 @@ const statusConfig: Record<TaskStatus, { label: string, className: string }> = {
   completada: { label: 'Completada', className: 'bg-green-100 text-green-800' },
   verificada: { label: 'Verificada', className: 'bg-teal-100 text-teal-800' },
   rechazada: { label: 'Rechazada', className: 'bg-red-100 text-red-800' },
+};
+
+const periodicityConfig: Record<TaskPeriodicity, { label: string }> = {
+    diaria: { label: 'Diaria' },
+    semanal: { label: 'Semanal' },
+    quincenal: { label: 'Quincenal' },
+    mensual: { label: 'Mensual' },
+    unica: { label: 'Única Vez' },
 };
 
 
@@ -159,6 +168,13 @@ export function TaskDetails({
                     <div>
                         <p className="font-semibold">Área</p>
                         <p>{area?.nombre}</p>
+                    </div>
+                </div>
+                 <div className="flex items-start gap-2">
+                    <Repeat className="w-4 h-4 mt-0.5 text-muted-foreground" />
+                    <div>
+                        <p className="font-semibold">Periodicidad</p>
+                        <p className="capitalize">{periodicityConfig[task.periodicidad].label}</p>
                     </div>
                 </div>
                  <div className="flex items-start gap-2">

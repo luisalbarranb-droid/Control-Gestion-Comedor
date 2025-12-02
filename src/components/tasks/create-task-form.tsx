@@ -35,7 +35,7 @@ import {
 import { DatePicker } from '@/components/ui/datepicker';
 import { useToast } from '@/hooks/use-toast';
 import { users, areas } from '@/lib/placeholder-data';
-import type { Task, TaskPriority, AreaId, Evidence } from '@/lib/types';
+import type { Task, TaskPriority, AreaId, Evidence, TaskPeriodicity } from '@/lib/types';
 
 type CreateTaskFormProps = {
   onTaskCreate: (task: Omit<Task, 'taskId' | 'creadoPor' | 'fechaCreacion' | 'estado' | 'checklist' | 'comentarios' | 'tags' | 'recurrente' | 'periodicidad'>) => void;
