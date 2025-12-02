@@ -44,8 +44,8 @@ const chartConfigPie = {
 
 export function TaskCharts() {
   return (
-    <>
-      <Card className="lg:col-span-2">
+    <div className="grid gap-4 md:gap-8 lg:grid-cols-2 lg:col-span-2">
+      <Card>
         <CardHeader>
           <CardTitle>Eficiencia por Usuario</CardTitle>
           <CardDescription>
@@ -125,6 +125,6 @@ export function TaskCharts() {
           </ChartContainer>
         </CardContent>
       </Card>
-    </>
+    </div>
   );
 }

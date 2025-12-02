@@ -11,6 +11,7 @@ import { TaskCharts } from '@/components/dashboard/task-charts';
 import { RecentTasks } from '@/components/dashboard/recent-tasks';
 import { SquareCheck } from 'lucide-react';
 import AIPrioritizer from '@/components/dashboard/ai-prioritizer';
+import { TopPerformers } from '@/components/dashboard/top-performers';
 
 export default function Dashboard() {
   return (
@@ -34,8 +35,9 @@ export default function Dashboard() {
             <AIPrioritizer />
           </div>
           <OverviewCards />
-          <div className="grid gap-4 md:gap-8 lg:grid-cols-2">
+          <div className="grid gap-4 md:gap-8 lg:grid-cols-3">
             <TaskCharts />
+            <TopPerformers />
           </div>
           <RecentTasks />
         </main>
