@@ -8,6 +8,7 @@ import {
   ClipboardList,
   AreaChart,
   Archive,
+  BookOpen,
 } from 'lucide-react';
 import {
   SidebarMenu,
@@ -37,6 +38,14 @@ export function MainNav() {
           <SidebarMenuButton isActive={pathname.startsWith('/tasks')}>
             <ClipboardList />
             <span>Tareas</span>
+          </SidebarMenuButton>
+        </Link>
+      </SidebarMenuItem>
+      <SidebarMenuItem>
+        <Link href="/menus">
+          <SidebarMenuButton isActive={pathname.startsWith('/menus')}>
+            <BookOpen />
+            <span>Menús</span>
           </SidebarMenuButton>
         </Link>
       </SidebarMenuItem>

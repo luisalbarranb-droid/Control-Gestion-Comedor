@@ -1,4 +1,4 @@
-import type { User, Area, Task, AreaId, Role, InventoryItem, InventoryCategory, InventoryTransaction, InventoryOrder, InventoryOrderItem } from './types';
+import type { User, Area, Task, AreaId, Role, InventoryItem, InventoryCategory, InventoryTransaction, InventoryOrder, InventoryOrderItem, Menu, MenuItem, Ingredient } from './types';
 
 export const areas: Area[] = [
   { id: 'servicio', nombre: 'Servicio', color: '#FF6B6B', responsable: 'user-admin-1', descripcion: 'Atención al cliente y servicio de mesas.', activa: true },
@@ -254,6 +254,18 @@ export const inventoryItems: InventoryItem[] = [
     proveedor: 'Finca El Sol',
     costoUnitario: 2.10,
   },
+    {
+    itemId: 'inv-3a',
+    nombre: 'Cebolla',
+    categoriaId: 'verduras',
+    cantidad: 20,
+    unidad: 'kg',
+    stockMinimo: 8,
+    fechaCreacion: new Date(),
+    ultimaActualizacion: new Date(),
+    proveedor: 'Finca El Sol',
+    costoUnitario: 1.50,
+  },
   {
     itemId: 'inv-4',
     nombre: 'Manzanas Fuji',
@@ -350,3 +362,69 @@ export const inventoryOrders: InventoryOrder[] = [
     creadoPor: 'user-admin-2',
   },
 ];
+
+
+const menuItems: MenuItem[] = [
+    {
+        menuItemId: 'menu-item-1',
+        name: 'Sopa de Lentejas',
+        category: 'entrada',
+        ingredients: [
+            { inventoryItemId: 'inv-3a', quantity: 0.05, wasteFactor: 0.1 }, // Cebolla
+            { inventoryItemId: 'inv-3', quantity: 0.05, wasteFactor: 0.1 }, // Tomate
+        ],
+    },
+    {
+        menuItemId: 'menu-item-2',
+        name: 'Pollo al Horno',
+        category: 'proteico',
+        ingredients: [
+            { inventoryItemId: 'inv-1', quantity: 0.25, wasteFactor: 0.05 }, // Pechuga de Pollo
+        ],
+    },
+    {
+        menuItemId: 'menu-item-3',
+        name: 'Arroz Blanco',
+        category: 'acompanante1',
+        ingredients: [
+            { inventoryItemId: 'inv-2', quantity: 0.1, wasteFactor: 0 }, // Arroz
+        ],
+    },
+    {
+        menuItemId: 'menu-item-4',
+        name: 'Ensalada Fresca',
+        category: 'acompanante2',
+        ingredients: [
+            { inventoryItemId: 'inv-3', quantity: 0.08, wasteFactor: 0.15 }, // Tomates
+        ],
+    },
+    {
+        menuItemId: 'menu-item-5',
+        name: 'Plátano Maduro Frito',
+        category: 'acompanante3',
+        ingredients: [],
+    },
+    {
+        menuItemId: 'menu-item-6',
+        name: 'Jugo de Manzana',
+        category: 'bebida',
+        ingredients: [
+            { inventoryItemId: 'inv-4', quantity: 0.3, wasteFactor: 0.2 }, // Manzanas
+        ],
+    },
+    {
+        menuItemId: 'menu-item-7',
+        name: 'Fruta Picada',
+        category: 'postre',
+        ingredients: [
+            { inventoryItemId: 'inv-4', quantity: 0.1, wasteFactor: 0.2 }, // Manzanas
+        ],
+    },
+];
+
+export const dailyMenu: Menu = {
+    menuId: 'menu-1',
+    date: new Date(),
+    pax: 150,
+    items: menuItems,
+};

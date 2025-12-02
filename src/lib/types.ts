@@ -158,3 +158,26 @@ export interface InventoryOrder {
   costoTotal: number;
   creadoPor: string; // userId
 }
+
+// MENU TYPES
+export type MenuItemCategory = 'entrada' | 'proteico' | 'acompanante1' | 'acompanante2' | 'acompanante3' | 'bebida' | 'postre';
+
+export interface Ingredient {
+  inventoryItemId: string; // link to InventoryItem
+  quantity: number; // quantity per person
+  wasteFactor: number; // percentage (0 to 1)
+}
+
+export interface MenuItem {
+  menuItemId: string;
+  name: string;
+  category: MenuItemCategory;
+  ingredients: Ingredient[];
+}
+
+export interface Menu {
+  menuId: string;
+  date: Date;
+  pax: number; // number of people
+  items: MenuItem[];
+}
