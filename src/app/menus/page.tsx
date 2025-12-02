@@ -74,7 +74,7 @@ export default function MenusPage() {
         <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
             <h1 className="font-headline text-2xl font-bold md:text-3xl">
-              Planificación de Menús
+              Planificación de Menus
             </h1>
             <div className="flex items-center gap-2">
                 <Popover>
@@ -124,7 +124,7 @@ export default function MenusPage() {
                 filteredMenus.map(menu => <MenuCard key={menu.menuId} menu={menu} />)
             ) : (
                 <div className="flex flex-col items-center justify-center text-center py-16 border-2 border-dashed rounded-lg">
-                    <p className="text-lg font-semibold text-muted-foreground">No hay menús para el período seleccionado.</p>
+                    <p className="text-lg font-semibold text-muted-foreground">No hay menus para el período seleccionado.</p>
                     <p className="text-sm text-muted-foreground mt-2">Intenta ajustar el rango de fechas o crea un nuevo menú.</p>
                 </div>
             )}
