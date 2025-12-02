@@ -230,7 +230,7 @@ export interface DailyClosing {
 }
 
 // ATTENDANCE TYPES
-export type AttendanceStatus = 'presente' | 'ausente' | 'retardo' | 'fuera-de-horario';
+export type AttendanceStatus = 'presente' | 'ausente' | 'retardo' | 'fuera-de-horario' | 'justificado' | 'no-justificado' | 'vacaciones';
 export type LeaveType = 'justificado' | 'no-justificado' | 'vacaciones';
 
 export interface AttendanceRecord {
@@ -239,6 +239,7 @@ export interface AttendanceRecord {
     checkIn: Date;
     checkOut?: Date;
     status: AttendanceStatus;
+    leaveType?: LeaveType;
 }
 
 export interface LeaveRecord {

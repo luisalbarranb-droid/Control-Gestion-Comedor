@@ -10,7 +10,7 @@ import {
 } from '@/components/ui/sidebar';
 import { Header } from '@/components/dashboard/header';
 import { MainNav } from '@/components/dashboard/main-nav';
-import { SquareCheck, UserCheck, UserX, Clock, Download, Calendar as CalendarIcon } from 'lucide-react';
+import { SquareCheck, UserCheck, UserX, Clock, Download, Calendar as CalendarIcon, MoreHorizontal, Check, X, ShieldAlert } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -27,11 +27,17 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { attendanceRecords, users } from '@/lib/placeholder-data';
-import type { AttendanceRecord, AttendanceStatus } from '@/lib/types';
+import type { AttendanceRecord, AttendanceStatus, LeaveType } from '@/lib/types';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -48,12 +54,15 @@ const statusConfig: Record<AttendanceStatus, { label: string, className: string,
     ausente: { label: 'Ausente', className: 'bg-red-100 text-red-800', icon: UserX },
     retardo: { label: 'Retardo', className: 'bg-yellow-100 text-yellow-800', icon: Clock },
     'fuera-de-horario': { label: 'Fuera de Horario', className: 'bg-gray-100 text-gray-800', icon: Clock },
+    'justificado': { label: 'Justificado', className: 'bg-blue-100 text-blue-800', icon: ShieldAlert },
+    'no-justificado': { label: 'No Justificado', className: 'bg-orange-100 text-orange-800', icon: UserX },
+    'vacaciones': { label: 'Vacaciones', className: 'bg-purple-100 text-purple-800', icon: CalendarIcon },
 };
 
 
 export default function AttendanceReportsPage() {
     const { toast } = useToast();
-    const [records] = useState<AttendanceRecord[]>(attendanceRecords);
+    const [records, setRecords] = useState<AttendanceRecord[]>(attendanceRecords);
     const [activeTab, setActiveTab] = useState('general');
     const [date, setDate] = useState<DateRange | undefined>({
         from: new Date(new Date().getFullYear(), new Date().getMonth(), 1),
@@ -74,7 +83,7 @@ export default function AttendanceReportsPage() {
         return recordDate >= from && recordDate <= to;
     });
 
-    const absenceRecords = filteredRecords.filter(r => r.status === 'ausente');
+    const absenceRecords = filteredRecords.filter(r => r.status === 'ausente' || r.status === 'justificado' || r.status === 'no-justificado' || r.status === 'vacaciones');
     const tardyRecords = filteredRecords.filter(r => r.status === 'retardo');
 
     const totalAbsences = absenceRecords.length;
@@ -86,6 +95,20 @@ export default function AttendanceReportsPage() {
         { title: 'Total Retardos', value: totalTardies, icon: Clock, className: 'text-yellow-600' },
         { title: 'Total Ausencias', value: totalAbsences, icon: UserX, className: 'text-red-600' },
     ];
+    
+    const handleAbsenceClassification = (recordId: string, type: LeaveType) => {
+        setRecords(prev => prev.map(rec => {
+            if (rec.recordId === recordId) {
+                return { ...rec, status: type, leaveType: type };
+            }
+            return rec;
+        }));
+        toast({
+            title: 'Ausencia Actualizada',
+            description: `El registro ha sido clasificado como ${type}.`,
+        })
+    };
+
 
     const handleExport = () => {
         let dataToExport: any[] = [];
@@ -135,7 +158,7 @@ export default function AttendanceReportsPage() {
         });
     };
     
-    const renderTable = (recordsToRender: AttendanceRecord[], tableId: string) => (
+    const renderTable = (recordsToRender: AttendanceRecord[], tableId: string, isAbsenceReport: boolean = false) => (
         <Table id={tableId}>
             <TableHeader>
                 <TableRow>
@@ -144,6 +167,7 @@ export default function AttendanceReportsPage() {
                     <TableHead>Hora Entrada</TableHead>
                     <TableHead>Hora Salida</TableHead>
                     <TableHead>Estado</TableHead>
+                    {isAbsenceReport && <TableHead className="text-right">Acciones</TableHead>}
                 </TableRow>
             </TableHeader>
             <TableBody>
@@ -164,7 +188,7 @@ export default function AttendanceReportsPage() {
                     </TableCell>
                     <TableCell>{format(record.checkIn, 'dd/MM/yyyy')}</TableCell>
                     <TableCell className="font-mono">
-                        {record.status !== 'ausente' ? format(record.checkIn, 'HH:mm:ss') : 'N/A'}
+                        {record.status !== 'ausente' && record.status !== 'justificado' && record.status !== 'no-justificado' && record.status !== 'vacaciones' ? format(record.checkIn, 'HH:mm:ss') : 'N/A'}
                     </TableCell>
                     <TableCell className="font-mono">
                         {record.checkOut ? format(record.checkOut, 'HH:mm:ss') : '--:--'}
@@ -175,6 +199,30 @@ export default function AttendanceReportsPage() {
                             {statusInfo.label}
                         </Badge>
                     </TableCell>
+                    {isAbsenceReport && (
+                        <TableCell className="text-right">
+                            {record.status === 'ausente' && (
+                                 <DropdownMenu>
+                                    <DropdownMenuTrigger asChild>
+                                        <Button size="icon" variant="ghost">
+                                            <MoreHorizontal className="h-4 w-4" />
+                                        </Button>
+                                    </DropdownMenuTrigger>
+                                    <DropdownMenuContent>
+                                        <DropdownMenuItem onClick={() => handleAbsenceClassification(record.recordId, 'justificado')}>
+                                            <Check className="mr-2 h-4 w-4" /> Marcar como Justificada
+                                        </DropdownMenuItem>
+                                        <DropdownMenuItem onClick={() => handleAbsenceClassification(record.recordId, 'no-justificado')}>
+                                            <X className="mr-2 h-4 w-4" /> Marcar como No Justificada
+                                        </DropdownMenuItem>
+                                         <DropdownMenuItem onClick={() => handleAbsenceClassification(record.recordId, 'vacaciones')}>
+                                            <CalendarIcon className="mr-2 h-4 w-4" /> Registrar Vacaciones
+                                        </DropdownMenuItem>
+                                    </DropdownMenuContent>
+                                </DropdownMenu>
+                            )}
+                        </TableCell>
+                    )}
                 </TableRow>
                 );
             })}
@@ -261,7 +309,7 @@ export default function AttendanceReportsPage() {
                                     <CardDescription>Detalle de todos los empleados ausentes para el período seleccionado.</CardDescription>
                                 </CardHeader>
                                 <CardContent>
-                                    {renderTable(absenceRecords, 'absences-table')}
+                                    {renderTable(absenceRecords, 'absences-table', true)}
                                 </CardContent>
                             </Card>
                         </TabsContent>
