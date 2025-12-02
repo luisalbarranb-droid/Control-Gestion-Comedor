@@ -3,19 +3,27 @@ export type AreaId = 'servicio' | 'cocina' | 'limpieza' | 'almacen' | 'equipos' 
 export type TaskStatus = 'pendiente' | 'en-progreso' | 'completada' | 'verificada' | 'rechazada';
 export type TaskPriority = 'baja' | 'media' | 'alta' | 'urgente';
 export type TaskPeriodicity = 'diaria' | 'semanal' | 'quincenal' | 'mensual' | 'unica';
+export type WorkerType = 'obrero' | 'empleado';
+export type ContractType = 'determinado' | 'indeterminado' | 'prueba';
+
 
 export interface User {
   userId: string;
   email: string;
   nombre: string;
+  cedula?: string;
+  telefono?: string;
+  direccion?: string;
   rol: Role;
   area: AreaId;
   activo: boolean;
-  fechaCreacion: Date;
+  fechaCreacion: Date; // Fecha de Ingreso
+  fechaCulminacionContrato?: Date;
   creadoPor: string; // userId or 'system'
   ultimoAcceso: Date;
-  telefono?: string;
   avatarUrl?: string;
+  tipoTrabajador?: WorkerType;
+  tipoContrato?: ContractType;
 }
 
 export interface Area {

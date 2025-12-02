@@ -10,14 +10,14 @@ import {
 } from '@/components/ui/sidebar';
 import { Header } from '@/components/dashboard/header';
 import { MainNav } from '@/components/dashboard/main-nav';
-import { SquareCheck, User, Mail, Briefcase, Building, Calendar, QrCode } from 'lucide-react';
+import { SquareCheck, User, Mail, Briefcase, Building, Calendar, QrCode, FileText, Phone, Home, FileCheck2 } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
-import type { Role } from '@/lib/types';
+import type { Role, WorkerType, ContractType } from '@/lib/types';
 import QRCode from 'react-qr-code';
 
 const roleVariant: Record<Role, string> = {
@@ -30,6 +30,12 @@ const statusVariant: Record<boolean, string> = {
   true: 'bg-green-100 text-green-800',
   false: 'bg-red-100 text-red-800',
 };
+
+const contractTypeVariant: Record<ContractType, string> = {
+    determinado: 'bg-blue-100 text-blue-800',
+    indeterminado: 'bg-green-100 text-green-800',
+    prueba: 'bg-yellow-100 text-yellow-800',
+}
 
 export default function UserProfilePage() {
   const params = useParams();
@@ -49,10 +55,16 @@ export default function UserProfilePage() {
   const getUserInitials = (name: string) => name.split(' ').map((n) => n[0]).join('');
 
   const userDetails = [
+    { label: 'Cédula', value: user.cedula, icon: FileText },
     { label: 'Email', value: user.email, icon: Mail },
+    { label: 'Teléfono', value: user.telefono, icon: Phone },
+    { label: 'Dirección', value: user.direccion, icon: Home },
     { label: 'Rol', value: user.rol, icon: Briefcase, isBadge: true, badgeClass: roleVariant[user.rol] },
     { label: 'Área', value: getAreaName(user.area), icon: Building },
-    { label: 'Miembro Desde', value: format(user.fechaCreacion, 'dd MMMM, yyyy', { locale: es }), icon: Calendar },
+    { label: 'Tipo de Trabajador', value: user.tipoTrabajador, icon: User, isBadge: true },
+    { label: 'Tipo de Contrato', value: user.tipoContrato, icon: FileText, isBadge: true, badgeClass: user.tipoContrato ? contractTypeVariant[user.tipoContrato] : '' },
+    { label: 'Fecha de Ingreso', value: format(user.fechaCreacion, 'dd MMMM, yyyy', { locale: es }), icon: Calendar },
+    { label: 'Fin de Contrato', value: user.fechaCulminacionContrato ? format(user.fechaCulminacionContrato, 'dd MMMM, yyyy', { locale: es }) : 'N/A', icon: FileCheck2 },
   ];
 
   return (
@@ -113,6 +125,7 @@ export default function UserProfilePage() {
                         <CardContent>
                             <dl className="grid grid-cols-1 md:grid-cols-2 gap-y-6 gap-x-4">
                                 {userDetails.map(detail => (
+                                    detail.value && (
                                     <div key={detail.label} className="flex items-start gap-3">
                                         <detail.icon className="w-5 h-5 text-muted-foreground mt-1" />
                                         <div>
@@ -128,6 +141,7 @@ export default function UserProfilePage() {
                                             )}
                                         </div>
                                     </div>
+                                    )
                                 ))}
                             </dl>
                         </CardContent>
