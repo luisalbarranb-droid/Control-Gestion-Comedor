@@ -202,6 +202,17 @@ export interface MenuReportData {
   Unidad: string;
 }
 
+export interface MenuImportRow {
+  date: Date;
+  pax: number;
+  itemName: string;
+  itemCategory: string;
+  ingredientName: string;
+  ingredientQuantity: number;
+  ingredientWasteFactor: number;
+}
+
+
 // DAILY CLOSING TYPES
 export interface DailyClosingItem {
   name: string;
