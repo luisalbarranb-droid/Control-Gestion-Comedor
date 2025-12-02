@@ -22,6 +22,7 @@ import { DateRange } from 'react-day-picker';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
+import Link from 'next/link';
 
 export default function MenusPage() {
   const [menus, setMenus] = useState<Menu[]>(weeklyMenus);
@@ -114,6 +115,9 @@ export default function MenusPage() {
                 </PopoverContent>
                 </Popover>
                  <CreateMenuForm onMenuCreate={handleCreateMenu}/>
+                 <Button asChild variant="outline">
+                    <Link href="/">Volver</Link>
+                </Button>
             </div>
           </div>
           <WeeklyPlanner menus={filteredMenus} range={date} />
