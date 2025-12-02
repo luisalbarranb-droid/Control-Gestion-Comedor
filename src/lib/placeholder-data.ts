@@ -1,5 +1,5 @@
-import type { User, Area, Task, AreaId, Role, InventoryItem, InventoryCategory, InventoryTransaction, InventoryOrder, InventoryOrderItem, Menu, MenuItem, Ingredient, DailyClosing } from './types';
-import { addDays, startOfWeek } from 'date-fns';
+import type { User, Area, Task, AreaId, Role, InventoryItem, InventoryCategory, InventoryTransaction, InventoryOrder, InventoryOrderItem, Menu, MenuItem, Ingredient, DailyClosing, AttendanceRecord } from './types';
+import { addDays, startOfWeek, set } from 'date-fns';
 
 export const areas: Area[] = [
   { id: 'servicio', nombre: 'Servicio', color: '#FF6B6B', responsable: 'user-admin-1', descripcion: 'Atención al cliente y servicio de mesas.', activa: true },
@@ -495,4 +495,28 @@ export const dailyClosings: DailyClosing[] = [
     variations: 'Se cambió la "Ensalada Fresca" por "Ensalada de Tomate" debido a falta de lechuga. No se sirvió el 3er acompañante.',
     closedBy: 'user-admin-1',
   }
+];
+
+const today = new Date();
+export const attendanceRecords: AttendanceRecord[] = [
+    {
+        recordId: 'att-1',
+        userId: 'user-admin-1',
+        checkIn: set(today, { hours: 7, minutes: 58, seconds: 10 }),
+        checkOut: set(today, { hours: 17, minutes: 5, seconds: 2 }),
+        status: 'presente',
+    },
+    {
+        recordId: 'att-2',
+        userId: 'user-comun-1',
+        checkIn: set(today, { hours: 8, minutes: 12, seconds: 45 }),
+        status: 'retardo',
+    },
+    {
+        recordId: 'att-3',
+        userId: 'user-comun-2',
+        checkIn: set(today, { hours: 8, minutes: 3, seconds: 11 }),
+        checkOut: set(today, { hours: 17, minutes: 1, seconds: 15 }),
+        status: 'presente',
+    }
 ];

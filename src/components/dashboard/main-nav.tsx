@@ -10,6 +10,7 @@ import {
   Archive,
   BookOpen,
   ClipboardCheck,
+  QrCode,
 } from 'lucide-react';
 import {
   SidebarMenu,
@@ -42,6 +43,16 @@ export function MainNav() {
           </SidebarMenuButton>
         </Link>
       </SidebarMenuItem>
+       {isAdmin && (
+         <SidebarMenuItem>
+            <Link href="/attendance">
+              <SidebarMenuButton isActive={pathname.startsWith('/attendance')}>
+                <QrCode />
+                <span>Asistencia</span>
+              </SidebarMenuButton>
+            </Link>
+          </SidebarMenuItem>
+       )}
       <SidebarMenuItem>
         <Link href="/menus">
           <SidebarMenuButton isActive={pathname.startsWith('/menus')}>

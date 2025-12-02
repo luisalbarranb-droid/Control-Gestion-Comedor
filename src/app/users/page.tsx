@@ -31,6 +31,7 @@ import {
 import { users, areas } from '@/lib/placeholder-data';
 import type { Role } from '@/lib/types';
 import { cn } from '@/lib/utils';
+import Link from 'next/link';
 
 const roleVariant: Record<Role, string> = {
   superadmin: 'bg-purple-100 text-purple-800',
@@ -93,9 +94,9 @@ export default function UsersPage() {
                 </TableHeader>
                 <TableBody>
                   {users.map((user) => (
-                    <TableRow key={user.userId}>
+                    <TableRow key={user.userId} className="cursor-pointer">
                       <TableCell>
-                        <div className="flex items-center gap-3">
+                        <Link href={`/users/${user.userId}`} className="flex items-center gap-3 hover:underline">
                           <Avatar className="h-9 w-9">
                             <AvatarImage src={user.avatarUrl} alt={user.nombre} />
                             <AvatarFallback>
@@ -103,7 +104,7 @@ export default function UsersPage() {
                             </AvatarFallback>
                           </Avatar>
                           <div className="font-medium">{user.nombre}</div>
-                        </div>
+                        </Link>
                       </TableCell>
                       <TableCell className="hidden md:table-cell">
                         {user.email}
@@ -135,6 +136,7 @@ export default function UsersPage() {
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
                             <DropdownMenuLabel>Acciones</DropdownMenuLabel>
+                            <DropdownMenuItem asChild><Link href={`/users/${user.userId}`}>Ver Perfil</Link></DropdownMenuItem>
                             <DropdownMenuItem>Editar</DropdownMenuItem>
                             <DropdownMenuItem>Desactivar</DropdownMenuItem>
                           </DropdownMenuContent>

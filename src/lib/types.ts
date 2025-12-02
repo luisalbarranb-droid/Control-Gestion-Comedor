@@ -197,3 +197,25 @@ export interface DailyClosing {
   variations: string;
   closedBy: string; // userId
 }
+
+// ATTENDANCE TYPES
+export type AttendanceStatus = 'presente' | 'ausente' | 'retardo' | 'fuera-de-horario';
+export type LeaveType = 'justificado' | 'no-justificado' | 'vacaciones';
+
+export interface AttendanceRecord {
+    recordId: string;
+    userId: string;
+    checkIn: Date;
+    checkOut?: Date;
+    status: AttendanceStatus;
+}
+
+export interface LeaveRecord {
+    leaveId: string;
+    userId: string;
+    startDate: Date;
+    endDate: Date;
+    type: LeaveType;
+    reason: string;
+    approvedBy?: string; // admin or superadmin userId
+}
