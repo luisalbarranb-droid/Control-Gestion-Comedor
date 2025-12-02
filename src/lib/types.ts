@@ -230,7 +230,7 @@ export interface DailyClosing {
 }
 
 // ATTENDANCE TYPES
-export type AttendanceStatus = 'presente' | 'ausente' | 'retardo' | 'fuera-de-horario' | 'justificado' | 'no-justificado' | 'vacaciones';
+export type AttendanceStatus = 'presente' | 'ausente' | 'retardo' | 'fuera-de-horario' | 'justificado' | 'no-justificado' | 'vacaciones' | 'dia-libre';
 export type LeaveType = 'justificado' | 'no-justificado' | 'vacaciones';
 
 export interface AttendanceRecord {
@@ -252,7 +252,7 @@ export interface LeaveRecord {
     approvedBy?: string; // admin or superadmin userId
 }
 
-// 0 for Monday, 1 for Tuesday, etc.
+// 0 for Monday, 1 for Tuesday, etc. up to 6 for Sunday
 export type DayOfWeek = 0 | 1 | 2 | 3 | 4 | 5 | 6;
 
 export interface DayOff {

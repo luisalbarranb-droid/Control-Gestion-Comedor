@@ -9,7 +9,7 @@ import {
 } from '@/components/ui/sidebar';
 import { Header } from '@/components/dashboard/header';
 import { MainNav } from '@/components/dashboard/main-nav';
-import { SquareCheck, MoreHorizontal, UserCheck, UserX, Clock, FileSpreadsheet, CalendarDays } from 'lucide-react';
+import { SquareCheck, MoreHorizontal, UserCheck, UserX, Clock, FileSpreadsheet, CalendarDays, CalendarOff } from 'lucide-react';
 import {
   Table,
   TableBody,
@@ -21,10 +21,10 @@ import {
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { users, attendanceRecords } from '@/lib/placeholder-data';
-import type { AttendanceRecord, AttendanceStatus } from '@/lib/types';
+import { users, attendanceRecords, dailyClosings, weeklyMenus } from '@/lib/placeholder-data';
+import type { AttendanceRecord, AttendanceStatus, DayOff } from '@/lib/types';
 import { cn } from '@/lib/utils';
-import { format } from 'date-fns';
+import { format, getDay, startOfWeek } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { ScannerCard } from '@/components/attendance/scanner-card';
 import { Button } from '@/components/ui/button';
@@ -35,16 +35,31 @@ const statusConfig: Record<AttendanceStatus, { label: string, className: string,
     ausente: { label: 'Ausente', className: 'bg-red-100 text-red-800', icon: UserX },
     retardo: { label: 'Retardo', className: 'bg-yellow-100 text-yellow-800', icon: Clock },
     'fuera-de-horario': { label: 'Fuera de Horario', className: 'bg-gray-100 text-gray-800', icon: Clock },
+    'justificado': { label: 'Justificado', className: 'bg-blue-100 text-blue-800', icon: UserCheck },
+    'no-justificado': { label: 'No Justificado', className: 'bg-orange-100 text-orange-800', icon: UserX },
+    'vacaciones': { label: 'Vacaciones', className: 'bg-purple-100 text-purple-800', icon: CalendarDays },
+    'dia-libre': { label: 'Día Libre', className: 'bg-sky-100 text-sky-800', icon: CalendarOff },
 };
+
+const MOCK_DAYS_OFF: DayOff[] = [
+    // Simula algunos días libres planificados para la semana actual
+    { userId: 'user-comun-1', weekStartDate: format(startOfWeek(new Date(), { weekStartsOn: 1 }), 'yyyy-MM-dd'), dayOff: 1 }, // Martes para Carlos
+    { userId: 'user-comun-2', weekStartDate: format(startOfWeek(new Date(), { weekStartsOn: 1 }), 'yyyy-MM-dd'), dayOff: 3 }, // Jueves para María
+];
 
 
 export default function AttendancePage() {
   const [records, setRecords] = useState<AttendanceRecord[]>(attendanceRecords);
+  const [daysOff] = useState<DayOff[]>(MOCK_DAYS_OFF);
 
   const getUser = (userId: string) => users.find((u) => u.userId === userId);
   const getUserInitials = (name: string) => name.split(' ').map((n) => n[0]).join('');
 
-  const todayRecords = records.filter(r => format(r.checkIn, 'yyyy-MM-dd') === format(new Date(), 'yyyy-MM-dd'));
+  const todayRecords = records.filter(r => format(new Date(r.checkIn), 'yyyy-MM-dd') === format(new Date(), 'yyyy-MM-dd'));
+  const today = new Date();
+  const todayDayOfWeek = (getDay(today) + 6) % 7; // Monday is 0, Sunday is 6
+  const weekStartDateString = format(startOfWeek(today, { weekStartsOn: 1 }), 'yyyy-MM-dd');
+
 
   return (
     <div className="min-h-screen w-full">
@@ -101,7 +116,17 @@ export default function AttendancePage() {
                         <TableBody>
                         {users.map(user => {
                             const record = todayRecords.find(r => r.userId === user.userId);
-                            const status = record?.status || 'ausente';
+                            const userDayOff = daysOff.find(d => d.userId === user.userId && d.weekStartDate === weekStartDateString);
+                            const isSunday = todayDayOfWeek === 6;
+                            
+                            let status: AttendanceStatus;
+
+                            if (isSunday || (userDayOff && userDayOff.dayOff === todayDayOfWeek)) {
+                                status = 'dia-libre';
+                            } else {
+                                status = record?.status || 'ausente';
+                            }
+
                             const config = statusConfig[status];
 
                             return (
@@ -118,10 +143,10 @@ export default function AttendancePage() {
                                         </div>
                                     </TableCell>
                                     <TableCell className="font-mono">
-                                        {record?.checkIn ? format(record.checkIn, 'HH:mm:ss') : '--:--'}
+                                        {record?.checkIn && status !== 'dia-libre' ? format(new Date(record.checkIn), 'HH:mm:ss') : '--:--'}
                                     </TableCell>
                                      <TableCell className="font-mono">
-                                        {record?.checkOut ? format(record.checkOut, 'HH:mm:ss') : '--:--'}
+                                        {record?.checkOut && status !== 'dia-libre' ? format(new Date(record.checkOut), 'HH:mm:ss') : '--:--'}
                                     </TableCell>
                                     <TableCell>
                                         <Badge variant="secondary" className={cn(config.className, 'capitalize')}>
