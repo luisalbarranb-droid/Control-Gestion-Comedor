@@ -10,7 +10,7 @@ import {
 } from '@/components/ui/sidebar';
 import { Header } from '@/components/dashboard/header';
 import { MainNav } from '@/components/dashboard/main-nav';
-import { SquareCheck, Calendar as CalendarIcon } from 'lucide-react';
+import { SquareCheck, Calendar as CalendarIcon, FileSpreadsheet } from 'lucide-react';
 import { CreateMenuForm } from '@/components/menus/create-menu-form';
 import { weeklyMenus } from '@/lib/placeholder-data';
 import type { Menu } from '@/lib/types';
@@ -114,8 +114,11 @@ export default function MenusPage() {
                 </PopoverContent>
                 </Popover>
                  <CreateMenuForm onMenuCreate={handleCreateMenu}/>
-                 <Button asChild variant="outline">
-                    <Link href="/">Volver</Link>
+                 <Button asChild variant="secondary">
+                    <Link href="/menus/report">
+                        <FileSpreadsheet className="mr-2 h-4 w-4" />
+                        Ver Reporte Consolidado
+                    </Link>
                 </Button>
             </div>
           </div>

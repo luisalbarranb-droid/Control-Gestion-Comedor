@@ -191,15 +191,15 @@ export interface Menu {
 }
 
 export interface MenuReportData {
-    'Fecha Menú': string;
-    'Plato': string;
-    'Categoría': string;
-    'PAX': number;
-    'Ingrediente': string;
-    'Cant. Neta / Persona': number;
-    'Cant. Bruta / Persona': number;
-    'Total Requerido': number;
-    'Unidad': string;
+  'Fecha Menú': string;
+  Plato: string;
+  Categoría: string;
+  PAX: number;
+  Ingrediente: string;
+  'Cant. Neta / Persona': number;
+  'Cant. Bruta / Persona': number;
+  'Total Requerido': number;
+  Unidad: string;
 }
 
 // DAILY CLOSING TYPES
