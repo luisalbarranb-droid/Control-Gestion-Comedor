@@ -1,6 +1,7 @@
 
 'use client';
 
+import { useState } from 'react';
 import {
   Sidebar,
   SidebarContent,
@@ -13,9 +14,17 @@ import { SquareCheck } from 'lucide-react';
 import { MenuCard } from '@/components/menus/menu-card';
 import { CreateMenuForm } from '@/components/menus/create-menu-form';
 import { dailyMenu } from '@/lib/placeholder-data';
+import type { Menu } from '@/lib/types';
 
 
 export default function MenusPage() {
+  const [menus, setMenus] = useState<Menu[]>([dailyMenu]);
+
+  // In the future, this function will handle adding new menus to the state
+  const handleCreateMenu = (newMenuData: any) => {
+    // const newMenu: Menu = { ... }
+    // setMenus(prevMenus => [...prevMenus, newMenu]);
+  };
 
   return (
     <div className="min-h-screen w-full">
@@ -37,7 +46,11 @@ export default function MenusPage() {
             </h1>
             <CreateMenuForm />
           </div>
-          <MenuCard menu={dailyMenu} />
+          <div className="space-y-8">
+            {menus.map(menu => (
+              <MenuCard key={menu.menuId} menu={menu} />
+            ))}
+          </div>
         </main>
       </SidebarInset>
     </div>
