@@ -97,12 +97,15 @@ export default function DailyClosingPage() {
                 <Button variant="secondary" asChild>
                   <Link href={`/daily-closing/report?date=${format(date, 'yyyy-MM-dd')}`}>
                     <FileText className="mr-2 h-4 w-4" />
-                    Ver Reporte Detallado
+                    Ver Reporte
                   </Link>
                 </Button>
               )}
               <Button onClick={() => setFormOpen(true)} disabled={!plannedMenuForDay}>
                 {selectedClosing ? 'Editar Cierre' : 'Realizar Cierre'}
+              </Button>
+               <Button asChild variant="outline">
+                <Link href="/">Volver</Link>
               </Button>
             </div>
           </div>
