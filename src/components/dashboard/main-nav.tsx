@@ -19,11 +19,11 @@ import {
   SidebarMenuButton,
 } from '@/components/ui/sidebar';
 import Link from 'next/link';
-import { useUserRole } from '@/hooks/use-user-role'; // Import the new hook
+import { useCurrentUser } from '@/hooks/use-current-user'; 
 
 export function MainNav() {
   const pathname = usePathname();
-  const { role } = useUserRole(); // Get the user's role
+  const { role } = useCurrentUser(); 
   const isAdmin = role === 'admin' || role === 'superadmin';
 
   return (
@@ -44,16 +44,14 @@ export function MainNav() {
           </SidebarMenuButton>
         </Link>
       </SidebarMenuItem>
-       {isAdmin && (
-         <SidebarMenuItem>
-            <Link href="/attendance">
-              <SidebarMenuButton isActive={pathname.startsWith('/attendance')}>
-                <QrCode />
-                <span>Asistencia</span>
-              </SidebarMenuButton>
-            </Link>
-          </SidebarMenuItem>
-       )}
+       <SidebarMenuItem>
+          <Link href="/attendance">
+            <SidebarMenuButton isActive={pathname.startsWith('/attendance')}>
+              <QrCode />
+              <span>Asistencia</span>
+            </SidebarMenuButton>
+          </Link>
+        </SidebarMenuItem>
       <SidebarMenuItem>
         <Link href="/menus">
           <SidebarMenuButton isActive={pathname.startsWith('/menus')}>

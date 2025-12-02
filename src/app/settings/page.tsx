@@ -13,11 +13,11 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
-import { useUserRole } from '@/hooks/use-user-role';
+import { useCurrentUser } from '@/hooks/use-current-user';
 import { ProfileCard } from '@/components/settings/profile-card';
 
 export default function SettingsPage() {
-  const { role } = useUserRole();
+  const { role } = useCurrentUser();
   const isAdmin = role === 'admin' || role === 'superadmin';
 
   return (

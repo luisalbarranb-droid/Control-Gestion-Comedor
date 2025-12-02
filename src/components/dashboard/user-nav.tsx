@@ -15,15 +15,11 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { users } from '@/lib/placeholder-data';
 import Link from 'next/link';
-import { useUserRole } from '@/hooks/use-user-role';
+import { useCurrentUser } from '@/hooks/use-current-user';
 
 export function UserNav() {
-  const { role } = useUserRole();
-  // In a real app, you'd get the current user from an auth hook
-  // We simulate a user based on the role for demonstration
-  const currentUser = users.find((u) => u.rol === (role || 'comun'));
+  const { user: currentUser, role } = useCurrentUser();
 
   if (!currentUser) {
     return null;

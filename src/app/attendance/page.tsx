@@ -29,7 +29,7 @@ import { es } from 'date-fns/locale';
 import { ScannerCard } from '@/components/attendance/scanner-card';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { useUserRole } from '@/hooks/use-user-role';
+import { useCurrentUser } from '@/hooks/use-current-user';
 
 const statusConfig: Record<AttendanceStatus, { label: string, className: string, icon: React.ElementType }> = {
     presente: { label: 'Presente', className: 'bg-green-100 text-green-800', icon: UserCheck },
@@ -52,7 +52,7 @@ const MOCK_DAYS_OFF: DayOff[] = [
 export default function AttendancePage() {
   const [records, setRecords] = useState<AttendanceRecord[]>(attendanceRecords);
   const [daysOff] = useState<DayOff[]>(MOCK_DAYS_OFF);
-  const { role } = useUserRole();
+  const { user, role } = useCurrentUser();
   const isAdmin = role === 'admin' || role === 'superadmin';
 
   const getUser = (userId: string) => users.find((u) => u.userId === userId);
@@ -62,6 +62,8 @@ export default function AttendancePage() {
   const today = new Date();
   const todayDayOfWeek = (getDay(today) + 6) % 7; // Monday is 0, Sunday is 6
   const weekStartDateString = format(startOfWeek(today, { weekStartsOn: 1 }), 'yyyy-MM-dd');
+  
+  const displayedUsers = isAdmin ? users : (user ? [user] : []);
 
 
   return (
@@ -82,20 +84,22 @@ export default function AttendancePage() {
                 <h1 className="font-headline text-2xl font-bold md:text-3xl">
                 Asistencia Diaria
                 </h1>
-                <div className="flex items-center gap-2">
-                    <Button variant="outline" asChild>
-                        <Link href="/attendance/planning">
-                            <CalendarDays className="mr-2 h-4 w-4" />
-                            Planificar Días Libres
-                        </Link>
-                    </Button>
-                    <Button variant="secondary" asChild>
-                        <Link href="/attendance/reports">
-                            <FileSpreadsheet className="mr-2 h-4 w-4" />
-                            Ver Reportes
-                        </Link>
-                    </Button>
-                </div>
+                {isAdmin && (
+                  <div className="flex items-center gap-2">
+                      <Button variant="outline" asChild>
+                          <Link href="/attendance/planning">
+                              <CalendarDays className="mr-2 h-4 w-4" />
+                              Planificar Días Libres
+                          </Link>
+                      </Button>
+                      <Button variant="secondary" asChild>
+                          <Link href="/attendance/reports">
+                              <FileSpreadsheet className="mr-2 h-4 w-4" />
+                              Ver Reportes
+                          </Link>
+                      </Button>
+                  </div>
+                )}
             </div>
            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             <div className="lg:col-span-2">
@@ -117,7 +121,7 @@ export default function AttendancePage() {
                         </TableRow>
                         </TableHeader>
                         <TableBody>
-                        {users.map(user => {
+                        {displayedUsers.map(user => {
                             const record = todayRecords.find(r => r.userId === user.userId);
                             const userDayOff = daysOff.find(d => d.userId === user.userId && d.weekStartDate === weekStartDateString);
                             const isSunday = todayDayOfWeek === 6;
