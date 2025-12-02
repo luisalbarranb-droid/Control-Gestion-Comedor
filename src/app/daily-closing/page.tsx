@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState } from 'react';
@@ -12,17 +11,17 @@ import {
 } from '@/components/ui/sidebar';
 import { Header } from '@/components/dashboard/header';
 import { MainNav } from '@/components/dashboard/main-nav';
-import { SquareCheck, Calendar as CalendarIcon } from 'lucide-react';
+import { SquareCheck, FileText } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { DatePicker } from '@/components/ui/datepicker';
-import { Card, CardHeader, CardTitle, CardContent, CardDescription, CardFooter } from '@/components/ui/card';
-import { Textarea } from '@/components/ui/textarea';
+import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/components/ui/card';
 import { weeklyMenus, dailyClosings } from '@/lib/placeholder-data';
-import type { DailyClosing, Menu, DailyClosingItem } from '@/lib/types';
+import type { DailyClosing, DailyClosingItem } from '@/lib/types';
 import { ClosingForm } from '@/components/daily-closing/closing-form';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { categoryDisplay } from '@/components/daily-closing/category-display';
+import Link from 'next/link';
 
 export default function DailyClosingPage() {
   const [date, setDate] = useState<Date>(subDays(new Date(),1));
@@ -94,6 +93,14 @@ export default function DailyClosingPage() {
             </h1>
             <div className="flex items-center gap-2">
               <DatePicker date={date} setDate={(d) => setDate(d || new Date())} />
+               {selectedClosing && (
+                <Button variant="secondary" asChild>
+                  <Link href={`/daily-closing/report?date=${format(date, 'yyyy-MM-dd')}`}>
+                    <FileText className="mr-2 h-4 w-4" />
+                    Ver Reporte Detallado
+                  </Link>
+                </Button>
+              )}
               <Button onClick={() => setFormOpen(true)} disabled={!plannedMenuForDay}>
                 {selectedClosing ? 'Editar Cierre' : 'Realizar Cierre'}
               </Button>
