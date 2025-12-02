@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useForm, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -30,10 +30,14 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { DatePicker } from '@/components/ui/datepicker';
-import { PlusCircle, Trash2 } from 'lucide-react';
-import type { InventoryItem, AreaId } from '@/lib/types';
+import { PlusCircle, Trash2, BookOpen } from 'lucide-react';
+import type { InventoryItem, AreaId, Menu } from '@/lib/types';
 import { Separator } from '../ui/separator';
-import { areas } from '@/lib/placeholder-data';
+import { areas, weeklyMenus } from '@/lib/placeholder-data';
+import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
+import { Calendar } from '../ui/calendar';
+import { useToast } from '@/hooks/use-toast';
+import { format } from 'date-fns';
 
 const exitReasons = [
     { id: 'produccion', label: 'Uso en Producción' },
@@ -62,6 +66,9 @@ interface InventoryExitFormProps {
 }
 
 export function InventoryExitForm({ isOpen, onOpenChange, onSave, inventoryItems }: InventoryExitFormProps) {
+  const { toast } = useToast();
+  const [menuDate, setMenuDate] = useState<Date>();
+  
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -70,12 +77,20 @@ export function InventoryExitForm({ isOpen, onOpenChange, onSave, inventoryItems
     },
   });
 
-  const { fields, append, remove } = useFieldArray({
+  const { fields, append, remove, replace } = useFieldArray({
     control: form.control,
     name: "items",
   });
   
   const selectedReason = form.watch('reason');
+  
+  const menusByDate = useMemo(() => {
+    return weeklyMenus.reduce((acc, menu) => {
+      const dateKey = format(new Date(menu.date), 'yyyy-MM-dd');
+      acc[dateKey] = menu;
+      return acc;
+    }, {} as Record<string, Menu>);
+  }, [weeklyMenus]);
 
   useEffect(() => {
     if (!isOpen) {
@@ -85,12 +100,65 @@ export function InventoryExitForm({ isOpen, onOpenChange, onSave, inventoryItems
         date: new Date(),
         items: [{ itemId: '', quantity: 0 }],
       });
+      setMenuDate(undefined);
     }
   }, [isOpen, form]);
+  
+  useEffect(() => {
+    if(selectedReason === 'produccion') {
+        form.setValue('destinationArea', 'cocina');
+    }
+  }, [selectedReason, form]);
+  
+  useEffect(() => {
+    if (menuDate) {
+        const dateKey = format(menuDate, 'yyyy-MM-dd');
+        const selectedMenu = menusByDate[dateKey];
+
+        if (selectedMenu) {
+            const ingredientMap = new Map<string, number>();
+            selectedMenu.items.forEach(menuItem => {
+                menuItem.ingredients.forEach(ingredient => {
+                    const grossQuantity = ingredient.quantity / (1 - ingredient.wasteFactor);
+                    const totalQuantity = grossQuantity * selectedMenu.pax;
+                    const currentQuantity = ingredientMap.get(ingredient.inventoryItemId) || 0;
+                    ingredientMap.set(ingredient.inventoryItemId, currentQuantity + totalQuantity);
+                });
+            });
+
+            const newItems = Array.from(ingredientMap.entries()).map(([itemId, quantity]) => ({
+                itemId,
+                quantity: parseFloat(quantity.toFixed(2))
+            }));
+
+            if (newItems.length > 0) {
+                replace(newItems);
+            } else {
+                replace([{ itemId: '', quantity: 0 }]);
+            }
+            
+            form.setValue('reason', 'produccion');
+            form.setValue('destinationArea', 'cocina');
+
+            toast({
+                title: "Menú Cargado",
+                description: `Se han cargado los ingredientes para el menú de ${selectedMenu.pax} PAX.`
+            });
+        } else {
+             toast({
+                variant: 'destructive',
+                title: "Sin Menú Planificado",
+                description: `No se encontró un menú para la fecha seleccionada.`
+            });
+            replace([{ itemId: '', quantity: 0 }]);
+        }
+    }
+  }, [menuDate, menusByDate, replace, toast, form]);
+
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-2xl">
+      <DialogContent className="sm:max-w-3xl">
         <DialogHeader>
           <DialogTitle>Registrar Salida de Inventario</DialogTitle>
           <DialogDescription>
@@ -99,14 +167,14 @@ export function InventoryExitForm({ isOpen, onOpenChange, onSave, inventoryItems
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSave)} className="space-y-4 max-h-[70vh] overflow-y-auto pr-6">
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-               <FormField
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <FormField
                 control={form.control}
                 name="reason"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Motivo de la Salida</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <Select onValueChange={field.onChange} value={field.value}>
                       <FormControl>
                         <SelectTrigger>
                           <SelectValue placeholder="Selecciona un motivo" />
@@ -122,14 +190,25 @@ export function InventoryExitForm({ isOpen, onOpenChange, onSave, inventoryItems
                   </FormItem>
                 )}
               />
-              {selectedReason === 'produccion' && (
+               <FormField
+                control={form.control}
+                name="date"
+                render={({ field }) => (
+                  <FormItem className="flex flex-col">
+                    <FormLabel>Fecha de Salida</FormLabel>
+                    <DatePicker date={field.value} setDate={field.onChange} />
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+               {selectedReason === 'produccion' && (
                  <FormField
                     control={form.control}
                     name="destinationArea"
                     render={({ field }) => (
                     <FormItem>
                         <FormLabel>Área de Destino</FormLabel>
-                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <Select onValueChange={field.onChange} value={field.value}>
                         <FormControl>
                             <SelectTrigger>
                             <SelectValue placeholder="Selecciona un área" />
@@ -146,22 +225,29 @@ export function InventoryExitForm({ isOpen, onOpenChange, onSave, inventoryItems
                     )}
                 />
               )}
-               <FormField
-                control={form.control}
-                name="date"
-                render={({ field }) => (
-                  <FormItem className="flex flex-col">
-                    <FormLabel>Fecha de Salida</FormLabel>
-                    <DatePicker date={field.value} setDate={field.onChange} />
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
             </div>
 
             <Separator />
 
-            <div>
+             <Popover>
+                <PopoverTrigger asChild>
+                    <Button type="button" variant="outline">
+                        <BookOpen className="mr-2 h-4 w-4" />
+                        Cargar desde Menú Planificado
+                    </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0">
+                    <Calendar
+                        mode="single"
+                        selected={menuDate}
+                        onSelect={setMenuDate}
+                        initialFocus
+                    />
+                </PopoverContent>
+            </Popover>
+
+
+            <div className="mt-4">
               <h3 className="text-lg font-medium mb-2">Artículos a Retirar</h3>
               <div className="space-y-4">
                 {fields.map((field, index) => (
@@ -172,7 +258,7 @@ export function InventoryExitForm({ isOpen, onOpenChange, onSave, inventoryItems
                       render={({ field }) => (
                         <FormItem className="flex-1">
                            <FormLabel className={index !== 0 ? "sr-only" : ""}>Artículo</FormLabel>
-                          <Select onValueChange={field.onChange} defaultValue={field.value}>
+                          <Select onValueChange={field.onChange} value={field.value}>
                             <FormControl>
                               <SelectTrigger>
                                 <SelectValue placeholder="Selecciona un artículo" />
