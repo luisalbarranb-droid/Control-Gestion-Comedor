@@ -34,6 +34,7 @@ import { inventoryItems, inventoryCategories, inventoryTransactions } from '@/li
 import type { InventoryItem, InventoryReportData, InventoryCategoryId } from '@/lib/types';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
+import Link from 'next/link';
 
 export default function InventoryReportsPage() {
   const { toast } = useToast();
@@ -125,10 +126,15 @@ export default function InventoryReportsPage() {
             <h1 className="font-headline text-2xl font-bold md:text-3xl">
               Reportes de Inventario
             </h1>
-            <Button onClick={handleExport}>
-              <Download className="mr-2 h-4 w-4" />
-              Exportar a Excel
-            </Button>
+            <div className="flex items-center gap-2">
+              <Button onClick={handleExport}>
+                <Download className="mr-2 h-4 w-4" />
+                Exportar a Excel
+              </Button>
+               <Button asChild variant="outline">
+                <Link href="/inventory">Volver</Link>
+              </Button>
+            </div>
           </div>
 
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
