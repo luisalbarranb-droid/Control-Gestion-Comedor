@@ -158,7 +158,7 @@ function ReportContent() {
                 Exportar a Excel
             </Button>
             <Button asChild variant="outline">
-                <Link href="/menus">Volver</Link>
+                <Link href="/menus">Volver a Planificación</Link>
             </Button>
         </div>
       </div>
