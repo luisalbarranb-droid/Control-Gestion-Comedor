@@ -37,7 +37,7 @@ const categoryOrder: MenuItemCategory[] = [
 ];
 
 export function MenuCard({ menu }: MenuCardProps) {
-  const sortedItems = menu.items.sort((a, b) => categoryOrder.indexOf(a.category) - categoryOrder.indexOf(b.category));
+  const sortedItems = [...menu.items].sort((a, b) => categoryOrder.indexOf(a.category) - categoryOrder.indexOf(b.category));
   const menuDate = format(menu.date, 'yyyy-MM-dd');
 
   return (

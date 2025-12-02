@@ -60,7 +60,7 @@ export function ClosingForm({ isOpen, onOpenChange, onSave, plannedMenu, existin
     resolver: zodResolver(formSchema),
     defaultValues: {
       executedPax: 0,
-      executedItems: [],
+      executedItems: [{ name: '', category: '' }],
       variations: '',
     },
   });
