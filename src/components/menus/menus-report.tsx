@@ -6,7 +6,7 @@ import { es } from 'date-fns/locale';
 import * as XLSX from 'xlsx';
 import { saveAs } from 'file-saver';
 import { useToast } from '@/hooks/use-toast';
-import { Download, Soup, Drumstick, Salad } from 'lucide-react';
+import { Download, Soup, Drumstick, Salad, SquareCheck } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   Card,
