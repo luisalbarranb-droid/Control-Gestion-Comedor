@@ -9,7 +9,7 @@ import {
 } from '@/components/ui/sidebar';
 import { Header } from '@/components/dashboard/header';
 import { MainNav } from '@/components/dashboard/main-nav';
-import { MoreHorizontal } from 'lucide-react';
+import { MoreHorizontal, SquareCheck } from 'lucide-react';
 import {
   Table,
   TableBody,
