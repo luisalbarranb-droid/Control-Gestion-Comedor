@@ -1,5 +1,5 @@
 import type { User, Area, Task, AreaId, Role, InventoryItem, InventoryCategory, InventoryTransaction, InventoryOrder, InventoryOrderItem, Menu, MenuItem, Ingredient, DailyClosing, AttendanceRecord } from './types';
-import { addDays, startOfWeek, set } from 'date-fns';
+import { addDays, startOfWeek, set, subDays } from 'date-fns';
 
 export const areas: Area[] = [
   { id: 'servicio', nombre: 'Servicio', color: '#FF6B6B', responsable: 'user-admin-1', descripcion: 'Atención al cliente y servicio de mesas.', activa: true },
@@ -525,25 +525,27 @@ export const dailyClosings: DailyClosing[] = [
 ];
 
 const today = new Date();
+const yesterday = subDays(today, 1);
+const twoDaysAgo = subDays(today, 2);
+
 export const attendanceRecords: AttendanceRecord[] = [
-    {
-        recordId: 'att-1',
-        userId: 'user-admin-1',
-        checkIn: set(today, { hours: 7, minutes: 58, seconds: 10 }),
-        checkOut: set(today, { hours: 17, minutes: 5, seconds: 2 }),
-        status: 'presente',
-    },
-    {
-        recordId: 'att-2',
-        userId: 'user-comun-1',
-        checkIn: set(today, { hours: 8, minutes: 12, seconds: 45 }),
-        status: 'retardo',
-    },
-    {
-        recordId: 'att-3',
-        userId: 'user-comun-2',
-        checkIn: set(today, { hours: 8, minutes: 3, seconds: 11 }),
-        checkOut: set(today, { hours: 17, minutes: 1, seconds: 15 }),
-        status: 'presente',
-    }
+    // Today
+    { recordId: 'att-1', userId: 'user-admin-1', checkIn: set(today, { hours: 7, minutes: 58, seconds: 10 }), checkOut: set(today, { hours: 17, minutes: 5, seconds: 2 }), status: 'presente' },
+    { recordId: 'att-2', userId: 'user-comun-1', checkIn: set(today, { hours: 8, minutes: 12, seconds: 45 }), status: 'retardo' },
+    { recordId: 'att-3', userId: 'user-comun-2', checkIn: set(today, { hours: 8, minutes: 3, seconds: 11 }), checkOut: set(today, { hours: 17, minutes: 1, seconds: 15 }), status: 'presente' },
+    { recordId: 'att-4', userId: 'user-comun-3', status: 'ausente', checkIn: set(today, { hours: 0, minutes: 0, seconds: 0 }) }, // Ausente
+    
+    // Yesterday
+    { recordId: 'att-5', userId: 'user-admin-1', checkIn: set(yesterday, { hours: 7, minutes: 55, seconds: 10 }), checkOut: set(yesterday, { hours: 17, minutes: 2, seconds: 2 }), status: 'presente' },
+    { recordId: 'att-6', userId: 'user-admin-2', status: 'ausente', checkIn: set(yesterday, { hours: 0, minutes: 0, seconds: 0 }) },
+    { recordId: 'att-7', userId: 'user-comun-1', checkIn: set(yesterday, { hours: 8, minutes: 1, seconds: 45 }), checkOut: set(yesterday, { hours: 17, minutes: 10, seconds: 12 }), status: 'presente' },
+    { recordId: 'att-8', userId: 'user-comun-2', checkIn: set(yesterday, { hours: 8, minutes: 20, seconds: 11 }), checkOut: set(yesterday, { hours: 17, minutes: 3, seconds: 15 }), status: 'retardo' },
+    { recordId: 'att-9', userId: 'user-comun-3', checkIn: set(yesterday, { hours: 7, minutes: 59, seconds: 50 }), checkOut: set(yesterday, { hours: 17, minutes: 0, seconds: 1 }), status: 'presente' },
+    
+    // Two days ago
+    { recordId: 'att-10', userId: 'user-admin-1', checkIn: set(twoDaysAgo, { hours: 8, minutes: 0, seconds: 10 }), checkOut: set(twoDaysAgo, { hours: 17, minutes: 1, seconds: 2 }), status: 'presente' },
+    { recordId: 'att-11', userId: 'user-admin-2', checkIn: set(twoDaysAgo, { hours: 8, minutes: 5, seconds: 10 }), checkOut: set(twoDaysAgo, { hours: 17, minutes: 8, seconds: 2 }), status: 'presente' },
+    { recordId: 'att-12', userId: 'user-comun-1', checkIn: set(twoDaysAgo, { hours: 8, minutes: 3, seconds: 45 }), checkOut: set(twoDaysAgo, { hours: 17, minutes: 0, seconds: 12 }), status: 'presente' },
+    { recordId: 'att-13', userId: 'user-comun-2', checkIn: set(twoDaysAgo, { hours: 8, minutes: 0, seconds: 11 }), checkOut: set(twoDaysAgo, { hours: 16, minutes: 55, seconds: 15 }), status: 'presente' },
+    { recordId: 'att-14', userId: 'user-comun-3', status: 'ausente', checkIn: set(twoDaysAgo, { hours: 0, minutes: 0, seconds: 0 }) },
 ];

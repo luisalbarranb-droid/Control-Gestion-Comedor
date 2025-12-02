@@ -9,7 +9,7 @@ import {
 } from '@/components/ui/sidebar';
 import { Header } from '@/components/dashboard/header';
 import { MainNav } from '@/components/dashboard/main-nav';
-import { SquareCheck, MoreHorizontal, UserCheck, UserX, Clock } from 'lucide-react';
+import { SquareCheck, MoreHorizontal, UserCheck, UserX, Clock, FileSpreadsheet } from 'lucide-react';
 import {
   Table,
   TableBody,
@@ -27,6 +27,8 @@ import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { ScannerCard } from '@/components/attendance/scanner-card';
+import { Button } from '@/components/ui/button';
+import Link from 'next/link';
 
 const statusConfig: Record<AttendanceStatus, { label: string, className: string, icon: React.ElementType }> = {
     presente: { label: 'Presente', className: 'bg-green-100 text-green-800', icon: UserCheck },
@@ -42,6 +44,8 @@ export default function AttendancePage() {
   const getUser = (userId: string) => users.find((u) => u.userId === userId);
   const getUserInitials = (name: string) => name.split(' ').map((n) => n[0]).join('');
 
+  const todayRecords = records.filter(r => format(r.checkIn, 'yyyy-MM-dd') === format(new Date(), 'yyyy-MM-dd'));
+
   return (
     <div className="min-h-screen w-full">
       <Sidebar>
@@ -56,6 +60,17 @@ export default function AttendancePage() {
       <SidebarInset>
         <Header />
         <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
+            <div className="flex items-center justify-between">
+                <h1 className="font-headline text-2xl font-bold md:text-3xl">
+                Asistencia Diaria
+                </h1>
+                <Button variant="secondary" asChild>
+                    <Link href="/attendance/reports">
+                        <FileSpreadsheet className="mr-2 h-4 w-4" />
+                        Ver Reportes
+                    </Link>
+                </Button>
+            </div>
            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             <div className="lg:col-span-2">
                 <Card>
@@ -77,7 +92,7 @@ export default function AttendancePage() {
                         </TableHeader>
                         <TableBody>
                         {users.map(user => {
-                            const record = records.find(r => r.userId === user.userId);
+                            const record = todayRecords.find(r => r.userId === user.userId);
                             const status = record?.status || 'ausente';
                             const config = statusConfig[status];
 
