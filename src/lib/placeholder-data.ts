@@ -527,6 +527,8 @@ export const dailyClosings: DailyClosing[] = [
 const today = new Date();
 const yesterday = subDays(today, 1);
 const twoDaysAgo = subDays(today, 2);
+const threeDaysAgo = subDays(today, 3);
+
 
 export const attendanceRecords: AttendanceRecord[] = [
     // Today
@@ -548,4 +550,8 @@ export const attendanceRecords: AttendanceRecord[] = [
     { recordId: 'att-12', userId: 'user-comun-1', checkIn: set(twoDaysAgo, { hours: 8, minutes: 3, seconds: 45 }), checkOut: set(twoDaysAgo, { hours: 17, minutes: 0, seconds: 12 }), status: 'presente' },
     { recordId: 'att-13', userId: 'user-comun-2', checkIn: set(twoDaysAgo, { hours: 8, minutes: 0, seconds: 11 }), checkOut: set(twoDaysAgo, { hours: 16, minutes: 55, seconds: 15 }), status: 'presente' },
     { recordId: 'att-14', userId: 'user-comun-3', status: 'ausente', checkIn: set(twoDaysAgo, { hours: 0, minutes: 0, seconds: 0 }) },
+
+    // Three days ago
+    { recordId: 'att-15', userId: 'user-admin-2', checkIn: set(threeDaysAgo, { hours: 8, minutes: 25, seconds: 10 }), checkOut: set(threeDaysAgo, { hours: 17, minutes: 8, seconds: 2 }), status: 'retardo' },
+    { recordId: 'att-16', userId: 'user-comun-1', status: 'ausente', checkIn: set(threeDaysAgo, { hours: 0, minutes: 0, seconds: 0 }) },
 ];

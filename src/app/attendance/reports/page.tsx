@@ -29,6 +29,7 @@ import {
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { attendanceRecords, users } from '@/lib/placeholder-data';
 import type { AttendanceRecord, AttendanceStatus } from '@/lib/types';
 import { cn } from '@/lib/utils';
@@ -40,7 +41,6 @@ import { useToast } from '@/hooks/use-toast';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { DateRange } from 'react-day-picker';
 import { Calendar } from '@/components/ui/calendar';
-import { addDays } from 'date-fns';
 import Link from 'next/link';
 
 const statusConfig: Record<AttendanceStatus, { label: string, className: string, icon: React.ElementType }> = {
@@ -54,6 +54,7 @@ const statusConfig: Record<AttendanceStatus, { label: string, className: string,
 export default function AttendanceReportsPage() {
     const { toast } = useToast();
     const [records] = useState<AttendanceRecord[]>(attendanceRecords);
+    const [activeTab, setActiveTab] = useState('general');
     const [date, setDate] = useState<DateRange | undefined>({
         from: new Date(new Date().getFullYear(), new Date().getMonth(), 1),
         to: new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0),
@@ -73,8 +74,11 @@ export default function AttendanceReportsPage() {
         return recordDate >= from && recordDate <= to;
     });
 
-    const totalAbsences = filteredRecords.filter(r => r.status === 'ausente').length;
-    const totalTardies = filteredRecords.filter(r => r.status === 'retardo').length;
+    const absenceRecords = filteredRecords.filter(r => r.status === 'ausente');
+    const tardyRecords = filteredRecords.filter(r => r.status === 'retardo');
+
+    const totalAbsences = absenceRecords.length;
+    const totalTardies = tardyRecords.length;
     const totalAttendances = filteredRecords.filter(r => r.status === 'presente' || r.status === 'retardo').length;
 
     const kpiCards = [
@@ -84,7 +88,11 @@ export default function AttendanceReportsPage() {
     ];
 
     const handleExport = () => {
-        const dataToExport = filteredRecords.map(record => {
+        let dataToExport: any[] = [];
+        let sheetName = 'Reporte';
+        let fileName = `Reporte_Asistencia_${format(new Date(), 'yyyy-MM-dd')}.xlsx`;
+
+        const baseMapping = (record: AttendanceRecord) => {
             const user = getUser(record.userId);
             const statusInfo = statusConfig[record.status];
             return {
@@ -95,22 +103,85 @@ export default function AttendanceReportsPage() {
                 'Hora Salida': record.checkOut ? format(record.checkOut, 'HH:mm:ss') : 'N/A',
                 'Estado': statusInfo.label,
             };
-        });
+        };
+
+        if (activeTab === 'general') {
+            dataToExport = filteredRecords.map(baseMapping);
+            sheetName = 'Historial General';
+            fileName = `Reporte_General_Asistencia_${format(new Date(), 'yyyy-MM-dd')}.xlsx`;
+        } else if (activeTab === 'absences') {
+            dataToExport = absenceRecords.map(baseMapping);
+            sheetName = 'Ausencias';
+            fileName = `Reporte_Ausencias_${format(new Date(), 'yyyy-MM-dd')}.xlsx`;
+        } else if (activeTab === 'tardies') {
+            dataToExport = tardyRecords.map(baseMapping);
+            sheetName = 'Retardos';
+            fileName = `Reporte_Retardos_${format(new Date(), 'yyyy-MM-dd')}.xlsx`;
+        }
+
 
         const worksheet = XLSX.utils.json_to_sheet(dataToExport);
         const workbook = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(workbook, worksheet, 'Reporte de Asistencia');
+        XLSX.utils.book_append_sheet(workbook, worksheet, sheetName);
         worksheet["!cols"] = [{ wch: 25 }, { wch: 15 }, { wch: 15 }, { wch: 15 }, { wch: 15 }, { wch: 15 }];
         
         const excelBuffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
         const data = new Blob([excelBuffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;charset=UTF-8' });
-        saveAs(data, `Reporte_Asistencia_${format(new Date(), 'yyyy-MM-dd')}.xlsx`);
+        saveAs(data, fileName);
 
         toast({
             title: 'Exportación Exitosa',
-            description: 'El reporte de asistencia ha sido descargado.',
+            description: `El ${sheetName} ha sido descargado.`,
         });
     };
+    
+    const renderTable = (recordsToRender: AttendanceRecord[], tableId: string) => (
+        <Table id={tableId}>
+            <TableHeader>
+                <TableRow>
+                    <TableHead>Empleado</TableHead>
+                    <TableHead>Fecha</TableHead>
+                    <TableHead>Hora Entrada</TableHead>
+                    <TableHead>Hora Salida</TableHead>
+                    <TableHead>Estado</TableHead>
+                </TableRow>
+            </TableHeader>
+            <TableBody>
+            {recordsToRender.map(record => {
+                const user = getUser(record.userId);
+                const statusInfo = statusConfig[record.status];
+                if (!user) return null;
+                return (
+                <TableRow key={record.recordId}>
+                    <TableCell>
+                        <div className="flex items-center gap-3">
+                            <Avatar className="h-9 w-9">
+                                <AvatarImage src={user.avatarUrl} alt={user.nombre} />
+                                <AvatarFallback>{getUserInitials(user.nombre)}</AvatarFallback>
+                            </Avatar>
+                            <div className="font-medium">{user.nombre}</div>
+                        </div>
+                    </TableCell>
+                    <TableCell>{format(record.checkIn, 'dd/MM/yyyy')}</TableCell>
+                    <TableCell className="font-mono">
+                        {record.status !== 'ausente' ? format(record.checkIn, 'HH:mm:ss') : 'N/A'}
+                    </TableCell>
+                    <TableCell className="font-mono">
+                        {record.checkOut ? format(record.checkOut, 'HH:mm:ss') : '--:--'}
+                    </TableCell>
+                    <TableCell>
+                        <Badge variant="secondary" className={cn(statusInfo.className, 'capitalize')}>
+                            <statusInfo.icon className="w-3 h-3 mr-1.5" />
+                            {statusInfo.label}
+                        </Badge>
+                    </TableCell>
+                </TableRow>
+                );
+            })}
+            </TableBody>
+        </Table>
+    )
+
 
     return (
         <div className="min-h-screen w-full">
@@ -166,58 +237,46 @@ export default function AttendanceReportsPage() {
                         ))}
                     </div>
 
-                    <Card>
-                        <CardHeader>
-                            <CardTitle>Historial de Asistencia</CardTitle>
-                            <CardDescription>Detalle de los registros de asistencia para el período seleccionado.</CardDescription>
-                        </CardHeader>
-                        <CardContent>
-                        <Table>
-                            <TableHeader>
-                                <TableRow>
-                                    <TableHead>Empleado</TableHead>
-                                    <TableHead>Fecha</TableHead>
-                                    <TableHead>Hora Entrada</TableHead>
-                                    <TableHead>Hora Salida</TableHead>
-                                    <TableHead>Estado</TableHead>
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                            {filteredRecords.map(record => {
-                                const user = getUser(record.userId);
-                                const statusInfo = statusConfig[record.status];
-                                if (!user) return null;
-                                return (
-                                <TableRow key={record.recordId}>
-                                    <TableCell>
-                                        <div className="flex items-center gap-3">
-                                            <Avatar className="h-9 w-9">
-                                                <AvatarImage src={user.avatarUrl} alt={user.nombre} />
-                                                <AvatarFallback>{getUserInitials(user.nombre)}</AvatarFallback>
-                                            </Avatar>
-                                            <div className="font-medium">{user.nombre}</div>
-                                        </div>
-                                    </TableCell>
-                                    <TableCell>{format(record.checkIn, 'dd/MM/yyyy')}</TableCell>
-                                    <TableCell className="font-mono">
-                                        {record.status !== 'ausente' ? format(record.checkIn, 'HH:mm:ss') : 'N/A'}
-                                    </TableCell>
-                                    <TableCell className="font-mono">
-                                        {record.checkOut ? format(record.checkOut, 'HH:mm:ss') : '--:--'}
-                                    </TableCell>
-                                    <TableCell>
-                                        <Badge variant="secondary" className={cn(statusInfo.className, 'capitalize')}>
-                                            <statusInfo.icon className="w-3 h-3 mr-1.5" />
-                                            {statusInfo.label}
-                                        </Badge>
-                                    </TableCell>
-                                </TableRow>
-                                );
-                            })}
-                            </TableBody>
-                        </Table>
-                        </CardContent>
-                    </Card>
+                    <Tabs value={activeTab} onValueChange={setActiveTab}>
+                        <TabsList className="grid w-full grid-cols-3">
+                            <TabsTrigger value="general">Historial General</TabsTrigger>
+                            <TabsTrigger value="absences">Reporte de Ausencias</TabsTrigger>
+                            <TabsTrigger value="tardies">Reporte de Retardos</TabsTrigger>
+                        </TabsList>
+                        <TabsContent value="general">
+                            <Card>
+                                <CardHeader>
+                                    <CardTitle>Historial de Asistencia</CardTitle>
+                                    <CardDescription>Detalle de todos los registros de asistencia para el período seleccionado.</CardDescription>
+                                </CardHeader>
+                                <CardContent>
+                                    {renderTable(filteredRecords, 'general-table')}
+                                </CardContent>
+                            </Card>
+                        </TabsContent>
+                         <TabsContent value="absences">
+                            <Card>
+                                <CardHeader>
+                                    <CardTitle>Reporte de Ausencias</CardTitle>
+                                    <CardDescription>Detalle de todos los empleados ausentes para el período seleccionado.</CardDescription>
+                                </CardHeader>
+                                <CardContent>
+                                    {renderTable(absenceRecords, 'absences-table')}
+                                </CardContent>
+                            </Card>
+                        </TabsContent>
+                         <TabsContent value="tardies">
+                            <Card>
+                                <CardHeader>
+                                    <CardTitle>Reporte de Retardos</CardTitle>
+                                    <CardDescription>Detalle de todos los empleados con retardo para el período seleccionado.</CardDescription>
+                                </CardHeader>
+                                <CardContent>
+                                    {renderTable(tardyRecords, 'tardies-table')}
+                                </CardContent>
+                            </Card>
+                        </TabsContent>
+                    </Tabs>
                 </main>
             </SidebarInset>
         </div>
