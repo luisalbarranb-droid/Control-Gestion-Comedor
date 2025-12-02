@@ -25,6 +25,7 @@ import type { Task, TaskPriority, TaskStatus, TaskPeriodicity } from '@/lib/type
 import { cn } from '@/lib/utils';
 import Image from 'next/image';
 import { Input } from '../ui/input';
+import { Label } from '@/components/ui/label';
 
 const priorityConfig: Record<TaskPriority, { label: string, className: string }> = {
   baja: { label: 'Baja', className: 'bg-green-100 text-green-800' },
