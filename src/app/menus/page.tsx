@@ -22,7 +22,7 @@ import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import Link from 'next/link';
-import { WeeklyPlanner } from '@/components/menus/weekly-planner';
+import { MenuCard } from '@/components/menus/menu-card';
 
 export default function MenusPage() {
   const [menus, setMenus] = useState<Menu[]>(weeklyMenus);
@@ -119,7 +119,16 @@ export default function MenusPage() {
                 </Button>
             </div>
           </div>
-          <WeeklyPlanner menus={filteredMenus} range={date} />
+          <div className="space-y-8">
+            {filteredMenus.length > 0 ? (
+                filteredMenus.map(menu => <MenuCard key={menu.menuId} menu={menu} />)
+            ) : (
+                <div className="flex flex-col items-center justify-center text-center py-16 border-2 border-dashed rounded-lg">
+                    <p className="text-lg font-semibold text-muted-foreground">No hay menús para el período seleccionado.</p>
+                    <p className="text-sm text-muted-foreground mt-2">Intenta ajustar el rango de fechas o crea un nuevo menú.</p>
+                </div>
+            )}
+          </div>
         </main>
       </SidebarInset>
     </div>
