@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { addDays, startOfMonth, endOfMonth } from 'date-fns';
+import { startOfMonth, endOfMonth } from 'date-fns';
 import {
   Sidebar,
   SidebarContent,
@@ -14,7 +14,7 @@ import { SquareCheck, Calendar as CalendarIcon } from 'lucide-react';
 import { CreateMenuForm } from '@/components/menus/create-menu-form';
 import { weeklyMenus } from '@/lib/placeholder-data';
 import type { Menu } from '@/lib/types';
-import { WeeklyPlanner } from '@/components/menus/weekly-planner';
+import { MenuCard } from '@/components/menus/menu-card';
 import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
@@ -56,7 +56,7 @@ export default function MenusPage() {
     to.setHours(23,59,59,999);
 
     return menuDate >= from && menuDate <= to;
-  });
+  }).sort((a,b) => a.date.getTime() - b.date.getTime());
 
   return (
     <div className="min-h-screen w-full">
@@ -74,7 +74,7 @@ export default function MenusPage() {
         <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
             <h1 className="font-headline text-2xl font-bold md:text-3xl">
-              Planificación Semanal de Menús
+              Planificación de Menús
             </h1>
             <div className="flex items-center gap-2">
                 <Popover>
@@ -120,7 +120,15 @@ export default function MenusPage() {
                 </Button>
             </div>
           </div>
-          <WeeklyPlanner menus={filteredMenus} range={date} />
+          <div className="space-y-8">
+            {filteredMenus.length > 0 ? (
+                filteredMenus.map(menu => <MenuCard key={menu.menuId} menu={menu} />)
+            ) : (
+                <div className="flex flex-col items-center justify-center h-64 border-2 border-dashed rounded-lg">
+                    <p className="text-muted-foreground">No hay menús planificados para el rango de fechas seleccionado.</p>
+                </div>
+            )}
+          </div>
         </main>
       </SidebarInset>
     </div>

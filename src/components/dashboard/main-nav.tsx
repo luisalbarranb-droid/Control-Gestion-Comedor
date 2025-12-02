@@ -11,6 +11,7 @@ import {
   BookOpen,
   ClipboardCheck,
   QrCode,
+  FileSpreadsheet
 } from 'lucide-react';
 import {
   SidebarMenu,
@@ -84,6 +85,14 @@ export function MainNav() {
               <SidebarMenuButton isActive={pathname.startsWith('/users')}>
                 <Users />
                 <span>Usuarios</span>
+              </SidebarMenuButton>
+            </Link>
+          </SidebarMenuItem>
+           <SidebarMenuItem>
+            <Link href="/reports">
+              <SidebarMenuButton isActive={pathname.startsWith('/reports')}>
+                <FileSpreadsheet />
+                <span>Reportes</span>
               </SidebarMenuButton>
             </Link>
           </SidebarMenuItem>

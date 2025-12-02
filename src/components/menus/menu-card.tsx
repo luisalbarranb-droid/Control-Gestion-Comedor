@@ -2,7 +2,8 @@
 
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { Users, Calendar, MoreVertical } from 'lucide-react';
+import { Users, Calendar, MoreVertical, FileText } from 'lucide-react';
+import Link from 'next/link';
 import {
   Card,
   CardContent,
@@ -37,6 +38,7 @@ const categoryOrder: MenuItemCategory[] = [
 
 export function MenuCard({ menu }: MenuCardProps) {
   const sortedItems = menu.items.sort((a, b) => categoryOrder.indexOf(a.category) - categoryOrder.indexOf(b.category));
+  const menuDate = format(menu.date, 'yyyy-MM-dd');
 
   return (
     <Card className="flex flex-col">
@@ -80,8 +82,14 @@ export function MenuCard({ menu }: MenuCardProps) {
           )}
         </div>
       </CardContent>
-      <CardFooter>
+      <CardFooter className="gap-2">
         <Button variant="outline">Ver Necesidades de Compra</Button>
+         <Button asChild>
+          <Link href={`/menus/report?date=${menuDate}`}>
+            <FileText className="mr-2 h-4 w-4" />
+            Ver Reporte
+          </Link>
+        </Button>
       </CardFooter>
     </Card>
   );
