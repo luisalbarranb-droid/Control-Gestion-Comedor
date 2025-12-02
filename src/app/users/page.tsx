@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import {
   Sidebar,
   SidebarContent,
@@ -8,7 +9,7 @@ import {
 } from '@/components/ui/sidebar';
 import { Header } from '@/components/dashboard/header';
 import { MainNav } from '@/components/dashboard/main-nav';
-import { SquareCheck, PlusCircle, MoreHorizontal } from 'lucide-react';
+import { MoreHorizontal } from 'lucide-react';
 import {
   Table,
   TableBody,
@@ -28,10 +29,12 @@ import {
   DropdownMenuLabel,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { users, areas } from '@/lib/placeholder-data';
-import type { Role } from '@/lib/types';
+import { users as initialUsers, areas } from '@/lib/placeholder-data';
+import type { User, Role } from '@/lib/types';
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
+import { UserForm } from '@/components/users/user-form';
+import { useToast } from '@/hooks/use-toast';
 
 const roleVariant: Record<Role, string> = {
   superadmin: 'bg-purple-100 text-purple-800',
@@ -45,8 +48,41 @@ const statusVariant: Record<boolean, string> = {
 };
 
 export default function UsersPage() {
+  const { toast } = useToast();
+  const [users, setUsers] = useState<User[]>(initialUsers);
+  const [selectedUser, setSelectedUser] = useState<User | null>(null);
+  const [isFormOpen, setFormOpen] = useState(false);
+
   const getAreaName = (areaId: string) => areas.find((a) => a.id === areaId)?.nombre || 'N/A';
   const getUserInitials = (name: string) => name.split(' ').map((n) => n[0]).join('');
+
+  const handleCreateUser = (newUserData: Omit<User, 'userId' | 'creadoPor' | 'ultimoAcceso' | 'avatarUrl'>) => {
+    const newUser: User = {
+        ...newUserData,
+        userId: `user-${Date.now()}`,
+        creadoPor: 'user-superadmin-1', // Placeholder for current user
+        ultimoAcceso: new Date(),
+        avatarUrl: `https://i.pravatar.cc/150?u=${newUserData.email}`
+    };
+    setUsers(prev => [newUser, ...prev]);
+    toast({
+        title: 'Usuario Creado',
+        description: `El usuario ${newUser.nombre} ha sido añadido.`,
+    });
+  };
+
+  const handleUpdateUser = (updatedUserData: User) => {
+     setUsers(prev => prev.map(u => u.userId === updatedUserData.userId ? updatedUserData : u));
+     toast({
+        title: 'Usuario Actualizado',
+        description: `Los datos de ${updatedUserData.nombre} han sido actualizados.`,
+    });
+  };
+
+  const openForm = (user: User | null) => {
+    setSelectedUser(user);
+    setFormOpen(true);
+  }
 
   return (
     <div className="min-h-screen w-full">
@@ -66,8 +102,7 @@ export default function UsersPage() {
             <h1 className="font-headline text-2xl font-bold md:text-3xl">
               Gestión de Usuarios
             </h1>
-            <Button>
-              <PlusCircle className="mr-2 h-4 w-4" />
+            <Button onClick={() => openForm(null)}>
               Crear Usuario
             </Button>
           </div>
@@ -94,9 +129,9 @@ export default function UsersPage() {
                 </TableHeader>
                 <TableBody>
                   {users.map((user) => (
-                    <TableRow key={user.userId} className="cursor-pointer">
+                    <TableRow key={user.userId}>
                       <TableCell>
-                        <Link href={`/users/${user.userId}`} className="flex items-center gap-3 hover:underline">
+                         <Link href={`/users/${user.userId}`} className="flex items-center gap-3 hover:underline">
                           <Avatar className="h-9 w-9">
                             <AvatarImage src={user.avatarUrl} alt={user.nombre} />
                             <AvatarFallback>
@@ -137,7 +172,7 @@ export default function UsersPage() {
                           <DropdownMenuContent align="end">
                             <DropdownMenuLabel>Acciones</DropdownMenuLabel>
                             <DropdownMenuItem asChild><Link href={`/users/${user.userId}`}>Ver Perfil</Link></DropdownMenuItem>
-                            <DropdownMenuItem>Editar</DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => openForm(user)}>Editar</DropdownMenuItem>
                             <DropdownMenuItem>Desactivar</DropdownMenuItem>
                           </DropdownMenuContent>
                         </DropdownMenu>
@@ -150,6 +185,12 @@ export default function UsersPage() {
           </Card>
         </main>
       </SidebarInset>
+      <UserForm
+        isOpen={isFormOpen}
+        onOpenChange={setFormOpen}
+        onSave={selectedUser ? handleUpdateUser : handleCreateUser}
+        user={selectedUser}
+      />
     </div>
   );
 }
