@@ -10,7 +10,7 @@ import {
 } from '@/components/ui/sidebar';
 import { Header } from '@/components/dashboard/header';
 import { MainNav } from '@/components/dashboard/main-nav';
-import { SquareCheck, Calendar as CalendarIcon, FileSpreadsheet } from 'lucide-react';
+import { SquareCheck, Calendar as CalendarIcon, FileSpreadsheet, View } from 'lucide-react';
 import { CreateMenuForm } from '@/components/menus/create-menu-form';
 import { weeklyMenus } from '@/lib/placeholder-data';
 import type { Menu } from '@/lib/types';
@@ -74,9 +74,9 @@ export default function MenusPage() {
         <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
             <h1 className="font-headline text-2xl font-bold md:text-3xl">
-              Planificación de Menus
+              Planificacion de Menus
             </h1>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 flex-wrap">
                 <Popover>
                 <PopoverTrigger asChild>
                     <Button
@@ -118,6 +118,12 @@ export default function MenusPage() {
                     <Link href="/menus/report">
                         <FileSpreadsheet className="mr-2 h-4 w-4" />
                         Ver Reporte Consolidado
+                    </Link>
+                </Button>
+                 <Button asChild variant="secondary">
+                    <Link href="/menus/calendar">
+                        <View className="mr-2 h-4 w-4" />
+                        Ver Calendario Mensual
                     </Link>
                 </Button>
             </div>
