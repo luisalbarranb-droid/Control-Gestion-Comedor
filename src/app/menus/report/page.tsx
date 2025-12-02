@@ -75,7 +75,7 @@ function ReportContent() {
           No pudimos encontrar un menú planificado para la fecha seleccionada ({format(reportDate, 'PPP', { locale: es })}).
         </p>
          <Button asChild className="mt-4">
-            <Link href="/menus">Volver a Menús</Link>
+            <Link href="/menus">Volver a Planificación</Link>
         </Button>
       </div>
     );
