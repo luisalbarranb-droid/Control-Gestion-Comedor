@@ -14,7 +14,6 @@ import { SquareCheck, Calendar as CalendarIcon } from 'lucide-react';
 import { CreateMenuForm } from '@/components/menus/create-menu-form';
 import { weeklyMenus } from '@/lib/placeholder-data';
 import type { Menu } from '@/lib/types';
-import { MenuCard } from '@/components/menus/menu-card';
 import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
@@ -23,6 +22,7 @@ import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import Link from 'next/link';
+import { WeeklyPlanner } from '@/components/menus/weekly-planner';
 
 export default function MenusPage() {
   const [menus, setMenus] = useState<Menu[]>(weeklyMenus);
@@ -91,8 +91,7 @@ export default function MenusPage() {
                     {date?.from ? (
                         date.to ? (
                         <>
-                            {format(date.from, "LLL dd, y", { locale: es })} -{" "}
-                            {format(date.to, "LLL dd, y", { locale: es })}
+                            {format(date.from, "LLLL yyyy", { locale: es })}
                         </>
                         ) : (
                         format(date.from, "LLL dd, y", { locale: es })
@@ -109,7 +108,7 @@ export default function MenusPage() {
                     defaultMonth={date?.from}
                     selected={date}
                     onSelect={setDate}
-                    numberOfMonths={2}
+                    numberOfMonths={1}
                     locale={es}
                     />
                 </PopoverContent>
@@ -120,15 +119,7 @@ export default function MenusPage() {
                 </Button>
             </div>
           </div>
-          <div className="space-y-8">
-            {filteredMenus.length > 0 ? (
-                filteredMenus.map(menu => <MenuCard key={menu.menuId} menu={menu} />)
-            ) : (
-                <div className="flex flex-col items-center justify-center h-64 border-2 border-dashed rounded-lg">
-                    <p className="text-muted-foreground">No hay menús planificados para el rango de fechas seleccionado.</p>
-                </div>
-            )}
-          </div>
+          <WeeklyPlanner menus={filteredMenus} range={date} />
         </main>
       </SidebarInset>
     </div>
