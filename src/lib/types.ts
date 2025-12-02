@@ -181,3 +181,19 @@ export interface Menu {
   pax: number; // number of people
   items: MenuItem[];
 }
+
+// DAILY CLOSING TYPES
+export interface DailyClosingItem {
+  name: string;
+  category: MenuItemCategory;
+}
+
+export interface DailyClosing {
+  closingId: string;
+  date: Date;
+  plannedMenu: Menu | null;
+  executedPax: number;
+  executedItems: DailyClosingItem[];
+  variations: string;
+  closedBy: string; // userId
+}

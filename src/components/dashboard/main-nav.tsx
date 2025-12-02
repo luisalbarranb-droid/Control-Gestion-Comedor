@@ -9,6 +9,7 @@ import {
   AreaChart,
   Archive,
   BookOpen,
+  ClipboardCheck,
 } from 'lucide-react';
 import {
   SidebarMenu,
@@ -46,6 +47,14 @@ export function MainNav() {
           <SidebarMenuButton isActive={pathname.startsWith('/menus')}>
             <BookOpen />
             <span>Menús</span>
+          </SidebarMenuButton>
+        </Link>
+      </SidebarMenuItem>
+      <SidebarMenuItem>
+        <Link href="/daily-closing">
+          <SidebarMenuButton isActive={pathname.startsWith('/daily-closing')}>
+            <ClipboardCheck />
+            <span>Cierres Diarios</span>
           </SidebarMenuButton>
         </Link>
       </SidebarMenuItem>

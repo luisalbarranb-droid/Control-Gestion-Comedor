@@ -1,4 +1,4 @@
-import type { User, Area, Task, AreaId, Role, InventoryItem, InventoryCategory, InventoryTransaction, InventoryOrder, InventoryOrderItem, Menu, MenuItem, Ingredient } from './types';
+import type { User, Area, Task, AreaId, Role, InventoryItem, InventoryCategory, InventoryTransaction, InventoryOrder, InventoryOrderItem, Menu, MenuItem, Ingredient, DailyClosing } from './types';
 import { addDays, startOfWeek } from 'date-fns';
 
 export const areas: Area[] = [
@@ -476,3 +476,23 @@ export const dailyMenu: Menu = {
     pax: 150,
     items: menuItems,
 };
+
+
+export const dailyClosings: DailyClosing[] = [
+  {
+    closingId: 'closing-1',
+    date: addDays(startOfThisWeek, 0),
+    plannedMenu: weeklyMenus.find(m => m.menuId === 'menu-1') || null,
+    executedPax: 145,
+    executedItems: [
+      { name: 'Sopa de Lentejas', category: 'entrada' },
+      { name: 'Pollo al Horno', category: 'proteico' },
+      { name: 'Arroz Blanco', category: 'acompanante1' },
+      { name: 'Ensalada de Tomate', category: 'acompanante2' }, // Cambio aquí
+      { name: 'Jugo de Manzana', category: 'bebida' },
+      { name: 'Fruta Picada', category: 'postre' },
+    ],
+    variations: 'Se cambió la "Ensalada Fresca" por "Ensalada de Tomate" debido a falta de lechuga. No se sirvió el 3er acompañante.',
+    closedBy: 'user-admin-1',
+  }
+];
