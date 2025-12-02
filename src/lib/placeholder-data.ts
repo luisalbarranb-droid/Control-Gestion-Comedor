@@ -30,8 +30,8 @@ export const users: User[] = [
   },
   {
     userId: 'user-admin-1',
-    email: 'admin1@comedor.com',
-    nombre: 'Ana Gómez',
+    email: 'erika.esquivel0603@gmail.com',
+    nombre: 'Erika Esquivel',
     cedula: 'V-87654321',
     telefono: '0414-9876543',
     rol: 'admin',
@@ -41,7 +41,7 @@ export const users: User[] = [
     fechaCulminacionContrato: new Date('2025-02-15T12:00:00Z'),
     creadoPor: 'user-superadmin-1',
     ultimoAcceso: new Date('2024-05-30T11:00:00Z'),
-    avatarUrl: 'https://i.pravatar.cc/150?u=admin1',
+    avatarUrl: 'https://i.pravatar.cc/150?u=erika',
     tipoTrabajador: 'empleado',
     tipoContrato: 'determinado',
   },
@@ -224,7 +224,7 @@ export const stats = {
     { name: 'Carlos R.', eficiencia: 90 },
     { name: 'María F.', eficiencia: 75 },
     { name: 'José M.', eficiencia: 85 },
-    { name: 'Ana G.', eficiencia: 95 },
+    { name: 'Erika E.', eficiencia: 95 },
   ],
   pieData: [
     { name: 'Cocina', value: 8, fill: 'hsl(var(--chart-1))' },
