@@ -250,3 +250,12 @@ export interface LeaveRecord {
     reason: string;
     approvedBy?: string; // admin or superadmin userId
 }
+
+// 0 for Monday, 1 for Tuesday, etc.
+export type DayOfWeek = 0 | 1 | 2 | 3 | 4 | 5 | 6;
+
+export interface DayOff {
+  userId: string;
+  weekStartDate: string; // YYYY-MM-DD
+  dayOff: DayOfWeek; // The one flexible day off
+}

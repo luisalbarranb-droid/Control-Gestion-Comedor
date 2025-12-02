@@ -9,7 +9,7 @@ import {
 } from '@/components/ui/sidebar';
 import { Header } from '@/components/dashboard/header';
 import { MainNav } from '@/components/dashboard/main-nav';
-import { SquareCheck, MoreHorizontal, UserCheck, UserX, Clock, FileSpreadsheet } from 'lucide-react';
+import { SquareCheck, MoreHorizontal, UserCheck, UserX, Clock, FileSpreadsheet, CalendarDays } from 'lucide-react';
 import {
   Table,
   TableBody,
@@ -64,12 +64,20 @@ export default function AttendancePage() {
                 <h1 className="font-headline text-2xl font-bold md:text-3xl">
                 Asistencia Diaria
                 </h1>
-                <Button variant="secondary" asChild>
-                    <Link href="/attendance/reports">
-                        <FileSpreadsheet className="mr-2 h-4 w-4" />
-                        Ver Reportes
-                    </Link>
-                </Button>
+                <div className="flex items-center gap-2">
+                    <Button variant="outline" asChild>
+                        <Link href="/attendance/planning">
+                            <CalendarDays className="mr-2 h-4 w-4" />
+                            Planificar Días Libres
+                        </Link>
+                    </Button>
+                    <Button variant="secondary" asChild>
+                        <Link href="/attendance/reports">
+                            <FileSpreadsheet className="mr-2 h-4 w-4" />
+                            Ver Reportes
+                        </Link>
+                    </Button>
+                </div>
             </div>
            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             <div className="lg:col-span-2">
