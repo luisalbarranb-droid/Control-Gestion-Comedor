@@ -1,4 +1,5 @@
 import type { User, Area, Task, AreaId, Role, InventoryItem, InventoryCategory, InventoryTransaction, InventoryOrder, InventoryOrderItem, Menu, MenuItem, Ingredient } from './types';
+import { addDays, startOfWeek } from 'date-fns';
 
 export const areas: Area[] = [
   { id: 'servicio', nombre: 'Servicio', color: '#FF6B6B', responsable: 'user-admin-1', descripcion: 'Atención al cliente y servicio de mesas.', activa: true },
@@ -421,6 +422,53 @@ const menuItems: MenuItem[] = [
         ],
     },
 ];
+
+const carneAsadaItems: MenuItem[] = [
+    { menuItemId: 'ca-1', name: 'Consomé de Pollo', category: 'entrada', ingredients: [] },
+    { menuItemId: 'ca-2', name: 'Carne Asada', category: 'proteico', ingredients: [{ inventoryItemId: 'inv-7', quantity: 0.28, wasteFactor: 0.1 }] },
+    { menuItemId: 'ca-3', name: 'Arroz con Maíz', category: 'acompanante1', ingredients: [{ inventoryItemId: 'inv-2', quantity: 0.1, wasteFactor: 0 }] },
+    { menuItemId: 'ca-4', name: 'Ensalada Rusa', category: 'acompanante2', ingredients: [] },
+    { menuItemId: 'ca-5', name: 'Papas Fritas', category: 'acompanante3', ingredients: [] },
+    { menuItemId: 'ca-6', name: 'Jugo de Papelón con Limón', category: 'bebida', ingredients: [] },
+    { menuItemId: 'ca-7', name: 'Quesillo', category: 'postre', ingredients: [] },
+];
+
+
+const startOfThisWeek = startOfWeek(new Date(), { weekStartsOn: 1 }); // Monday
+
+export const weeklyMenus: Menu[] = [
+  {
+    menuId: 'menu-1',
+    date: addDays(startOfThisWeek, 0), // Lunes
+    pax: 150,
+    items: menuItems,
+  },
+  {
+    menuId: 'menu-2',
+    date: addDays(startOfThisWeek, 1), // Martes
+    pax: 160,
+    items: carneAsadaItems,
+  },
+    {
+    menuId: 'menu-3',
+    date: addDays(startOfThisWeek, 2), // Miércoles
+    pax: 140,
+    items: menuItems,
+  },
+    {
+    menuId: 'menu-4',
+    date: addDays(startOfThisWeek, 3), // Jueves
+    pax: 155,
+    items: carneAsadaItems,
+  },
+    {
+    menuId: 'menu-5',
+    date: addDays(startOfThisWeek, 4), // Viernes
+    pax: 170,
+    items: menuItems,
+  },
+];
+
 
 export const dailyMenu: Menu = {
     menuId: 'menu-1',

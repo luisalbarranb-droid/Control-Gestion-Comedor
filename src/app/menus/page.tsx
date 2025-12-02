@@ -13,12 +13,12 @@ import { MainNav } from '@/components/dashboard/main-nav';
 import { SquareCheck } from 'lucide-react';
 import { MenuCard } from '@/components/menus/menu-card';
 import { CreateMenuForm } from '@/components/menus/create-menu-form';
-import { dailyMenu } from '@/lib/placeholder-data';
+import { weeklyMenus } from '@/lib/placeholder-data';
 import type { Menu } from '@/lib/types';
 
 
 export default function MenusPage() {
-  const [menus, setMenus] = useState<Menu[]>([dailyMenu]);
+  const [menus, setMenus] = useState<Menu[]>(weeklyMenus);
 
   // In the future, this function will handle adding new menus to the state
   const handleCreateMenu = (newMenuData: any) => {
@@ -42,11 +42,11 @@ export default function MenusPage() {
         <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
           <div className="flex items-center justify-between">
              <h1 className="font-headline text-2xl font-bold md:text-3xl">
-              Planificación de Menús
+              Planificación Semanal de Menús
             </h1>
             <CreateMenuForm />
           </div>
-          <div className="space-y-8">
+          <div className="grid grid-cols-1 gap-8">
             {menus.map(menu => (
               <MenuCard key={menu.menuId} menu={menu} />
             ))}
