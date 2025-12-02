@@ -8,6 +8,8 @@ export const areas: Area[] = [
   { id: 'almacen', nombre: 'Almacén', color: '#96CEB4', responsable: 'user-admin-2', descripcion: 'Gestión de inventario y suministros.', activa: true },
   { id: 'equipos', nombre: 'Equipos', color: '#FFEAA7', responsable: 'user-admin-1', descripcion: 'Mantenimiento de equipos de cocina.', activa: true },
   { id: 'administracion', nombre: 'Administración', color: '#DDA0DD', responsable: 'user-superadmin-1', descripcion: 'Gestión general y administrativa.', activa: true },
+  { id: 'operaciones', nombre: 'Operaciones', color: '#F79F79', responsable: 'user-superadmin-1', descripcion: 'Coordinación de operaciones diarias.', activa: true },
+  { id: 'rrhh', nombre: 'RRHH', color: '#A2D2FF', responsable: 'user-superadmin-1', descripcion: 'Gestión de Recursos Humanos.', activa: true },
 ];
 
 export const users: User[] = [

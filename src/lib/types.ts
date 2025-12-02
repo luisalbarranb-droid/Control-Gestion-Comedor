@@ -1,5 +1,5 @@
 export type Role = 'superadmin' | 'admin' | 'comun';
-export type AreaId = 'servicio' | 'cocina' | 'limpieza' | 'almacen' | 'equipos' | 'administracion';
+export type AreaId = 'servicio' | 'cocina' | 'limpieza' | 'almacen' | 'equipos' | 'administracion' | 'operaciones' | 'rrhh';
 export type TaskStatus = 'pendiente' | 'en-progreso' | 'completada' | 'verificada' | 'rechazada';
 export type TaskPriority = 'baja' | 'media' | 'alta' | 'urgente';
 export type TaskPeriodicity = 'diaria' | 'semanal' | 'quincenal' | 'mensual' | 'unica';
