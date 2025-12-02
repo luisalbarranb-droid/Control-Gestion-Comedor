@@ -26,9 +26,10 @@ import {
 import { Input } from '@/components/ui/input';
 import { DatePicker } from '@/components/ui/datepicker';
 import { useToast } from '@/hooks/use-toast';
+import { Menu } from '@/lib/types';
 
 type CreateMenuFormProps = {
-  // onMenuCreate: (menu: any) => void;
+  onMenuCreate: (menu: Omit<Menu, 'menuId' | 'items'>) => void;
 };
 
 const formSchema = z.object({
@@ -38,7 +39,7 @@ const formSchema = z.object({
 
 type FormValues = z.infer<typeof formSchema>;
 
-export function CreateMenuForm({}: CreateMenuFormProps) {
+export function CreateMenuForm({ onMenuCreate }: CreateMenuFormProps) {
   const [isOpen, setIsOpen] = useState(false);
   const { toast } = useToast();
 
@@ -58,10 +59,10 @@ export function CreateMenuForm({}: CreateMenuFormProps) {
   };
 
   function onSubmit(values: FormValues) {
-    // onMenuCreate(values);
+    onMenuCreate(values);
     toast({
       title: 'Menú Creado',
-      description: `El menú para el ${values.date.toLocaleDateString()} ha sido creado.`,
+      description: `El borrador del menú para el ${values.date.toLocaleDateString()} ha sido creado. Ahora puedes añadirle platos.`,
     });
     handleOpenChange(false);
   }

@@ -2,23 +2,22 @@
 
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { Users, Calendar } from 'lucide-react';
+import { Users, Calendar, MoreVertical } from 'lucide-react';
 import {
   Card,
   CardContent,
   CardDescription,
+  CardFooter,
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
-import { Separator } from '@/components/ui/separator';
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { Button } from '@/components/ui/button';
 import type { Menu, MenuItemCategory } from '@/lib/types';
 import { MenuItemCard } from './menu-item-card';
 
@@ -36,36 +35,54 @@ const categoryOrder: MenuItemCategory[] = [
     'postre'
 ];
 
-
 export function MenuCard({ menu }: MenuCardProps) {
-
   const sortedItems = menu.items.sort((a, b) => categoryOrder.indexOf(a.category) - categoryOrder.indexOf(b.category));
 
   return (
-    <Card>
+    <Card className="flex flex-col">
       <CardHeader>
-        <div className="flex flex-col md:flex-row md:justify-between md:items-center">
-            <div>
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <Calendar className="w-4 h-4" />
-                    <CardTitle className="capitalize">
-                    Menú del {format(menu.date, 'EEEE, dd MMMM, yyyy', { locale: es })}
-                    </CardTitle>
-                </div>
-                <div className="flex items-center gap-2 mt-2">
-                    <Users className="w-4 h-4 text-muted-foreground" />
-                    <CardDescription>{menu.pax} Comensales (PAX)</CardDescription>
-                </div>
+        <div className="flex justify-between items-start">
+          <div>
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <Calendar className="w-4 h-4" />
+              <CardTitle className="capitalize text-lg">
+                Menú del {format(menu.date, 'EEEE, dd MMMM, yyyy', { locale: es })}
+              </CardTitle>
             </div>
+            <div className="flex items-center gap-2 mt-2">
+              <Users className="w-4 h-4 text-muted-foreground" />
+              <CardDescription>{menu.pax} Comensales (PAX)</CardDescription>
+            </div>
+          </div>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="icon">
+                <MoreVertical className="w-4 h-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem>Editar Menú</DropdownMenuItem>
+              <DropdownMenuItem>Duplicar Menú</DropdownMenuItem>
+              <DropdownMenuItem className="text-red-500">Eliminar</DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </CardHeader>
-      <CardContent>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {sortedItems.map(item => (
-                <MenuItemCard key={item.menuItemId} menuItem={item} pax={menu.pax} />
-            ))}
+      <CardContent className="flex-grow">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+          {sortedItems.map(item => (
+            <MenuItemCard key={item.menuItemId} menuItem={item} pax={menu.pax} />
+          ))}
+          {sortedItems.length === 0 && (
+            <div className="col-span-full flex items-center justify-center h-40 border-2 border-dashed rounded-md">
+                <p className="text-muted-foreground">Este menú aún no tiene platos asignados.</p>
+            </div>
+          )}
         </div>
       </CardContent>
+      <CardFooter>
+        <Button variant="outline">Ver Necesidades de Compra</Button>
+      </CardFooter>
     </Card>
   );
 }
