@@ -21,7 +21,7 @@ import {
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { users, attendanceRecords, dailyClosings, weeklyMenus } from '@/lib/placeholder-data';
+import { users, attendanceRecords } from '@/lib/placeholder-data';
 import type { AttendanceRecord, AttendanceStatus, DayOff } from '@/lib/types';
 import { cn } from '@/lib/utils';
 import { format, getDay, startOfWeek } from 'date-fns';
@@ -29,6 +29,7 @@ import { es } from 'date-fns/locale';
 import { ScannerCard } from '@/components/attendance/scanner-card';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
+import { useUserRole } from '@/hooks/use-user-role';
 
 const statusConfig: Record<AttendanceStatus, { label: string, className: string, icon: React.ElementType }> = {
     presente: { label: 'Presente', className: 'bg-green-100 text-green-800', icon: UserCheck },
@@ -51,6 +52,8 @@ const MOCK_DAYS_OFF: DayOff[] = [
 export default function AttendancePage() {
   const [records, setRecords] = useState<AttendanceRecord[]>(attendanceRecords);
   const [daysOff] = useState<DayOff[]>(MOCK_DAYS_OFF);
+  const { role } = useUserRole();
+  const isAdmin = role === 'admin' || role === 'superadmin';
 
   const getUser = (userId: string) => users.find((u) => u.userId === userId);
   const getUserInitials = (name: string) => name.split(' ').map((n) => n[0]).join('');
@@ -162,9 +165,11 @@ export default function AttendancePage() {
                     </CardContent>
                 </Card>
             </div>
-            <div>
-                <ScannerCard />
-            </div>
+            {isAdmin && (
+                <div>
+                    <ScannerCard />
+                </div>
+            )}
            </div>
         </main>
       </SidebarInset>
