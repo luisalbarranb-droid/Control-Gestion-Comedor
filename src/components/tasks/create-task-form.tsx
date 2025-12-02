@@ -35,14 +35,15 @@ import {
 import { DatePicker } from '@/components/ui/datepicker';
 import { useToast } from '@/hooks/use-toast';
 import { users, areas } from '@/lib/placeholder-data';
-import type { Task, TaskPriority, AreaId, Evidence, TaskPeriodicity } from '@/lib/types';
+import type { Task, TaskPriority, AreaId, TaskPeriodicity } from '@/lib/types';
 
 type CreateTaskFormProps = {
-  onTaskCreate: (task: Omit<Task, 'taskId' | 'creadoPor' | 'fechaCreacion' | 'estado' | 'checklist' | 'comentarios' | 'tags' | 'recurrente' | 'periodicidad'>) => void;
+  onTaskCreate: (task: Omit<Task, 'taskId' | 'creadoPor' | 'fechaCreacion' | 'estado' | 'checklist' | 'comentarios' | 'tags' | 'recurrente'>) => void;
 };
 
 export function CreateTaskForm({ onTaskCreate }: CreateTaskFormProps) {
   const priorities: TaskPriority[] = ['baja', 'media', 'alta', 'urgente'];
+  const periodicities: TaskPeriodicity[] = ['unica', 'diaria', 'semanal', 'quincenal', 'mensual'];
 
   const formSchema = z.object({
     titulo: z.string().min(3, 'El título debe tener al menos 3 caracteres.'),
@@ -50,6 +51,7 @@ export function CreateTaskForm({ onTaskCreate }: CreateTaskFormProps) {
     area: z.string({ required_error: 'Debes seleccionar un área.' }),
     asignadoA: z.string({ required_error: 'Debes asignar la tarea a un usuario.' }),
     prioridad: z.string({ required_error: 'Debes seleccionar una prioridad.' }),
+    periodicidad: z.string({ required_error: 'Debes seleccionar una periodicidad.' }),
     fechaVencimiento: z.date({ required_error: 'Debes seleccionar una fecha de vencimiento.' }),
     tiempoEstimado: z.coerce.number().int().positive('El tiempo debe ser un número positivo.').optional(),
   });
@@ -69,6 +71,7 @@ export function CreateTaskForm({ onTaskCreate }: CreateTaskFormProps) {
       asignadoA: undefined,
       prioridad: undefined,
       fechaVencimiento: undefined,
+      periodicidad: 'unica',
     },
   });
 
@@ -83,6 +86,7 @@ export function CreateTaskForm({ onTaskCreate }: CreateTaskFormProps) {
     const taskData = {
         ...values,
         prioridad: values.prioridad as TaskPriority,
+        periodicidad: values.periodicidad as TaskPeriodicity,
         area: values.area as AreaId,
         tiempoEstimado: values.tiempoEstimado || 0,
         descripcion: values.descripcion || '',
@@ -201,6 +205,28 @@ export function CreateTaskForm({ onTaskCreate }: CreateTaskFormProps) {
                       <SelectContent>
                         {priorities.map(p => (
                           <SelectItem key={p} value={p} className="capitalize">{p}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="periodicidad"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Periodicidad</FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Selecciona una periodicidad" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {periodicities.map(p => (
+                          <SelectItem key={p} value={p} className="capitalize">{p === 'unica' ? 'Única Vez' : p}</SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
