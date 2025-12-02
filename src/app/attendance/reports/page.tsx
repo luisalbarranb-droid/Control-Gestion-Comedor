@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import {
   Sidebar,
   SidebarContent,
@@ -10,7 +10,7 @@ import {
 } from '@/components/ui/sidebar';
 import { Header } from '@/components/dashboard/header';
 import { MainNav } from '@/components/dashboard/main-nav';
-import { SquareCheck, UserCheck, UserX, Clock, Download, Calendar as CalendarIcon, MoreHorizontal, Check, X, ShieldAlert } from 'lucide-react';
+import { SquareCheck, UserCheck, UserX, Clock, Download, Calendar as CalendarIcon, MoreHorizontal, Check, X, ShieldAlert, FileClock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -37,9 +37,9 @@ import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { attendanceRecords, users } from '@/lib/placeholder-data';
-import type { AttendanceRecord, AttendanceStatus, LeaveType } from '@/lib/types';
+import type { AttendanceRecord, AttendanceStatus, LeaveType, ConsolidatedRecord } from '@/lib/types';
 import { cn } from '@/lib/utils';
-import { format } from 'date-fns';
+import { format, differenceInHours } from 'date-fns';
 import { es } from 'date-fns/locale';
 import * as XLSX from 'xlsx';
 import { saveAs } from 'file-saver';
@@ -57,6 +57,7 @@ const statusConfig: Record<AttendanceStatus, { label: string, className: string,
     'justificado': { label: 'Justificado', className: 'bg-blue-100 text-blue-800', icon: ShieldAlert },
     'no-justificado': { label: 'No Justificado', className: 'bg-orange-100 text-orange-800', icon: UserX },
     'vacaciones': { label: 'Vacaciones', className: 'bg-purple-100 text-purple-800', icon: CalendarIcon },
+    'dia-libre': { label: 'Día Libre', className: 'bg-sky-100 text-sky-800', icon: CalendarIcon },
 };
 
 
@@ -82,6 +83,49 @@ export default function AttendanceReportsPage() {
         to.setHours(23,59,59,999);
         return recordDate >= from && recordDate <= to;
     });
+    
+    const consolidatedData = useMemo(() => {
+        const userStats: Record<string, ConsolidatedRecord> = users.reduce((acc, user) => {
+            acc[user.userId] = {
+                userId: user.userId,
+                userName: user.nombre,
+                attendedDays: 0,
+                absentDays: 0,
+                freeDays: 0,
+                justifiedRestDays: 0,
+                totalHours: 0,
+            };
+            return acc;
+        }, {} as Record<string, ConsolidatedRecord>);
+
+        filteredRecords.forEach(record => {
+            const userStat = userStats[record.userId];
+            if (!userStat) return;
+
+            switch (record.status) {
+                case 'presente':
+                case 'retardo':
+                    userStat.attendedDays += 1;
+                    if (record.checkIn && record.checkOut) {
+                        userStat.totalHours += differenceInHours(new Date(record.checkOut), new Date(record.checkIn));
+                    }
+                    break;
+                case 'ausente':
+                case 'no-justificado':
+                    userStat.absentDays += 1;
+                    break;
+                case 'justificado':
+                    userStat.justifiedRestDays += 1;
+                    break;
+                case 'dia-libre':
+                case 'vacaciones':
+                    userStat.freeDays += 1;
+                    break;
+            }
+        });
+
+        return Object.values(userStats);
+    }, [filteredRecords]);
 
     const absenceRecords = filteredRecords.filter(r => r.status === 'ausente' || r.status === 'justificado' || r.status === 'no-justificado' || r.status === 'vacaciones');
     const tardyRecords = filteredRecords.filter(r => r.status === 'retardo');
@@ -140,6 +184,17 @@ export default function AttendanceReportsPage() {
             dataToExport = tardyRecords.map(baseMapping);
             sheetName = 'Retardos';
             fileName = `Reporte_Retardos_${format(new Date(), 'yyyy-MM-dd')}.xlsx`;
+        } else if (activeTab === 'consolidated') {
+             dataToExport = consolidatedData.map(d => ({
+                'Empleado': d.userName,
+                'Días Asistidos': d.attendedDays,
+                'Días Ausente': d.absentDays,
+                'Días Libres': d.freeDays,
+                'Reposos Justificados': d.justifiedRestDays,
+                'Horas Trabajadas': d.totalHours,
+             }));
+            sheetName = 'Consolidado Quincenal';
+            fileName = `Reporte_Consolidado_Asistencia_${format(new Date(), 'yyyy-MM-dd')}.xlsx`;
         }
 
 
@@ -286,10 +341,11 @@ export default function AttendanceReportsPage() {
                     </div>
 
                     <Tabs value={activeTab} onValueChange={setActiveTab}>
-                        <TabsList className="grid w-full grid-cols-3">
+                        <TabsList className="grid w-full grid-cols-4">
                             <TabsTrigger value="general">Historial General</TabsTrigger>
                             <TabsTrigger value="absences">Reporte de Ausencias</TabsTrigger>
                             <TabsTrigger value="tardies">Reporte de Retardos</TabsTrigger>
+                            <TabsTrigger value="consolidated">Consolidado Quincenal</TabsTrigger>
                         </TabsList>
                         <TabsContent value="general">
                             <Card>
@@ -321,6 +377,48 @@ export default function AttendanceReportsPage() {
                                 </CardHeader>
                                 <CardContent>
                                     {renderTable(tardyRecords, 'tardies-table')}
+                                </CardContent>
+                            </Card>
+                        </TabsContent>
+                         <TabsContent value="consolidated">
+                            <Card>
+                                <CardHeader>
+                                    <CardTitle className="flex items-center gap-2"><FileClock />Reporte Consolidado Quincenal</CardTitle>
+                                    <CardDescription>Resumen de asistencia y horas trabajadas por empleado en el período seleccionado.</CardDescription>
+                                </CardHeader>
+                                <CardContent>
+                                    <Table>
+                                        <TableHeader>
+                                            <TableRow>
+                                                <TableHead>Empleado</TableHead>
+                                                <TableHead className="text-center">Días Asistidos</TableHead>
+                                                <TableHead className="text-center">Días Ausente</TableHead>
+                                                <TableHead className="text-center">Días Libres</TableHead>
+                                                <TableHead className="text-center">Reposos</TableHead>
+                                                <TableHead className="text-center">Total Horas</TableHead>
+                                            </TableRow>
+                                        </TableHeader>
+                                        <TableBody>
+                                            {consolidatedData.map(data => (
+                                                <TableRow key={data.userId}>
+                                                    <TableCell>
+                                                        <div className="flex items-center gap-3">
+                                                            <Avatar className="h-9 w-9">
+                                                                <AvatarImage src={getUser(data.userId)?.avatarUrl} alt={data.userName} />
+                                                                <AvatarFallback>{getUserInitials(data.userName)}</AvatarFallback>
+                                                            </Avatar>
+                                                            <div className="font-medium">{data.userName}</div>
+                                                        </div>
+                                                    </TableCell>
+                                                    <TableCell className="text-center font-mono">{data.attendedDays}</TableCell>
+                                                    <TableCell className="text-center font-mono">{data.absentDays}</TableCell>
+                                                    <TableCell className="text-center font-mono">{data.freeDays}</TableCell>
+                                                    <TableCell className="text-center font-mono">{data.justifiedRestDays}</TableCell>
+                                                    <TableCell className="text-center font-mono">{data.totalHours.toFixed(1)}</TableCell>
+                                                </TableRow>
+                                            ))}
+                                        </TableBody>
+                                    </Table>
                                 </CardContent>
                             </Card>
                         </TabsContent>

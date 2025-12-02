@@ -242,6 +242,16 @@ export interface AttendanceRecord {
     leaveType?: LeaveType;
 }
 
+export interface ConsolidatedRecord {
+  userId: string;
+  userName: string;
+  attendedDays: number;
+  absentDays: number;
+  freeDays: number;
+  justifiedRestDays: number;
+  totalHours: number;
+}
+
 export interface LeaveRecord {
     leaveId: string;
     userId: string;
