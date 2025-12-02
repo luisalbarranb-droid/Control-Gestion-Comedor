@@ -1,5 +1,6 @@
 'use client';
 
+import React from 'react';
 import { Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { format } from 'date-fns';
