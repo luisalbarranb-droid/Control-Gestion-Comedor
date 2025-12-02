@@ -75,7 +75,7 @@ function ReportContent() {
           No pudimos encontrar un menú planificado para la fecha seleccionada ({format(reportDate, 'PPP', { locale: es })}).
         </p>
          <Button asChild className="mt-4">
-            <Link href="/menus">Volver a Planificación</Link>
+            <Link href="/menus">Volver a Menús</Link>
         </Button>
       </div>
     );
@@ -158,7 +158,7 @@ function ReportContent() {
                 Exportar a Excel
             </Button>
             <Button asChild variant="outline">
-                <Link href="/menus">Volver a Planificación</Link>
+                <Link href="/menus">Volver a Menús</Link>
             </Button>
         </div>
       </div>

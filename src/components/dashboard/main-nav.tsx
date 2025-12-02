@@ -58,7 +58,7 @@ export function MainNav() {
         <Link href="/menus">
           <SidebarMenuButton isActive={pathname.startsWith('/menus')}>
             <BookOpen />
-            <span>Planificación</span>
+            <span>Menús</span>
           </SidebarMenuButton>
         </Link>
       </SidebarMenuItem>
