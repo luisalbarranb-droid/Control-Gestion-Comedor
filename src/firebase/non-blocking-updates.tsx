@@ -16,13 +16,14 @@ import {FirestorePermissionError} from '@/firebase/errors';
  * Initiates a setDoc operation for a document reference.
  * Does NOT await the write operation internally.
  */
-export function setDocumentNonBlocking(docRef: DocumentReference, data: any, options: SetOptions) {
-  setDoc(docRef, data, options).catch(error => {
+export function setDocumentNonBlocking(docRef: DocumentReference, data: any, options?: SetOptions) {
+  const setWithOptions = options ? setDoc(docRef, data, options) : setDoc(docRef, data);
+  setWithOptions.catch(error => {
     errorEmitter.emit(
       'permission-error',
       new FirestorePermissionError({
         path: docRef.path,
-        operation: options.merge ? 'update' : 'create',
+        operation: options?.merge ? 'update' : 'create',
         requestResourceData: data,
       })
     )
