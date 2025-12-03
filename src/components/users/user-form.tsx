@@ -37,19 +37,19 @@ import type { User, Role, AreaId, WorkerType, ContractType } from '@/lib/types';
 import { Textarea } from '../ui/textarea';
 
 const formSchema = z.object({
-  nombre: z.string().min(2, "El nombre es obligatorio."),
+  name: z.string().min(2, "El nombre es obligatorio."),
   email: z.string().email("Debe ser un email válido."),
   password: z.string().optional(),
   cedula: z.string().optional(),
-  telefono: z.string().optional(),
-  direccion: z.string().optional(),
-  rol: z.string({ required_error: 'El rol es obligatorio.'}),
+  phone: z.string().optional(),
+  address: z.string().optional(),
+  role: z.string({ required_error: 'El rol es obligatorio.'}),
   area: z.string({ required_error: 'El área es obligatoria.' }),
-  tipoTrabajador: z.string().optional(),
-  tipoContrato: z.string().optional(),
-  activo: z.boolean(),
-  fechaCreacion: z.date({ required_error: 'La fecha de ingreso es obligatoria.' }),
-  fechaCulminacionContrato: z.date().optional(),
+  workerType: z.string().optional(),
+  contractType: z.string().optional(),
+  isActive: z.boolean(),
+  creationDate: z.date({ required_error: 'La fecha de ingreso es obligatoria.' }),
+  contractEndDate: z.date().optional(),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -70,14 +70,14 @@ export function UserForm({ isOpen, onOpenChange, onSave, user }: UserFormProps) 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      nombre: '',
+      name: '',
       email: '',
       password: '',
       cedula: '',
-      telefono: '',
-      direccion: '',
-      activo: true,
-      fechaCreacion: new Date(),
+      phone: '',
+      address: '',
+      isActive: true,
+      creationDate: new Date(),
     },
   });
 
@@ -86,28 +86,25 @@ export function UserForm({ isOpen, onOpenChange, onSave, user }: UserFormProps) 
       if (user) {
         form.reset({
             ...user,
-            nombre: user.nombre,
-            rol: user.rol,
-            activo: user.activo,
             password: '', // Password should not be shown when editing
-            fechaCreacion: user.fechaCreacion?.toDate ? user.fechaCreacion.toDate() : new Date(user.fechaCreacion as any),
-            fechaCulminacionContrato: user.fechaCulminacionContrato?.toDate ? user.fechaCulminacionContrato.toDate() : user.fechaCulminacionContrato ? new Date(user.fechaCulminacionContrato as any) : undefined,
+            creationDate: user.creationDate?.toDate ? user.creationDate.toDate() : new Date(user.creationDate as any),
+            contractEndDate: user.contractEndDate?.toDate ? user.contractEndDate.toDate() : user.contractEndDate ? new Date(user.contractEndDate as any) : undefined,
         });
       } else {
         form.reset({
-          nombre: '',
+          name: '',
           email: '',
           password: '',
           cedula: '',
-          telefono: '',
-          direccion: '',
-          rol: undefined,
+          phone: '',
+          address: '',
+          role: undefined,
           area: undefined,
-          tipoTrabajador: undefined,
-          tipoContrato: undefined,
-          activo: true,
-          fechaCreacion: new Date(),
-          fechaCulminacionContrato: undefined
+          workerType: undefined,
+          contractType: undefined,
+          isActive: true,
+          creationDate: new Date(),
+          contractEndDate: undefined
         });
       }
     }
@@ -117,14 +114,11 @@ export function UserForm({ isOpen, onOpenChange, onSave, user }: UserFormProps) 
     const { password, ...userData } = values;
     const dataToSave = {
         ...userData,
-        rol: values.rol as Role,
+        role: values.role as Role,
         area: values.area as AreaId,
-        tipoTrabajador: values.tipoTrabajador as WorkerType | undefined,
-        tipoContrato: values.tipoContrato as ContractType | undefined,
-        // Ensure dates are correctly formatted for Firestore if needed,
-        // but for setDoc, Date objects are fine.
-        fechaCreacion: values.fechaCreacion,
-        ultimoAcceso: new Date(), // Set last access on save
+        workerType: values.workerType as WorkerType | undefined,
+        contractType: values.contractType as ContractType | undefined,
+        lastAccess: new Date(), // Set last access on save
     };
     onSave(dataToSave, password);
     onOpenChange(false);
@@ -144,7 +138,7 @@ export function UserForm({ isOpen, onOpenChange, onSave, user }: UserFormProps) 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <FormField
                 control={form.control}
-                name="nombre"
+                name="name"
                 render={({ field }) => (
                     <FormItem>
                     <FormLabel>Nombre Completo</FormLabel>
@@ -198,7 +192,7 @@ export function UserForm({ isOpen, onOpenChange, onSave, user }: UserFormProps) 
                 />
                 <FormField
                 control={form.control}
-                name="telefono"
+                name="phone"
                 render={({ field }) => (
                     <FormItem>
                     <FormLabel>Teléfono</FormLabel>
@@ -213,7 +207,7 @@ export function UserForm({ isOpen, onOpenChange, onSave, user }: UserFormProps) 
 
             <FormField
                 control={form.control}
-                name="direccion"
+                name="address"
                 render={({ field }) => (
                     <FormItem>
                     <FormLabel>Dirección</FormLabel>
@@ -228,7 +222,7 @@ export function UserForm({ isOpen, onOpenChange, onSave, user }: UserFormProps) 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                  <FormField
                     control={form.control}
-                    name="rol"
+                    name="role"
                     render={({ field }) => (
                     <FormItem>
                         <FormLabel>Rol</FormLabel>
@@ -264,7 +258,7 @@ export function UserForm({ isOpen, onOpenChange, onSave, user }: UserFormProps) 
                 />
                  <FormField
                     control={form.control}
-                    name="tipoTrabajador"
+                    name="workerType"
                     render={({ field }) => (
                     <FormItem>
                         <FormLabel>Tipo de Trabajador</FormLabel>
@@ -282,7 +276,7 @@ export function UserForm({ isOpen, onOpenChange, onSave, user }: UserFormProps) 
                 />
                  <FormField
                     control={form.control}
-                    name="tipoContrato"
+                    name="contractType"
                     render={({ field }) => (
                     <FormItem>
                         <FormLabel>Tipo de Contrato</FormLabel>
@@ -300,7 +294,7 @@ export function UserForm({ isOpen, onOpenChange, onSave, user }: UserFormProps) 
                 />
                  <FormField
                     control={form.control}
-                    name="fechaCreacion"
+                    name="creationDate"
                     render={({ field }) => (
                     <FormItem className="flex flex-col">
                         <FormLabel>Fecha de Ingreso</FormLabel>
@@ -311,7 +305,7 @@ export function UserForm({ isOpen, onOpenChange, onSave, user }: UserFormProps) 
                 />
                  <FormField
                     control={form.control}
-                    name="fechaCulminacionContrato"
+                    name="contractEndDate"
                     render={({ field }) => (
                     <FormItem className="flex flex-col">
                         <FormLabel>Fin de Contrato (Opcional)</FormLabel>
@@ -324,7 +318,7 @@ export function UserForm({ isOpen, onOpenChange, onSave, user }: UserFormProps) 
             </div>
              <FormField
                 control={form.control}
-                name="activo"
+                name="isActive"
                 render={({ field }) => (
                     <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm">
                     <div className="space-y-0.5">

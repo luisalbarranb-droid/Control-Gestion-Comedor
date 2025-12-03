@@ -37,7 +37,7 @@ export function UserNav() {
 
   const { data: currentUser, isLoading: isProfileLoading } = useDoc<User>(userDocRef);
   const isLoading = isAuthLoading || isProfileLoading;
-  const rol = currentUser?.rol;
+  const role = currentUser?.role;
 
   const handleSignOut = async () => {
     if (auth) {
@@ -63,7 +63,7 @@ export function UserNav() {
     )
   }
 
-  const userInitials = currentUser.nombre
+  const userInitials = currentUser.name
     .split(' ')
     .map((n) => n[0])
     .join('');
@@ -73,7 +73,7 @@ export function UserNav() {
       <DropdownMenuTrigger asChild>
         <Button variant="ghost" className="relative h-8 w-8 rounded-full">
           <Avatar className="h-9 w-9">
-            <AvatarImage src={currentUser.avatarUrl} alt={`@${currentUser.nombre}`} />
+            <AvatarImage src={currentUser.avatarUrl} alt={`@${currentUser.name}`} />
             <AvatarFallback>{userInitials}</AvatarFallback>
           </Avatar>
         </Button>
@@ -81,7 +81,7 @@ export function UserNav() {
       <DropdownMenuContent className="w-56" align="end" forceMount>
         <DropdownMenuLabel className="font-normal">
           <div className="flex flex-col space-y-1">
-            <p className="text-sm font-medium leading-none">{currentUser.nombre}</p>
+            <p className="text-sm font-medium leading-none">{currentUser.name}</p>
             <p className="text-xs leading-none text-muted-foreground">
               {currentUser.email}
             </p>
@@ -92,7 +92,7 @@ export function UserNav() {
           <DropdownMenuItem asChild>
             <Link href={`/users/${currentUser.id}`}>Perfil</Link>
           </DropdownMenuItem>
-          {rol === 'superadmin' && (
+          {role === 'superadmin' && (
             <DropdownMenuItem>Facturación</DropdownMenuItem>
           )}
           <DropdownMenuItem asChild>
