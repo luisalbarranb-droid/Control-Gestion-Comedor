@@ -93,7 +93,7 @@ export function ProfileCard() {
     updateDocumentNonBlocking(userRef, dataToUpdate);
 
     if (data.newPassword) {
-        // En una aplicación real, esto debería activar una función de Firebase Auth para reautenticar y actualizar la contraseña.
+        // In a real app, this should trigger a Firebase Auth function to reauthenticate and update the password.
         console.log('Password change requested. (Not implemented in prototype)');
         toast({
           title: 'Cambio de Contraseña',
