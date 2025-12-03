@@ -24,7 +24,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2 } from 'lucide-react';
-import { useUser, useDoc, useFirestore, useMemoFirebase, setDocumentNonBlocking } from '@/firebase';
+import { useUser, useDoc, useFirestore, useMemoFirebase, updateDocumentNonBlocking } from '@/firebase';
 import { doc } from 'firebase/firestore';
 import type { User } from '@/lib/types';
 
@@ -93,7 +93,7 @@ export function ProfileCard() {
     };
     
     const userRef = doc(firestore, 'users', user.id);
-    setDocumentNonBlocking(userRef, dataToUpdate, { merge: true });
+    updateDocumentNonBlocking(userRef, dataToUpdate);
 
     if (data.newPassword) {
         // En una aplicación real, esto debería activar una función de Firebase Auth para reautenticar y actualizar la contraseña.

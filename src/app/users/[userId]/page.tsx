@@ -37,7 +37,7 @@ const statusVariant: Record<boolean, string> = {
   false: 'bg-red-100 text-red-800',
 };
 
-const contractTypeVariant: Record<ContractType, string> = {
+const contractTypeVariant: Record<string, string> = {
     determinado: 'bg-blue-100 text-blue-800',
     indeterminado: 'bg-green-100 text-green-800',
     prueba: 'bg-yellow-100 text-yellow-800',
@@ -63,7 +63,7 @@ export default function UserProfilePage() {
     () => (firestore && userId ? doc(firestore, 'users', userId) : null),
     [firestore, userId]
   );
-  const { data: user, isLoading: isProfileLoading } = useDoc<UserType>(userDocRef, {
+  const { data: user, isLoading: isProfileLoading } } from useDoc<UserType>(userDocRef, {
       disabled: !userId || !authUser
   });
   

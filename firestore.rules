@@ -54,14 +54,14 @@ service cloud.firestore {
     match /tasks/{taskId} {
       // Any authenticated user can list tasks (queries will filter them)
       // Any participant (creator, assignee) or admin can get a specific task
-      allow get: if isSignedIn() && (get(/databases/$(database)/documents/tasks/$(taskId)).data.assignedTo == request.auth.uid || get(/databases/$(database)/documents/tasks/$(taskId)).data.createdBy == request.auth.uid || isAdminOrHigher());
+      allow get: if isSignedIn() && (get(/databases/$(database)/documents/tasks/$(taskId)).data.asignadoA == request.auth.uid || get(/databases/$(database)/documents/tasks/$(taskId)).data.creadoPor == request.auth.uid || isAdminOrHigher());
       allow list: if isSignedIn();
       // Anyone can create a task, but they must be the creator
-      allow create: if isSignedIn() && isCreator('createdBy');
+      allow create: if isSignedIn() && isCreator('creadoPor');
       // Only participants or admins can update, and creator is immutable
-      allow update: if isSignedIn() && (resource.data.assignedTo == request.auth.uid || resource.data.createdBy == request.auth.uid || isAdminOrHigher()) && request.resource.data.createdBy == resource.data.createdBy;
+      allow update: if isSignedIn() && (resource.data.asignadoA == request.auth.uid || resource.data.creadoPor == request.auth.uid || isAdminOrHigher()) && request.resource.data.creadoPor == resource.data.creadoPor;
       // Only creator or admin can delete
-      allow delete: if isSignedIn() && (resource.data.createdBy == request.auth.uid || isAdminOrHigher());
+      allow delete: if isSignedIn() && (resource.data.creadoPor == request.auth.uid || isAdminOrHigher());
     }
     
     match /inventory/{itemId} {
@@ -85,7 +85,7 @@ service cloud.firestore {
 
     function isTaskParticipant(taskId) {
       let taskData = get(/databases/$(database)/documents/tasks/$(taskId)).data;
-      return isOwner(taskData.assignedTo) || isOwner(taskData.createdBy) || isAdminOrHigher();
+      return isOwner(taskData.asignadoA) || isOwner(taskData.creadoPor) || isAdminOrHigher();
     }
 
     match /evidences/{evidenceId} {
