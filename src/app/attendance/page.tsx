@@ -22,15 +22,15 @@ import { es } from 'date-fns/locale';
 
 export default function AttendancePage() {
   const { user: currentUser, role, isLoading: isCurrentUserLoading } = useCurrentUser();
-  const isAdmin = role === 'admin' || role === 'superadmin';
+  const isAdmin = !!(currentUser && (currentUser.rol === 'admin' || currentUser.rol === 'superadmin'));
   const firestore = useFirestore();
 
   // --- Fetch users (Only for admins) ---
   const usersCollectionRef = useMemoFirebase(
-    () => (firestore && isAdmin && currentUser ? collection(firestore, 'users') : null),
-    [firestore, isAdmin, currentUser]
+    () => (firestore && isAdmin ? collection(firestore, 'users') : null),
+    [firestore, isAdmin]
   );
-  const { data: users, isLoading: isLoadingUsers } = useCollection(usersCollectionRef);
+  const { data: usersData, isLoading: isLoadingUsers } = useCollection(usersCollectionRef);
 
   // --- Fetch today's attendance records ---
   const attendanceQuery = useMemoFirebase(() => {
@@ -54,10 +54,10 @@ export default function AttendancePage() {
   const { data: daysOff, isLoading: isLoadingDaysOff } = useCollection(daysOffQuery);
 
   // Correctly determine the loading state
-  const isLoading = isCurrentUserLoading || (!currentUser) || isLoadingAttendance || isLoadingDaysOff || (isAdmin && isLoadingUsers);
+  const isLoading = isCurrentUserLoading || isLoadingAttendance || isLoadingDaysOff || (isAdmin && isLoadingUsers);
 
   // Determine which users to display. Wait until loading is complete.
-  const displayedUsers = isLoading ? [] : (isAdmin ? users : (currentUser ? [currentUser] : []));
+  const displayedUsers = isCurrentUserLoading ? [] : (isAdmin ? usersData : (currentUser ? [currentUser] : []));
 
   return (
     <div className="min-h-screen w-full">
