@@ -59,7 +59,7 @@ export default function InventoryReportsPage() {
     .sort(([, a], [, b]) => b - a)
     .slice(0, 10)
     .map(([itemId, quantity]) => {
-      const item = items.find(i => i.itemId === itemId);
+      const item = items.find(i => i.id === itemId);
       return {
         name: item?.nombre || 'Desconocido',
         quantity,
@@ -70,7 +70,7 @@ export default function InventoryReportsPage() {
 
   const handleExport = () => {
     const reportData: InventoryReportData[] = items.map(item => ({
-      'ID de Artículo': item.itemId,
+      'ID de Artículo': item.id,
       'Nombre': item.nombre,
       'Categoría': getCategoryName(item.categoriaId),
       'Cantidad Actual': item.cantidad,
@@ -79,7 +79,7 @@ export default function InventoryReportsPage() {
       'Costo Unitario': item.costoUnitario || 0,
       'Valor Total': item.cantidad * (item.costoUnitario || 0),
       'Estado': item.cantidad <= item.stockMinimo ? 'Bajo Stock' : 'OK',
-      'Última Actualización': format(new Date(item.ultimaActualizacion), 'yyyy-MM-dd HH:mm'),
+      'Última Actualización': format(new Date(item.ultimaActualizacion as any), 'yyyy-MM-dd HH:mm'),
     }));
 
     const worksheet = XLSX.utils.json_to_sheet(reportData);
@@ -175,7 +175,7 @@ export default function InventoryReportsPage() {
                             const isLowStock = item.cantidad <= item.stockMinimo;
                             const itemValue = item.cantidad * (item.costoUnitario || 0);
                             return (
-                            <TableRow key={item.itemId}>
+                            <TableRow key={item.id}>
                                 <TableCell className="font-medium">{item.nombre}</TableCell>
                                 <TableCell>
                                 <Badge variant="outline">{getCategoryName(item.categoriaId)}</Badge>

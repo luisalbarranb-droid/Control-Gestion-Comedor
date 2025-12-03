@@ -61,13 +61,11 @@ export function ProfileCard() {
 
   const form = useForm<ProfileFormValues>({
     resolver: zodResolver(profileSchema),
-    // The form values are now derived directly from the `user` object
-    // or set to empty strings if the user is not yet loaded.
-    values: {
-      name: user?.name || '',
-      email: user?.email || '',
-      currentPassword: '',
-      newPassword: '',
+    defaultValues: {
+        name: '',
+        email: '',
+        currentPassword: '',
+        newPassword: '',
     },
   });
   
@@ -79,14 +77,16 @@ export function ProfileCard() {
       form.reset({
         name: user.name,
         email: user.email,
+        currentPassword: '',
+        newPassword: '',
       });
     }
   }, [user, form]);
   
   const onSubmit = async (data: ProfileFormValues) => {
-    if (!user) return;
+    if (!user || !firestore) return;
     
-    const dataToUpdate = {
+    const dataToUpdate: Partial<User> = {
         name: data.name,
         lastAccess: serverTimestamp()
     };

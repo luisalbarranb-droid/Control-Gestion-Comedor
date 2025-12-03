@@ -1,4 +1,3 @@
-
 import type { User, Area, Task, AreaId, Role, InventoryItem, InventoryCategory, InventoryTransaction, InventoryOrder, InventoryOrderItem, Menu, MenuItem, Ingredient, DailyClosing, AttendanceRecord, WorkerType, ContractType } from './types';
 import { addDays, startOfWeek, set, subDays } from 'date-fns';
 
@@ -18,106 +17,106 @@ export const users: User[] = [
     id: 'user-superadmin-1',
     userId: 'user-superadmin-1',
     email: 'arvecladu@gmail.com',
-    nombre: 'Super Admin',
+    name: 'Super Admin',
     cedula: 'V-12345678',
-    telefono: '0412-1234567',
-    direccion: 'Av. Principal, Edificio Central, Piso 10',
-    rol: 'superadmin',
+    phone: '0412-1234567',
+    address: 'Av. Principal, Edificio Central, Piso 10',
+    role: 'superadmin',
     area: 'administracion',
-    activo: true,
-    fechaCreacion: new Date('2023-01-01T12:00:00Z'),
-    creadoPor: 'system',
-    ultimoAcceso: new Date('2024-05-30T10:00:00Z'),
+    isActive: true,
+    creationDate: new Date('2023-01-01T12:00:00Z'),
+    createdBy: 'system',
+    lastAccess: new Date('2024-05-30T10:00:00Z'),
     avatarUrl: 'https://i.pravatar.cc/150?u=superadmin',
-    tipoTrabajador: 'empleado',
-    tipoContrato: 'indeterminado',
+    workerType: 'empleado',
+    contractType: 'indeterminado',
   },
   {
     id: 'user-admin-1',
     userId: 'user-admin-1',
     email: 'erika.esquivel0603@gmail.com',
-    nombre: 'Erika Esquivel',
+    name: 'Erika Esquivel',
     cedula: 'V-87654321',
-    telefono: '0414-9876543',
-    rol: 'admin',
+    phone: '0414-9876543',
+    role: 'admin',
     area: 'cocina',
-    activo: true,
-    fechaCreacion: new Date('2023-02-15T12:00:00Z'),
-    fechaCulminacionContrato: new Date('2025-02-15T12:00:00Z'),
-    creadoPor: 'user-superadmin-1',
-    ultimoAcceso: new Date('2024-05-30T11:00:00Z'),
+    isActive: true,
+    creationDate: new Date('2023-02-15T12:00:00Z'),
+    contractEndDate: new Date('2025-02-15T12:00:00Z'),
+    createdBy: 'user-superadmin-1',
+    lastAccess: new Date('2024-05-30T11:00:00Z'),
     avatarUrl: 'https://i.pravatar.cc/150?u=erika',
-    tipoTrabajador: 'empleado',
-    tipoContrato: 'determinado',
+    workerType: 'empleado',
+    contractType: 'determinado',
   },
   {
     id: 'user-admin-2',
     userId: 'user-admin-2',
     email: 'admin2@comedor.com',
-    nombre: 'Luis Pérez',
+    name: 'Luis Pérez',
     cedula: 'V-11223344',
-    telefono: '0424-1122334',
-    rol: 'admin',
+    phone: '0424-1122334',
+    role: 'admin',
     area: 'limpieza',
-    activo: true,
-    fechaCreacion: new Date('2023-03-20T12:00:00Z'),
-    creadoPor: 'user-superadmin-1',
-    ultimoAcceso: new Date('2024-05-29T09:00:00Z'),
+    isActive: true,
+    creationDate: new Date('2023-03-20T12:00:00Z'),
+    createdBy: 'user-superadmin-1',
+    lastAccess: new Date('2024-05-29T09:00:00Z'),
     avatarUrl: 'https://i.pravatar.cc/150?u=admin2',
-    tipoTrabajador: 'empleado',
-    tipoContrato: 'indeterminado',
+    workerType: 'empleado',
+    contractType: 'indeterminado',
   },
   {
     id: 'user-comun-1',
     userId: 'user-comun-1',
     email: 'carlos@comedor.com',
-    nombre: 'Carlos Ruiz',
+    name: 'Carlos Ruiz',
     cedula: 'V-22334455',
-    telefono: '0416-2233445',
-    rol: 'comun',
+    phone: '0416-2233445',
+    role: 'comun',
     area: 'cocina',
-    activo: true,
-    fechaCreacion: new Date('2023-04-10T12:00:00Z'),
-    creadoPor: 'user-admin-1',
-    ultimoAcceso: new Date('2024-05-30T08:30:00Z'),
+    isActive: true,
+    creationDate: new Date('2023-04-10T12:00:00Z'),
+    createdBy: 'user-admin-1',
+    lastAccess: new Date('2024-05-30T08:30:00Z'),
     avatarUrl: 'https://i.pravatar.cc/150?u=carlos',
-    tipoTrabajador: 'obrero',
-    tipoContrato: 'indeterminado',
+    workerType: 'obrero',
+    contractType: 'indeterminado',
   },
   {
     id: 'user-comun-2',
     userId: 'user-comun-2',
     email: 'maria@comedor.com',
-    nombre: 'María Fernández',
+    name: 'María Fernández',
     cedula: 'V-33445566',
-    telefono: '0412-3344556',
-    rol: 'comun',
+    phone: '0412-3344556',
+    role: 'comun',
     area: 'servicio',
-    activo: true,
-    fechaCreacion: new Date('2023-04-11T12:00:00Z'),
-    creadoPor: 'user-admin-1',
-    ultimoAcceso: new Date('2024-05-30T14:00:00Z'),
+    isActive: true,
+    creationDate: new Date('2023-04-11T12:00:00Z'),
+    createdBy: 'user-admin-1',
+    lastAccess: new Date('2024-05-30T14:00:00Z'),
     avatarUrl: 'https://i.pravatar.cc/150?u=maria',
-    tipoTrabajador: 'obrero',
-    tipoContrato: 'indeterminado',
+    workerType: 'obrero',
+    contractType: 'indeterminado',
   },
   {
     id: 'user-comun-3',
     userId: 'user-comun-3',
     email: 'jose@comedor.com',
-    nombre: 'José Martínez',
+    name: 'José Martínez',
     cedula: 'V-44556677',
-    telefono: '0414-4455667',
-    rol: 'comun',
+    phone: '0414-4455667',
+    role: 'comun',
     area: 'limpieza',
-    activo: true,
-    fechaCreacion: new Date('2024-05-01T12:00:00Z'),
-    fechaCulminacionContrato: new Date('2024-08-01T12:00:00Z'),
-    creadoPor: 'user-admin-2',
-    ultimoAcceso: new Date('2024-05-28T16:00:00Z'),
+    isActive: true,
+    creationDate: new Date('2024-05-01T12:00:00Z'),
+    contractEndDate: new Date('2024-08-01T12:00:00Z'),
+    createdBy: 'user-admin-2',
+    lastAccess: new Date('2024-05-28T16:00:00Z'),
     avatarUrl: 'https://i.pravatar.cc/150?u=jose',
-    tipoTrabajador: 'obrero',
-    tipoContrato: 'prueba',
+    workerType: 'obrero',
+    contractType: 'prueba',
   },
 ];
 
@@ -403,7 +402,7 @@ export const inventoryOrders: InventoryOrder[] = [
 
 const menuItems: MenuItem[] = [
     {
-        menuItemId: 'menu-item-1',
+        id: 'menu-item-1',
         name: 'Sopa de Lentejas',
         category: 'entrada',
         ingredients: [
@@ -412,7 +411,7 @@ const menuItems: MenuItem[] = [
         ],
     },
     {
-        menuItemId: 'menu-item-2',
+        id: 'menu-item-2',
         name: 'Pollo al Horno',
         category: 'proteico',
         ingredients: [
@@ -420,7 +419,7 @@ const menuItems: MenuItem[] = [
         ],
     },
     {
-        menuItemId: 'menu-item-3',
+        id: 'menu-item-3',
         name: 'Arroz Blanco',
         category: 'acompanante1',
         ingredients: [
@@ -428,7 +427,7 @@ const menuItems: MenuItem[] = [
         ],
     },
     {
-        menuItemId: 'menu-item-4',
+        id: 'menu-item-4',
         name: 'Ensalada Fresca',
         category: 'acompanante2',
         ingredients: [
@@ -436,13 +435,13 @@ const menuItems: MenuItem[] = [
         ],
     },
     {
-        menuItemId: 'menu-item-5',
+        id: 'menu-item-5',
         name: 'Plátano Maduro Frito',
         category: 'acompanante3',
         ingredients: [],
     },
     {
-        menuItemId: 'menu-item-6',
+        id: 'menu-item-6',
         name: 'Jugo de Manzana',
         category: 'bebida',
         ingredients: [
@@ -450,7 +449,7 @@ const menuItems: MenuItem[] = [
         ],
     },
     {
-        menuItemId: 'menu-item-7',
+        id: 'menu-item-7',
         name: 'Fruta Picada',
         category: 'postre',
         ingredients: [
@@ -460,13 +459,13 @@ const menuItems: MenuItem[] = [
 ];
 
 const carneAsadaItems: MenuItem[] = [
-    { menuItemId: 'ca-1', name: 'Consomé de Pollo', category: 'entrada', ingredients: [] },
-    { menuItemId: 'ca-2', name: 'Carne Asada', category: 'proteico', ingredients: [{ inventoryItemId: 'inv-7', quantity: 0.28, wasteFactor: 0.1 }] },
-    { menuItemId: 'ca-3', name: 'Arroz con Maíz', category: 'acompanante1', ingredients: [{ inventoryItemId: 'inv-2', quantity: 0.1, wasteFactor: 0 }] },
-    { menuItemId: 'ca-4', name: 'Ensalada Rusa', category: 'acompanante2', ingredients: [] },
-    { menuItemId: 'ca-5', name: 'Papas Fritas', category: 'acompanante3', ingredients: [] },
-    { menuItemId: 'ca-6', name: 'Jugo de Papelón con Limón', category: 'bebida', ingredients: [] },
-    { menuItemId: 'ca-7', name: 'Quesillo', category: 'postre', ingredients: [] },
+    { id: 'ca-1', name: 'Consomé de Pollo', category: 'entrada', ingredients: [] },
+    { id: 'ca-2', name: 'Carne Asada', category: 'proteico', ingredients: [{ inventoryItemId: 'inv-7', quantity: 0.28, wasteFactor: 0.1 }] },
+    { id: 'ca-3', name: 'Arroz con Maíz', category: 'acompanante1', ingredients: [{ inventoryItemId: 'inv-2', quantity: 0.1, wasteFactor: 0 }] },
+    { id: 'ca-4', name: 'Ensalada Rusa', category: 'acompanante2', ingredients: [] },
+    { id: 'ca-5', name: 'Papas Fritas', category: 'acompanante3', ingredients: [] },
+    { id: 'ca-6', name: 'Jugo de Papelón con Limón', category: 'bebida', ingredients: [] },
+    { id: 'ca-7', name: 'Quesillo', category: 'postre', ingredients: [] },
 ];
 
 
@@ -474,31 +473,31 @@ const startOfThisWeek = startOfWeek(new Date(), { weekStartsOn: 1 }); // Monday
 
 export const weeklyMenus: Menu[] = [
   {
-    menuId: 'menu-1',
+    id: 'menu-1',
     date: addDays(startOfThisWeek, 0), // Lunes
     pax: 150,
     items: menuItems,
   },
   {
-    menuId: 'menu-2',
+    id: 'menu-2',
     date: addDays(startOfThisWeek, 1), // Martes
     pax: 160,
     items: carneAsadaItems,
   },
     {
-    menuId: 'menu-3',
+    id: 'menu-3',
     date: addDays(startOfThisWeek, 2), // Miércoles
     pax: 140,
     items: menuItems,
   },
     {
-    menuId: 'menu-4',
+    id: 'menu-4',
     date: addDays(startOfThisWeek, 3), // Jueves
     pax: 155,
     items: carneAsadaItems,
   },
     {
-    menuId: 'menu-5',
+    id: 'menu-5',
     date: addDays(startOfThisWeek, 4), // Viernes
     pax: 170,
     items: menuItems,
@@ -507,7 +506,7 @@ export const weeklyMenus: Menu[] = [
 
 
 export const dailyMenu: Menu = {
-    menuId: 'menu-1',
+    id: 'menu-1',
     date: new Date(),
     pax: 150,
     items: menuItems,
@@ -518,7 +517,7 @@ export const dailyClosings: DailyClosing[] = [
   {
     closingId: 'closing-1',
     date: addDays(startOfThisWeek, 0),
-    plannedMenu: weeklyMenus.find(m => m.menuId === 'menu-1') || null,
+    plannedMenu: weeklyMenus.find(m => m.id === 'menu-1') || null,
     executedPax: 145,
     executedItems: [
       { name: 'Sopa de Lentejas', category: 'entrada' },
@@ -541,26 +540,26 @@ const threeDaysAgo = subDays(today, 3);
 
 export const attendanceRecords: AttendanceRecord[] = [
     // Today
-    { recordId: 'att-1', userId: 'user-admin-1', checkIn: set(today, { hours: 7, minutes: 58, seconds: 10 }), checkOut: set(today, { hours: 17, minutes: 5, seconds: 2 }), status: 'presente' },
-    { recordId: 'att-2', userId: 'user-comun-1', checkIn: set(today, { hours: 8, minutes: 12, seconds: 45 }), status: 'retardo' },
-    { recordId: 'att-3', userId: 'user-comun-2', checkIn: set(today, { hours: 8, minutes: 3, seconds: 11 }), checkOut: set(today, { hours: 17, minutes: 1, seconds: 15 }), status: 'presente' },
-    { recordId: 'att-4', userId: 'user-comun-3', status: 'ausente', checkIn: set(today, { hours: 0, minutes: 0, seconds: 0 }) }, // Ausente
+    { id: 'att-1', userId: 'user-admin-1', checkIn: set(today, { hours: 7, minutes: 58, seconds: 10 }), checkOut: set(today, { hours: 17, minutes: 5, seconds: 2 }), status: 'presente' },
+    { id: 'att-2', userId: 'user-comun-1', checkIn: set(today, { hours: 8, minutes: 12, seconds: 45 }), status: 'retardo' },
+    { id: 'att-3', userId: 'user-comun-2', checkIn: set(today, { hours: 8, minutes: 3, seconds: 11 }), checkOut: set(today, { hours: 17, minutes: 1, seconds: 15 }), status: 'presente' },
+    { id: 'att-4', userId: 'user-comun-3', status: 'ausente', checkIn: set(today, { hours: 0, minutes: 0, seconds: 0 }) }, // Ausente
     
     // Yesterday
-    { recordId: 'att-5', userId: 'user-admin-1', checkIn: set(yesterday, { hours: 7, minutes: 55, seconds: 10 }), checkOut: set(yesterday, { hours: 17, minutes: 2, seconds: 2 }), status: 'presente' },
-    { recordId: 'att-6', userId: 'user-admin-2', status: 'ausente', checkIn: set(yesterday, { hours: 0, minutes: 0, seconds: 0 }) },
-    { recordId: 'att-7', userId: 'user-comun-1', checkIn: set(yesterday, { hours: 8, minutes: 1, seconds: 45 }), checkOut: set(yesterday, { hours: 17, minutes: 10, seconds: 12 }), status: 'presente' },
-    { recordId: 'att-8', userId: 'user-comun-2', checkIn: set(yesterday, { hours: 8, minutes: 20, seconds: 11 }), checkOut: set(yesterday, { hours: 17, minutes: 3, seconds: 15 }), status: 'retardo' },
-    { recordId: 'att-9', userId: 'user-comun-3', checkIn: set(yesterday, { hours: 7, minutes: 59, seconds: 50 }), checkOut: set(yesterday, { hours: 17, minutes: 0, seconds: 1 }), status: 'presente' },
+    { id: 'att-5', userId: 'user-admin-1', checkIn: set(yesterday, { hours: 7, minutes: 55, seconds: 10 }), checkOut: set(yesterday, { hours: 17, minutes: 2, seconds: 2 }), status: 'presente' },
+    { id: 'att-6', userId: 'user-admin-2', status: 'ausente', checkIn: set(yesterday, { hours: 0, minutes: 0, seconds: 0 }) },
+    { id: 'att-7', userId: 'user-comun-1', checkIn: set(yesterday, { hours: 8, minutes: 1, seconds: 45 }), checkOut: set(yesterday, { hours: 17, minutes: 10, seconds: 12 }), status: 'presente' },
+    { id: 'att-8', userId: 'user-comun-2', checkIn: set(yesterday, { hours: 8, minutes: 20, seconds: 11 }), checkOut: set(yesterday, { hours: 17, minutes: 3, seconds: 15 }), status: 'retardo' },
+    { id: 'att-9', userId: 'user-comun-3', checkIn: set(yesterday, { hours: 7, minutes: 59, seconds: 50 }), checkOut: set(yesterday, { hours: 17, minutes: 0, seconds: 1 }), status: 'presente' },
     
     // Two days ago
-    { recordId: 'att-10', userId: 'user-admin-1', checkIn: set(twoDaysAgo, { hours: 8, minutes: 0, seconds: 10 }), checkOut: set(twoDaysAgo, { hours: 17, minutes: 1, seconds: 2 }), status: 'presente' },
-    { recordId: 'att-11', userId: 'user-admin-2', checkIn: set(twoDaysAgo, { hours: 8, minutes: 5, seconds: 10 }), checkOut: set(twoDaysAgo, { hours: 17, minutes: 8, seconds: 2 }), status: 'presente' },
-    { recordId: 'att-12', userId: 'user-comun-1', checkIn: set(twoDaysAgo, { hours: 8, minutes: 3, seconds: 45 }), checkOut: set(twoDaysAgo, { hours: 17, minutes: 0, seconds: 12 }), status: 'presente' },
-    { recordId: 'att-13', userId: 'user-comun-2', checkIn: set(twoDaysAgo, { hours: 8, minutes: 0, seconds: 11 }), checkOut: set(twoDaysAgo, { hours: 16, minutes: 55, seconds: 15 }), status: 'presente' },
-    { recordId: 'att-14', userId: 'user-comun-3', status: 'ausente', checkIn: set(twoDaysAgo, { hours: 0, minutes: 0, seconds: 0 }) },
+    { id: 'att-10', userId: 'user-admin-1', checkIn: set(twoDaysAgo, { hours: 8, minutes: 0, seconds: 10 }), checkOut: set(twoDaysAgo, { hours: 17, minutes: 1, seconds: 2 }), status: 'presente' },
+    { id: 'att-11', userId: 'user-admin-2', checkIn: set(twoDaysAgo, { hours: 8, minutes: 5, seconds: 10 }), checkOut: set(twoDaysAgo, { hours: 17, minutes: 8, seconds: 2 }), status: 'presente' },
+    { id: 'att-12', userId: 'user-comun-1', checkIn: set(twoDaysAgo, { hours: 8, minutes: 3, seconds: 45 }), checkOut: set(twoDaysAgo, { hours: 17, minutes: 0, seconds: 12 }), status: 'presente' },
+    { id: 'att-13', userId: 'user-comun-2', checkIn: set(twoDaysAgo, { hours: 8, minutes: 0, seconds: 11 }), checkOut: set(twoDaysAgo, { hours: 16, minutes: 55, seconds: 15 }), status: 'presente' },
+    { id: 'att-14', userId: 'user-comun-3', status: 'ausente', checkIn: set(twoDaysAgo, { hours: 0, minutes: 0, seconds: 0 }) },
 
     // Three days ago
-    { recordId: 'att-15', userId: 'user-admin-2', checkIn: set(threeDaysAgo, { hours: 8, minutes: 25, seconds: 10 }), checkOut: set(threeDaysAgo, { hours: 17, minutes: 8, seconds: 2 }), status: 'retardo' },
-    { recordId: 'att-16', userId: 'user-comun-1', status: 'ausente', checkIn: set(threeDaysAgo, { hours: 0, minutes: 0, seconds: 0 }) },
+    { id: 'att-15', userId: 'user-admin-2', checkIn: set(threeDaysAgo, { hours: 8, minutes: 25, seconds: 10 }), checkOut: set(threeDaysAgo, { hours: 17, minutes: 8, seconds: 2 }), status: 'retardo' },
+    { id: 'att-16', userId: 'user-comun-1', status: 'ausente', checkIn: set(threeDaysAgo, { hours: 0, minutes: 0, seconds: 0 }) },
 ];
