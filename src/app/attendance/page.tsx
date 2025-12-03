@@ -1,4 +1,3 @@
-
 'use client';
 
 import {
@@ -33,7 +32,7 @@ export default function AttendancePage() {
 
   // --- Fetch today's attendance records ---
   const attendanceQuery = useMemoFirebase(() => {
-    if (!firestore) return null;
+    if (!firestore || !currentUser) return null;
     const todayStart = startOfDay(new Date());
     const todayEnd = endOfDay(new Date());
     return query(
@@ -41,20 +40,28 @@ export default function AttendancePage() {
         where('checkIn', '>=', todayStart), 
         where('checkIn', '<=', todayEnd)
     );
-  }, [firestore]);
+  }, [firestore, currentUser]);
   const { data: todayRecords, isLoading: isLoadingAttendance } = useCollection(attendanceQuery);
 
   // --- Fetch this week's days off ---
-  const weekStartDateString = format(startOfWeek(new Date(), { weekStartsOn: 1 }), 'yyyy-MM-dd');
-  const daysOffQuery = useMemoFirebase(() => {
-      if (!firestore) return null;
-      return query(collection(firestore, 'daysOff'), where('weekStartDate', '==', weekStartDateString));
-  }, [firestore, weekStartDateString]);
+    const weekStartDateString = format(startOfWeek(new Date(), { weekStartsOn: 1 }), 'yyyy-MM-dd');
+    const daysOffQuery = useMemoFirebase(() => {
+        if (!firestore || !currentUser) return null;
+        return query(collection(firestore, 'daysOff'), where('weekStartDate', '==', weekStartDateString));
+    }, [firestore, currentUser, weekStartDateString]);
   const { data: daysOff, isLoading: isLoadingDaysOff } = useCollection(daysOffQuery);
 
   // The main loading state depends on the current user being loaded first.
   // Then, we wait for the other relevant data fetches to complete.
   const isLoading = isCurrentUserLoading || isLoadingAttendance || isLoadingDaysOff || (isAdmin && isLoadingUsers);
+
+  if (isCurrentUserLoading) {
+    return (
+      <div className="min-h-screen w-full flex items-center justify-center">
+          <p>Cargando datos de asistencia...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen w-full">

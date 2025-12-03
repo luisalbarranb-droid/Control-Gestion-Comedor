@@ -110,18 +110,20 @@ export default function AttendanceReportsPage() {
     const getUserInitials = (name: string) => name ? name.split(' ').map((n) => n[0]).join('') : '';
     
     const consolidatedData = useMemo(() => {
-        if (isLoadingUsers || isLoadingRecords || !users || !filteredRecords) return [];
+        if (!users || !filteredRecords) return [];
 
         const userStats: Record<string, ConsolidatedRecord> = users.reduce((acc, user) => {
-            acc[user.id] = {
-                userId: user.id,
-                userName: user.nombre,
-                attendedDays: 0,
-                absentDays: 0,
-                freeDays: 0,
-                justifiedRestDays: 0,
-                totalHours: 0,
-            };
+            if (user) {
+              acc[user.id] = {
+                  userId: user.id,
+                  userName: user.nombre,
+                  attendedDays: 0,
+                  absentDays: 0,
+                  freeDays: 0,
+                  justifiedRestDays: 0,
+                  totalHours: 0,
+              };
+            }
             return acc;
         }, {} as Record<string, ConsolidatedRecord>);
 
@@ -155,7 +157,7 @@ export default function AttendanceReportsPage() {
         });
 
         return Object.values(userStats);
-    }, [users, filteredRecords, isLoadingUsers, isLoadingRecords]);
+    }, [users, filteredRecords]);
 
     const absenceRecords = filteredRecords?.filter(r => r.status === 'ausente' || r.status === 'justificado' || r.status === 'no-justificado' || r.status === 'vacaciones') || [];
     const tardyRecords = filteredRecords?.filter(r => r.status === 'retardo') || [];
@@ -320,7 +322,7 @@ export default function AttendanceReportsPage() {
 
     const isLoading = isCurrentUserLoading || isLoadingRecords || (isAdmin && isLoadingUsers);
 
-    if (isLoading && !currentUser) { // Still waiting for auth
+    if (isCurrentUserLoading) { // Still waiting for auth
         return <div className="flex items-center justify-center h-screen">Cargando...</div>;
     }
 
