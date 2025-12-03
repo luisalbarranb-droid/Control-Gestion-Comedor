@@ -36,7 +36,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { users, areas } from '@/lib/placeholder-data';
+import { areas, users as mockUsers } from '@/lib/placeholder-data';
 import type { Task, TaskPriority, TaskStatus, AreaId } from '@/lib/types';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
@@ -69,27 +69,28 @@ export default function TasksPage() {
   const { user: currentUser } = useCurrentUser();
   
   const tasksCollectionRef = useMemoFirebase(
-    () => (firestore ? collection(firestore, 'tasks') : null),
-    [firestore]
+    () => (firestore && currentUser ? collection(firestore, 'tasks') : null),
+    [firestore, currentUser]
   );
   const { data: tasks, isLoading } = useCollection<Task>(tasksCollectionRef);
 
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   
-  // TODO: Fetch users and areas from Firestore instead of placeholder
-  const getUser = (userId: string) => users.find((u) => u.userId === userId);
+  // TODO: Fetch users from Firestore instead of placeholder
+  const { data: users } = useCollection<any>(useMemoFirebase(() => (firestore ? collection(firestore, 'users') : null), [firestore]));
   const getArea = (areaId: string) => areas.find((a) => a.id === areaId);
+  const getUser = (userId: string) => users?.find((u) => u.id === userId);
 
-  const handleTaskCreate = (newTaskData: Omit<Task, 'taskId' | 'creadoPor' | 'fechaCreacion' | 'estado' | 'checklist' | 'comentarios' | 'tags' | 'recurrente' | 'periodicidad' | 'evidencias'>) => {
+  const handleTaskCreate = (newTaskData: Omit<Task, 'id' | 'creadoPor' | 'fechaCreacion' | 'estado' | 'checklist' | 'comentarios' | 'tags' | 'recurrente' | 'evidencias'>) => {
     if (!firestore || !currentUser) return;
     
     const collectionRef = collection(firestore, 'tasks');
     const docRef = doc(collectionRef);
 
-    const fullyNewTask: Omit<Task, 'taskId'> = {
+    const fullyNewTask: Omit<Task, 'id'> = {
       ...newTaskData,
       id: docRef.id,
-      creadoPor: currentUser.userId,
+      creadoPor: currentUser.id,
       fechaCreacion: serverTimestamp(),
       estado: 'pendiente',
       periodicidad: 'unica',
@@ -130,7 +131,7 @@ export default function TasksPage() {
               <h1 className="font-headline text-2xl font-bold md:text-3xl">
                 Gestión de Tareas
               </h1>
-              <CreateTaskForm onTaskCreate={handleTaskCreate} />
+              <CreateTaskForm onTaskCreate={handleTaskCreate} users={users || []}/>
             </div>
 
             <Card>

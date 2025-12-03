@@ -34,14 +34,15 @@ import {
 } from '@/components/ui/select';
 import { DatePicker } from '@/components/ui/datepicker';
 import { useToast } from '@/hooks/use-toast';
-import { users, areas } from '@/lib/placeholder-data';
-import type { Task, TaskPriority, AreaId, TaskPeriodicity } from '@/lib/types';
+import { areas } from '@/lib/placeholder-data';
+import type { Task, TaskPriority, AreaId, TaskPeriodicity, User } from '@/lib/types';
 
 type CreateTaskFormProps = {
-  onTaskCreate: (task: Omit<Task, 'taskId' | 'creadoPor' | 'fechaCreacion' | 'estado' | 'checklist' | 'comentarios' | 'tags' | 'recurrente' | 'evidencias' | 'id'>) => void;
+  onTaskCreate: (task: Omit<Task, 'id' | 'creadoPor' | 'fechaCreacion' | 'estado' | 'checklist' | 'comentarios' | 'tags' | 'recurrente' | 'evidencias'>) => void;
+  users: User[];
 };
 
-export function CreateTaskForm({ onTaskCreate }: CreateTaskFormProps) {
+export function CreateTaskForm({ onTaskCreate, users }: CreateTaskFormProps) {
   const priorities: TaskPriority[] = ['baja', 'media', 'alta', 'urgente'];
   const periodicities: TaskPeriodicity[] = ['unica', 'diaria', 'semanal', 'quincenal', 'mensual'];
 
@@ -181,7 +182,7 @@ export function CreateTaskForm({ onTaskCreate }: CreateTaskFormProps) {
                       </FormControl>
                       <SelectContent>
                         {users.map(user => (
-                          <SelectItem key={user.userId} value={user.userId}>{user.nombre}</SelectItem>
+                          <SelectItem key={user.id} value={user.id}>{user.nombre}</SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
