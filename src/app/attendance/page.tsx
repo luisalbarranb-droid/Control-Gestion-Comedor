@@ -1,6 +1,7 @@
 
 'use client';
 
+import { format, startOfWeek } from 'date-fns';
 import {
   Sidebar,
   SidebarContent,
@@ -17,7 +18,6 @@ import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
 import { collection, query, where } from 'firebase/firestore';
 import { AttendanceTable } from '@/components/attendance/attendance-table';
 import { ScannerCard } from '@/components/attendance/scanner-card';
-import { format, startOfWeek } from 'date-fns';
 
 export const dynamic = 'force-dynamic';
 
@@ -28,8 +28,8 @@ export default function AttendancePage() {
 
   // --- Fetch today's attendance records ---
   const attendanceQuery = useMemoFirebase(() => {
-    // Wait until we know who the user is to build the query.
-    if (isCurrentUserLoading || !currentUser || !firestore) return null;
+    // Wait until we have a user to build the query.
+    if (!currentUser || !firestore) return null;
     const todayStart = new Date();
     todayStart.setHours(0, 0, 0, 0);
     const todayEnd = new Date();
@@ -39,22 +39,22 @@ export default function AttendancePage() {
         where('checkIn', '>=', todayStart), 
         where('checkIn', '<=', todayEnd)
     );
-  }, [firestore, currentUser, isCurrentUserLoading]);
+  }, [firestore, currentUser]);
   const { data: todayRecords, isLoading: isLoadingAttendance } = useCollection(attendanceQuery);
 
   // --- Fetch this week's days off ---
     const weekStartDateString = format(startOfWeek(new Date(), { weekStartsOn: 1 }), 'yyyy-MM-dd');
     const daysOffQuery = useMemoFirebase(() => {
-        // Wait until we know who the user is to build the query.
-        if (isCurrentUserLoading || !currentUser || !firestore) return null;
+        // Wait until we have a user to build the query.
+        if (!currentUser || !firestore) return null;
         return query(collection(firestore, 'daysOff'), where('weekStartDate', '==', weekStartDateString));
-    }, [firestore, currentUser, weekStartDateString, isCurrentUserLoading]);
+    }, [firestore, currentUser, weekStartDateString]);
   const { data: daysOff, isLoading: isLoadingDaysOff } = useCollection(daysOffQuery);
 
-  // The final loading state depends on the user auth and the queries.
+  // The final loading state depends on the user auth and the queries that depend on the user.
   const isLoading = isCurrentUserLoading || isLoadingAttendance || isLoadingDaysOff;
 
-  if (isLoading) {
+  if (isCurrentUserLoading) {
     return (
       <div className="min-h-screen w-full flex items-center justify-center">
           <p>Cargando datos de asistencia...</p>
