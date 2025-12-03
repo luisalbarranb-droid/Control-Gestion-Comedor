@@ -37,13 +37,11 @@ export function UserNav() {
 
   const { data: currentUser, isLoading: isProfileLoading } = useDoc<User>(userDocRef);
   const isLoading = isAuthLoading || isProfileLoading;
-  const role = currentUser?.role;
 
   const handleSignOut = async () => {
     if (auth) {
       await signOut(auth);
-      // Use window.location.href for a full page reload to ensure all state is cleared.
-      window.location.href = '/login';
+      router.push('/login');
     }
   };
   
@@ -92,7 +90,7 @@ export function UserNav() {
           <DropdownMenuItem asChild>
             <Link href={`/users/${currentUser.id}`}>Perfil</Link>
           </DropdownMenuItem>
-          {role === 'superadmin' && (
+          {currentUser.role === 'superadmin' && (
             <DropdownMenuItem>Facturación</DropdownMenuItem>
           )}
           <DropdownMenuItem asChild>

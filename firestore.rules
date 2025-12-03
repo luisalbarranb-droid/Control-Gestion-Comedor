@@ -1,7 +1,7 @@
 
 /**
  * @fileoverview Firebase Security Rules for a Task Management Application
- * @version 7
+ * @version 8
  *
  * @description
  * This ruleset enforces a role-based access control (RBAC) model combined with
@@ -10,7 +10,6 @@
  * and can manage tasks assigned to them or created by them.
  *
  * Core Philosophy:
- * The security model is built on three pillars:
  * 1. Verified Identity: All authenticated users have access, but what they can
  *    do is strictly controlled.
  * 2. Role-Based Access: 'admin' and 'superadmin' roles grant elevated privileges.
@@ -18,17 +17,6 @@
  *    access in sensitive areas like user management.
  * 3. User Ownership: Users have explicit control over the data they create, such
  *    as their own user profile, comments, and evidence uploads.
- *
- * Data Structure:
- * The Firestore database uses a flat, top-level collection structure to segregate
- * data domains:
- * - /users/{userId}: Private user profiles.
- * - /areas/{areaId}: Organizational areas.
- * - /tasks/{taskId}: Core task documents.
- * - /evidences/{evidenceId}: Evidence linked to tasks.
- * - /comments/{commentId}: Comments linked to tasks.
- * - /statistics/{period}: Aggregated data for administrative review.
- * - /configuration/{id}: Global application settings.
  *
  * Key Security Decisions:
  * - Admin Supremacy: Admins and Superadmins have wide-ranging read access.
@@ -39,11 +27,6 @@
  *   to admins/superadmins.
  * - Task Accessibility: Access to a task (and its related comments/evidence) is
  *   granted to the user it is assigned to, the user who created it, and admins.
- *
- * Denormalization for Authorization:
- * To ensure fast and secure rule evaluation, key authorization fields are
- * denormalized. For example, `tasks` documents contain `createdBy` and `assignedTo`
- * user IDs. This avoids costly and slow cross-collection `get()` calls in most rules.
  */
 rules_version = '2';
 service cloud.firestore {
@@ -154,7 +137,8 @@ service cloud.firestore {
     match /users/{userId} {
       allow get: if isSignedIn() && (isOwner(userId) || isAdminOrHigher());
       allow list: if isAdminOrHigher();
-      allow create, update, delete: if isSuperAdmin();
+      allow create: if isSuperAdmin();
+      allow update, delete: if isSuperAdmin();
     }
 
     // --------------------------------------------------------------------

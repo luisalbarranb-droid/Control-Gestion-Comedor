@@ -1,3 +1,4 @@
+
 'use client';
 
 import { usePathname } from 'next/navigation';
@@ -11,7 +12,8 @@ import {
   BookOpen,
   ClipboardCheck,
   QrCode,
-  FileSpreadsheet
+  FileSpreadsheet,
+  Loader2
 } from 'lucide-react';
 import {
   SidebarMenu,
@@ -58,10 +60,13 @@ export function MainNav() {
   ];
 
   const navItems = allNavItems.filter(item => {
-    if (item.visibleForRoles) {
-      return item.visibleForRoles.includes(currentUser?.role as any);
+    if (!item.visibleForRoles) {
+        return true; // Visible for all roles
     }
-    return true;
+    if (currentUser?.role && item.visibleForRoles.includes(currentUser.role)) {
+        return true;
+    }
+    return false;
   });
 
   if (isLoading) {

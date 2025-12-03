@@ -19,7 +19,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Loader2 } from 'lucide-react';
 import { useAuth, useFirestore, setDocumentNonBlocking } from '@/firebase';
 import { signInWithEmailAndPassword, createUserWithEmailAndPassword, User as FirebaseAuthUser } from 'firebase/auth';
-import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
 import type { User } from '@/lib/types';
 
 
@@ -39,7 +39,6 @@ export default function LoginPage() {
     if (!firestore) return;
     const userRef = doc(firestore, 'users', firebaseUser.uid);
     
-    // Create new user document with standardized English fields
     const newUser: Omit<User, 'lastAccess' | 'creationDate'> = {
       id: firebaseUser.uid,
       userId: firebaseUser.uid,
@@ -51,12 +50,10 @@ export default function LoginPage() {
       createdBy: 'system',
     };
 
-    // We use setDoc with merge:true to create or overwrite.
-    // This forcefully corrects any old/incorrect data structure.
     await setDoc(userRef, {
       ...newUser,
-      creationDate: new Date(),
-      lastAccess: new Date(),
+      creationDate: serverTimestamp(),
+      lastAccess: serverTimestamp(),
     }, { merge: true });
 
     console.log('Super Admin user document created or updated:', firebaseUser.uid);
@@ -78,7 +75,6 @@ export default function LoginPage() {
 
     try {
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
-      // After successful sign-in, always ensure the user data is correct.
       await upsertUserData(userCredential.user);
       
       toast({
@@ -89,7 +85,6 @@ export default function LoginPage() {
 
     } catch (error: any) {
       if (error.code === 'auth/user-not-found') {
-        // If user does not exist, create a new superadmin account
         try {
             const newUserCredential = await createUserWithEmailAndPassword(auth, email, password);
             await upsertUserData(newUserCredential.user);
@@ -132,7 +127,7 @@ export default function LoginPage() {
           <div className="grid gap-2 text-center">
             <h1 className="text-3xl font-bold font-headline">Comedor Control</h1>
             <p className="text-balance text-muted-foreground">
-              Ingrese su correo electrónico para iniciar sesión
+              Ingrese su correo para iniciar sesión
             </p>
           </div>
           <form onSubmit={handleLogin}>

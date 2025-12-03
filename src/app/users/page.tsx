@@ -128,6 +128,7 @@ export default function UsersPage() {
             toast({ variant: 'destructive', title: 'Error al crear usuario', description });
         }
     }
+    setFormOpen(false);
   };
 
   const getAreaName = (areaId: string) => areas.find((a) => a.id === areaId)?.nombre || 'N/A';
