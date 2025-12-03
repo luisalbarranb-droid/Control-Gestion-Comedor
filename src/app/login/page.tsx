@@ -28,7 +28,7 @@ export default function LoginPage() {
   const { toast } = useToast();
   const auth = useAuth();
   const [email, setEmail] = useState('arvecladu@gmail.com');
-  const [password, setPassword] = useState('password');
+  const [password, setPassword] = useState('12345678');
   const [isLoading, setIsLoading] = useState(false);
 
   const handleLogin = async (e: React.FormEvent) => {
