@@ -16,9 +16,10 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import type { MenuItem } from '@/lib/types';
-import { inventoryItems } from '@/lib/placeholder-data';
+import type { MenuItem, InventoryItem as TInventoryItem } from '@/lib/types';
 import { cn } from '@/lib/utils';
+import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
+import { collection } from 'firebase/firestore';
 
 interface MenuItemCardProps {
   menuItem: MenuItem;
@@ -36,8 +37,14 @@ const categoryDisplay: Record<string, { label: string; className: string }> = {
 }
 
 export function MenuItemCard({ menuItem, pax }: MenuItemCardProps) {
+  const firestore = useFirestore();
+  const inventoryCollectionRef = useMemoFirebase(
+    () => (firestore ? collection(firestore, 'inventory') : null),
+    [firestore]
+  );
+  const { data: inventoryItems, isLoading } = useCollection<TInventoryItem>(inventoryCollectionRef);
 
-  const getInventoryItem = (id: string) => inventoryItems.find(i => i.itemId === id);
+  const getInventoryItem = (id: string) => inventoryItems?.find(i => i.id === id);
   const { label, className } = categoryDisplay[menuItem.category];
 
   return (
@@ -58,9 +65,17 @@ export function MenuItemCard({ menuItem, pax }: MenuItemCardProps) {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {menuItem.ingredients.map((ingredient, index) => {
+            {isLoading && <TableRow><TableCell colSpan={2} className="text-center">Cargando ingredientes...</TableCell></TableRow>}
+            {!isLoading && menuItem.ingredients.map((ingredient, index) => {
               const itemInfo = getInventoryItem(ingredient.inventoryItemId);
-              if (!itemInfo) return null;
+              if (!itemInfo) return (
+                 <TableRow key={index}>
+                    <TableCell className="font-medium text-red-500">Ingrediente no encontrado</TableCell>
+                    <TableCell className="text-right font-mono">
+                      -
+                    </TableCell>
+                  </TableRow>
+              );
               
               // Cantidad neta requerida por persona
               const netQuantityPerPax = ingredient.quantity;
@@ -78,7 +93,7 @@ export function MenuItemCard({ menuItem, pax }: MenuItemCardProps) {
                 </TableRow>
               );
             })}
-             {menuItem.ingredients.length === 0 && (
+             {!isLoading && menuItem.ingredients.length === 0 && (
                 <TableRow>
                     <TableCell colSpan={2} className="text-center text-muted-foreground">
                         Sin ingredientes definidos.
@@ -91,3 +106,5 @@ export function MenuItemCard({ menuItem, pax }: MenuItemCardProps) {
     </Card>
   );
 }
+
+    

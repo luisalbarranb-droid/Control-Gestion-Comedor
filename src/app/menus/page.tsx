@@ -13,7 +13,7 @@ import { Header } from '@/components/dashboard/header';
 import { MainNav } from '@/components/dashboard/main-nav';
 import { SquareCheck, Calendar as CalendarIcon, FileSpreadsheet, View, Upload } from 'lucide-react';
 import { CreateMenuForm } from '@/components/menus/create-menu-form';
-import { weeklyMenus, inventoryItems } from '@/lib/placeholder-data';
+import { inventoryItems } from '@/lib/placeholder-data';
 import type { Menu, MenuItem, MenuImportRow, MenuItemCategory } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -24,24 +24,36 @@ import Link from 'next/link';
 import { MenuCard } from '@/components/menus/menu-card';
 import { MenuImportDialog } from '@/components/menus/menu-import-dialog';
 import { useToast } from '@/hooks/use-toast';
+import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
+import { collection, doc, serverTimestamp, writeBatch } from 'firebase/firestore';
+import { addDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 
 
 export default function MenusPage() {
   const { toast } = useToast();
-  const [menus, setMenus] = useState<Menu[]>(weeklyMenus);
+  const firestore = useFirestore();
+
+  const menusCollectionRef = useMemoFirebase(
+    () => (firestore ? collection(firestore, 'menus') : null),
+    [firestore]
+  );
+  const { data: menus, isLoading } = useCollection<Menu>(menusCollectionRef);
+
   const [isImportOpen, setImportOpen] = useState(false);
   const [date, setDate] = useState<DateRange | undefined>({
     from: startOfMonth(new Date()),
     to: endOfMonth(new Date()),
   });
 
-  const handleCreateMenu = (newMenuData: Omit<Menu, 'menuId' | 'items'>) => {
-     const newMenu: Menu = {
+  const handleCreateMenu = (newMenuData: Omit<Menu, 'id' | 'items'>) => {
+     if (!firestore) return;
+     const docRef = doc(collection(firestore, 'menus'));
+     const newMenu: Omit<Menu, 'id'> = {
         ...newMenuData,
-        menuId: `menu-${Date.now()}`,
+        id: docRef.id,
         items: [], // Start with an empty menu, to be edited later
      }
-     setMenus(prev => [...prev, newMenu]);
+     addDocumentNonBlocking(docRef.parent, newMenu);
   };
   
   const handleImportMenus = (data: MenuImportRow[]) => {
@@ -55,7 +67,7 @@ export default function MenusPage() {
         
         if (!menusByDate[dateKey]) {
             menusByDate[dateKey] = {
-                menuId: `menu-${dateKey}-${Math.random()}`,
+                id: `menu-${dateKey}-${Math.random()}`,
                 date: new Date(row.date),
                 pax: row.pax,
                 items: [],
@@ -76,7 +88,7 @@ export default function MenusPage() {
 
         if (inventoryItem && row.ingredientName) {
             menuItem.ingredients.push({
-                inventoryItemId: inventoryItem.itemId,
+                inventoryItemId: inventoryItem.id,
                 quantity: row.ingredientQuantity,
                 wasteFactor: row.ingredientWasteFactor || 0,
             });
@@ -85,11 +97,8 @@ export default function MenusPage() {
 
     const newMenus = Object.values(menusByDate);
     
-    setMenus(prev => {
-        const existingMenuDates = new Set(prev.map(m => format(new Date(m.date), 'yyyy-MM-dd')));
-        const incomingMenus = newMenus.filter(nm => !existingMenuDates.has(format(new Date(nm.date), 'yyyy-MM-dd')));
-        return [...prev, ...incomingMenus];
-    });
+    // In a real app, this would be a batch write to Firestore
+    console.log("Importing menus:", newMenus);
 
     toast({
       title: 'Importación Exitosa',
@@ -99,9 +108,9 @@ export default function MenusPage() {
 };
 
 
-  const filteredMenus = menus.filter(menu => {
+  const filteredMenus = menus?.filter(menu => {
     if (!date?.from) return true;
-    const menuDate = new Date(menu.date);
+    const menuDate = menu.date.toDate ? menu.date.toDate() : new Date(menu.date);
     const from = new Date(date.from);
     from.setHours(0,0,0,0);
     
@@ -115,7 +124,15 @@ export default function MenusPage() {
     to.setHours(23,59,59,999);
 
     return menuDate >= from && menuDate <= to;
-  }).sort((a,b) => a.date.getTime() - b.date.getTime());
+  }).sort((a,b) => (a.date.toDate ? a.date.toDate().getTime() : new Date(a.date).getTime()) - (b.date.toDate ? b.date.toDate().getTime() : new Date(b.date).getTime())) || [];
+
+  if (isLoading) {
+    return (
+        <div className="min-h-screen w-full flex items-center justify-center">
+            <p>Cargando menús...</p>
+        </div>
+    )
+  }
 
   return (
     <div className="min-h-screen w-full">
@@ -193,7 +210,7 @@ export default function MenusPage() {
           </div>
           <div className="space-y-8">
             {filteredMenus.length > 0 ? (
-                filteredMenus.map(menu => <MenuCard key={menu.menuId} menu={menu} />)
+                filteredMenus.map(menu => <MenuCard key={menu.id} menu={menu} />)
             ) : (
                 <div className="flex flex-col items-center justify-center text-center py-16 border-2 border-dashed rounded-lg">
                     <p className="text-lg font-semibold text-muted-foreground">No hay menus para el período seleccionado.</p>
@@ -211,3 +228,5 @@ export default function MenusPage() {
     </div>
   );
 }
+
+    

@@ -24,10 +24,11 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { inventoryItems } from '@/lib/placeholder-data';
-import type { Menu, MenuReportData } from '@/lib/types';
+import type { Menu, MenuReportData, InventoryItem as TInventoryItem } from '@/lib/types';
 import { cn } from '@/lib/utils';
 import { categoryDisplay } from '@/components/daily-closing/category-display';
+import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
+import { collection } from 'firebase/firestore';
 
 interface MenusReportProps {
   menus: Menu[];
@@ -43,16 +44,32 @@ const categoryIcons: Record<string, React.ElementType> = {
 
 export function MenusReport({ menus }: MenusReportProps) {
   const { toast } = useToast();
+  const firestore = useFirestore();
+  const inventoryCollectionRef = useMemoFirebase(
+    () => (firestore ? collection(firestore, 'inventory') : null),
+    [firestore]
+  );
+  const { data: inventoryItems, isLoading: isLoadingInventory } = useCollection<TInventoryItem>(inventoryCollectionRef);
+
 
   const handleExport = () => {
+    if (!inventoryItems) {
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description: 'Datos de inventario no disponibles para exportar.',
+      });
+      return;
+    }
     const reportData: MenuReportData[] = [];
 
     menus.forEach((selectedMenu) => {
+      const menuDate = selectedMenu.date.toDate ? selectedMenu.date.toDate() : new Date(selectedMenu.date);
       selectedMenu.items.forEach((item) => {
         if (item.ingredients.length > 0) {
           item.ingredients.forEach((ingredient) => {
             const invItem = inventoryItems.find(
-              (i) => i.itemId === ingredient.inventoryItemId
+              (i) => i.id === ingredient.inventoryItemId
             );
             if (!invItem) return;
 
@@ -61,7 +78,7 @@ export function MenusReport({ menus }: MenusReportProps) {
             const totalRequired = grossPerPax * selectedMenu.pax;
 
             reportData.push({
-              'Fecha Menú': format(selectedMenu.date, 'yyyy-MM-dd'),
+              'Fecha Menú': format(menuDate, 'yyyy-MM-dd'),
               Plato: item.name,
               Categoría: categoryDisplay[item.category]?.label || item.category,
               PAX: selectedMenu.pax,
@@ -74,7 +91,7 @@ export function MenusReport({ menus }: MenusReportProps) {
           });
         } else {
           reportData.push({
-            'Fecha Menú': format(selectedMenu.date, 'yyyy-MM-dd'),
+            'Fecha Menú': format(menuDate, 'yyyy-MM-dd'),
             Plato: item.name,
             Categoría: categoryDisplay[item.category]?.label || item.category,
             PAX: selectedMenu.pax,
@@ -127,14 +144,14 @@ export function MenusReport({ menus }: MenusReportProps) {
               materia prima necesaria.
             </CardDescription>
           </div>
-          <Button onClick={handleExport}>
+          <Button onClick={handleExport} disabled={isLoadingInventory}>
             <Download className="mr-2 h-4 w-4" />
             Exportar a Excel
           </Button>
         </div>
       </CardHeader>
       <CardContent>
-        {menus.length > 0 ? (
+        {(menus.length > 0 && !isLoadingInventory) ? (
           <Table>
             <TableHeader>
               <TableRow>
@@ -147,12 +164,13 @@ export function MenusReport({ menus }: MenusReportProps) {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {menus.map((menu) =>
-                menu.items.map((item) => (
-                  <React.Fragment key={`${menu.menuId}-${item.menuItemId}`}>
+              {menus.map((menu) => {
+                const menuDate = menu.date.toDate ? menu.date.toDate() : new Date(menu.date);
+                return menu.items.map((item) => (
+                  <React.Fragment key={`${menu.id}-${item.menuItemId}`}>
                     <TableRow className="bg-muted/50">
                       <TableCell className="font-bold">
-                        {format(new Date(menu.date), 'dd/MM/yyyy')}
+                        {format(menuDate, 'dd/MM/yyyy')}
                       </TableCell>
                       <TableCell colSpan={5}>
                         <div className="flex items-center gap-3 font-bold">
@@ -175,10 +193,10 @@ export function MenusReport({ menus }: MenusReportProps) {
                     </TableRow>
                     {item.ingredients.length > 0 ? (
                       item.ingredients.map((ingredient) => {
-                        const invItem = inventoryItems.find(
-                          (i) => i.itemId === ingredient.inventoryItemId
+                        const invItem = inventoryItems?.find(
+                          (i) => i.id === ingredient.inventoryItemId
                         );
-                        if (!invItem) return null;
+                        if (!invItem) return <TableRow key={ingredient.inventoryItemId}><TableCell colSpan={6} className="text-center text-red-500">Ingrediente no encontrado</TableCell></TableRow>;
                         const netPerPax = ingredient.quantity;
                         const grossPerPax =
                           netPerPax / (1 - ingredient.wasteFactor);
@@ -214,21 +232,23 @@ export function MenusReport({ menus }: MenusReportProps) {
                       </TableRow>
                     )}
                   </React.Fragment>
-                ))
+                ))}
               )}
             </TableBody>
           </Table>
         ) : (
           <div className="flex flex-col items-center justify-center text-center py-16 border-2 border-dashed rounded-lg">
             <p className="text-lg font-semibold text-muted-foreground">
-              No hay menús para el período seleccionado.
+              {isLoadingInventory ? 'Cargando datos...' : 'No hay menús para el período seleccionado.'}
             </p>
-            <p className="text-sm text-muted-foreground mt-2">
+            {!isLoadingInventory && <p className="text-sm text-muted-foreground mt-2">
               Intenta ajustar el rango de fechas.
-            </p>
+            </p>}
           </div>
         )}
       </CardContent>
     </Card>
   );
 }
+
+    

@@ -410,7 +410,7 @@
         "type"
       ]
     },
-     "InventoryItem": {
+    "InventoryItem": {
       "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "Inventory Item",
       "type": "object",
@@ -472,6 +472,96 @@
         "stockMinimo",
         "fechaCreacion",
         "ultimaActualizacion"
+      ]
+    },
+    "Menu": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Menu",
+      "type": "object",
+      "description": "Represents a planned menu for a specific date.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the menu."
+        },
+        "date": {
+          "type": "string",
+          "format": "date-time",
+          "description": "The date for which the menu is planned."
+        },
+        "pax": {
+          "type": "number",
+          "description": "Number of people (comensales) the menu is planned for."
+        },
+        "items": {
+          "type": "array",
+          "description": "List of menu items for this menu.",
+          "items": {
+            "$ref": "#/backend/entities/MenuItem"
+          }
+        }
+      },
+      "required": [
+        "id",
+        "date",
+        "pax"
+      ]
+    },
+    "MenuItem": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Menu Item",
+      "type": "object",
+      "description": "Represents a single dish or item within a menu.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the menu item."
+        },
+        "name": {
+          "type": "string",
+          "description": "Name of the dish."
+        },
+        "category": {
+          "type": "string",
+          "description": "Category of the dish (e.g., entrada, proteico)."
+        },
+        "ingredients": {
+          "type": "array",
+          "description": "List of ingredients required for this dish.",
+          "items": {
+            "$ref": "#/backend/entities/Ingredient"
+          }
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "category"
+      ]
+    },
+    "Ingredient": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Ingredient",
+      "type": "object",
+      "description": "Represents an ingredient required for a menu item.",
+      "properties": {
+        "inventoryItemId": {
+          "type": "string",
+          "description": "Reference to the InventoryItem."
+        },
+        "quantity": {
+          "type": "number",
+          "description": "Net quantity per person required."
+        },
+        "wasteFactor": {
+          "type": "number",
+          "description": "Waste factor percentage (0 to 1)."
+        }
+      },
+      "required": [
+        "inventoryItemId",
+        "quantity",
+        "wasteFactor"
       ]
     }
   },
@@ -595,7 +685,7 @@
           ]
         }
       },
-       {
+      {
         "path": "/inventory/{itemId}",
         "definition": {
           "entityName": "InventoryItem",
@@ -610,8 +700,25 @@
             }
           ]
         }
+      },
+      {
+        "path": "/menus/{menuId}",
+        "definition": {
+          "entityName": "Menu",
+          "schema": {
+            "$ref": "#/backend/entities/Menu"
+          },
+          "description": "Stores the planned menus for each day.",
+          "params": [
+            {
+              "name": "menuId",
+              "description": "The unique identifier for the menu."
+            }
+          ]
+        }
       }
     ],
     "reasoning": "The Firestore structure is designed to support a task management system with role-based access control. It prioritizes authorization independence through denormalization and structural segregation.  \n\n**Authorization Independence (Denormalization):**\n*   `tasks` collection: The `area` and `assignedTo` fields are present in each task document. This denormalization allows security rules to validate access based on the user's role, the task's assigned area, and the assigned user without needing to perform expensive `get()` operations to retrieve the area or user details from other collections.  The inclusion of `createdBy` also allows for tracing and potential access control based on task creator.\n\n**Structural Segregation:**\n*   User data (`users` collection) is separated from task data (`tasks` collection).  \n*   Area definitions (`areas` collection) are separate from both users and tasks.\n*   Configuration data (`configuration` collection) is separate. This ensures that different types of data with varying access requirements are not mixed in the same collection.\n\n**Access Modeling:**\n*   **Private Data:** The `users` collection follows a path-based ownership model (`/users/{userId}`).\n\n**QAPs (Rules are not Filters):**\n*   Secure `list` operations for tasks are supported because each task document contains the `assignedTo` field. Rules can efficiently filter tasks based on the authenticated user's ID.\n\n**Invariants:**\n*   The structure supports invariants like ownership (through `createdBy` and `assignedTo` in the `tasks` collection) and timestamps (through `creationDate`, `dueDate`, `completionDate` in the `tasks` collection).\n\n**Additional Notes:**\n*   The `statistics` collection is designed to store aggregated data, which can be updated via backend processes. Access to this collection is restricted to admins and superadmins.\n*   The `evidence` and `comments` subcollections are intentionally avoided to minimize read costs when accessing task data. Instead, `evidenceIds` and `commentIds` are used in the `Task` entity to store references to `Evidence` and `Comment` entities which are stored as top-level collections. The `Evidence` collection denormalizes the `taskId` to allow performant security rules.\n*   The `configuration` collection allows storing application-wide settings.\n"
   }
 }
+    

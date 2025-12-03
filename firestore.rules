@@ -204,6 +204,14 @@ service cloud.firestore {
       allow get, list: if isSignedIn();
       allow create, update, delete: if isAdminOrHigher();
     }
+    
+    // --------------------------------------------------------------------
+    // Collection Rules: /menus
+    // --------------------------------------------------------------------
+    match /menus/{menuId} {
+      allow get, list: if isSignedIn();
+      allow create, update, delete: if isAdminOrHigher();
+    }
 
 
     // --------------------------------------------------------------------
@@ -278,3 +286,5 @@ service cloud.firestore {
 
   }
 }
+
+    

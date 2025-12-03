@@ -17,7 +17,6 @@ import {
   PopoverTrigger,
 } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
-import { weeklyMenus } from '@/lib/placeholder-data';
 import type { Menu } from '@/lib/types';
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
@@ -25,18 +24,28 @@ import { MenusReport } from '@/components/menus/menus-report';
 import { DateRange } from 'react-day-picker';
 import { startOfMonth, endOfMonth, format } from 'date-fns';
 import { es } from 'date-fns/locale';
+import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
+import { collection } from 'firebase/firestore';
+
 
 export default function MenuReportPage() {
-  const [menus] = useState<Menu[]>(weeklyMenus);
+  const firestore = useFirestore();
+
+  const menusCollectionRef = useMemoFirebase(
+    () => (firestore ? collection(firestore, 'menus') : null),
+    [firestore]
+  );
+  const { data: menus, isLoading } = useCollection<Menu>(menusCollectionRef);
+
   const [date, setDate] = useState<DateRange | undefined>({
     from: startOfMonth(new Date()),
     to: endOfMonth(new Date()),
   });
 
   const filteredMenus = menus
-    .filter((menu) => {
+    ?.filter((menu) => {
       if (!date?.from) return true;
-      const menuDate = new Date(menu.date);
+      const menuDate = menu.date.toDate ? menu.date.toDate() : new Date(menu.date);
       menuDate.setMinutes(
         menuDate.getMinutes() + menuDate.getTimezoneOffset()
       );
@@ -53,7 +62,7 @@ export default function MenuReportPage() {
       to.setHours(23, 59, 59, 999);
       return menuDate >= from && menuDate <= to;
     })
-    .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+    .sort((a, b) => (a.date.toDate ? a.date.toDate().getTime() : new Date(a.date).getTime()) - (b.date.toDate ? b.date.toDate().getTime() : new Date(b.date).getTime())) || [];
 
   return (
     <div className="min-h-screen w-full">
@@ -121,9 +130,11 @@ export default function MenuReportPage() {
               </Button>
             </div>
           </div>
-          <MenusReport menus={filteredMenus} />
+          {isLoading ? <p>Cargando reporte...</p> : <MenusReport menus={filteredMenus} />}
         </main>
       </SidebarInset>
     </div>
   );
 }
+
+    

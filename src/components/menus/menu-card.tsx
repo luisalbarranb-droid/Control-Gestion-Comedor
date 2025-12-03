@@ -38,7 +38,8 @@ const categoryOrder: MenuItemCategory[] = [
 
 export function MenuCard({ menu }: MenuCardProps) {
   const sortedItems = [...menu.items].sort((a, b) => categoryOrder.indexOf(a.category) - categoryOrder.indexOf(b.category));
-  const menuDate = format(menu.date, 'yyyy-MM-dd');
+  const menuDateObj = menu.date.toDate ? menu.date.toDate() : new Date(menu.date);
+  const menuDate = format(menuDateObj, 'yyyy-MM-dd');
 
   return (
     <Card className="flex flex-col">
@@ -48,7 +49,7 @@ export function MenuCard({ menu }: MenuCardProps) {
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
               <Calendar className="w-4 h-4" />
               <CardTitle className="capitalize text-lg">
-                Menú del {format(menu.date, 'EEEE, dd MMMM, yyyy', { locale: es })}
+                Menú del {format(menuDateObj, 'EEEE, dd MMMM, yyyy', { locale: es })}
               </CardTitle>
             </div>
             <div className="flex items-center gap-2 mt-2">
@@ -94,3 +95,5 @@ export function MenuCard({ menu }: MenuCardProps) {
     </Card>
   );
 }
+
+    

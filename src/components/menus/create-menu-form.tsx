@@ -29,7 +29,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Menu } from '@/lib/types';
 
 type CreateMenuFormProps = {
-  onMenuCreate: (menu: Omit<Menu, 'menuId' | 'items'>) => void;
+  onMenuCreate: (menu: Omit<Menu, 'id' | 'items'>) => void;
 };
 
 const formSchema = z.object({
@@ -123,3 +123,5 @@ export function CreateMenuForm({ onMenuCreate }: CreateMenuFormProps) {
     </Dialog>
   );
 }
+
+    
