@@ -1,4 +1,3 @@
-
 'use client';
 
 import React from 'react';
@@ -25,13 +24,13 @@ import {
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2 } from 'lucide-react';
-import { useUser, useDoc, useFirestore, useMemoFirebase } from '@/firebase';
-import { doc } from 'firebase/firestore';
+import { useUser, useDoc, useFirestore, useMemoFirebase, setDocumentNonBlocking } from '@/firebase';
+import { doc, serverTimestamp } from 'firebase/firestore';
 import type { User } from '@/lib/types';
 
 
 const profileSchema = z.object({
-  nombre: z.string().min(2, 'El nombre es requerido.'),
+  name: z.string().min(2, 'El nombre es requerido.'),
   email: z.string().email(),
   currentPassword: z.string().optional(),
   newPassword: z.string().optional(),
@@ -63,7 +62,7 @@ export function ProfileCard() {
   const form = useForm<ProfileFormValues>({
     resolver: zodResolver(profileSchema),
     defaultValues: {
-      nombre: '',
+      name: '',
       email: '',
       currentPassword: '',
       newPassword: '',
@@ -76,7 +75,7 @@ export function ProfileCard() {
   React.useEffect(() => {
     if (user) {
       form.reset({
-        nombre: user.nombre,
+        name: user.name,
         email: user.email,
         currentPassword: '',
         newPassword: '',
@@ -85,10 +84,22 @@ export function ProfileCard() {
   }, [user, form]);
   
   const onSubmit = async (data: ProfileFormValues) => {
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1000));
+    if (!user) return;
     
-    console.log('Updating profile:', data);
+    const dataToUpdate = {
+        name: data.name,
+    };
+    
+    const userRef = doc(firestore, 'users', user.id);
+    setDocumentNonBlocking(userRef, dataToUpdate, { merge: true });
+
+    // Handle password change if provided
+    if (data.newPassword) {
+        // In a real app, you would call a secure Firebase function to verify the old password
+        // and update it. Client-side password changes are complex and less secure.
+        // For this prototype, we'll just show a success message.
+        console.log('Password change requested. (Not implemented in prototype)');
+    }
 
     toast({
       title: 'Perfil Actualizado',
@@ -123,7 +134,7 @@ export function ProfileCard() {
           <CardContent className="space-y-4">
              <FormField
               control={form.control}
-              name="nombre"
+              name="name"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Nombre</FormLabel>

@@ -1,4 +1,3 @@
-
 import { Timestamp } from 'firebase/firestore';
 
 export type Role = 'superadmin' | 'admin' | 'comun';
@@ -21,9 +20,9 @@ export interface User {
   role: Role;
   area: AreaId;
   isActive: boolean;
-  creationDate: Date | Timestamp; // Fecha de Ingreso
+  creationDate: Date | Timestamp;
   contractEndDate?: Date | Timestamp;
-  createdBy: string; // userId or 'system'
+  createdBy: string;
   lastAccess: Date | Timestamp;
   avatarUrl?: string;
   workerType?: WorkerType;
