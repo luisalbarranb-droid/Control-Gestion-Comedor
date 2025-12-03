@@ -36,13 +36,14 @@ export function MainNav() {
 
   const { data: currentUser, isLoading: isProfileLoading } = useDoc<User>(userDocRef);
 
+  // CORRECTED: Ensure role is read from `currentUser.role`
   const role = currentUser?.role;
   const isAdmin = role === 'admin' || role === 'superadmin';
 
   if (isAuthLoading || isProfileLoading) {
     return (
       <SidebarMenu>
-         {/* Puedes mostrar skeletons o un loader aquí mientras carga */}
+         {/* You can show skeletons or a loader here while loading */}
       </SidebarMenu>
     )
   }
