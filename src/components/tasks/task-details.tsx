@@ -99,8 +99,8 @@ export function TaskDetails({
     }
   };
 
-  const assignedUser = users.find((u) => u.userId === task.asignadoA);
-  const creatorUser = users.find((u) => u.userId === task.creadoPor);
+  const assignedUser = users.find((u) => u.id === task.asignadoA);
+  const creatorUser = users.find((u) => u.id === task.creadoPor);
   const area = areas.find((a) => a.id === task.area);
   const fechaCreacion = task.fechaCreacion.toDate ? task.fechaCreacion.toDate() : new Date(task.fechaCreacion as any);
   const fechaVencimiento = task.fechaVencimiento.toDate ? task.fechaVencimiento.toDate() : new Date(task.fechaVencimiento as any);

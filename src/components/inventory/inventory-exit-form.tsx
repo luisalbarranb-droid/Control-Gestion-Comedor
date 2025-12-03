@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
@@ -91,7 +90,7 @@ export function InventoryExitForm({ isOpen, onOpenChange, onSave, inventoryItems
       acc[dateKey] = menu;
       return acc;
     }, {} as Record<string, Menu>);
-  }, [weeklyMenus]);
+  }, []);
 
   useEffect(() => {
     if (!isOpen) {

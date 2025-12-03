@@ -34,7 +34,7 @@ const statusVariant: Record<TaskStatus, string> = {
 export function RecentTasks() {
   const recentTasks = tasks.slice(0, 5);
 
-  const getUser = (userId: string) => users.find(u => u.userId === userId);
+  const getUser = (userId: string) => users.find(u => u.id === userId);
   const getArea = (areaId: string) => areas.find(a => a.id === areaId);
 
   return (

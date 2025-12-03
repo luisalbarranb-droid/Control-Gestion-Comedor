@@ -21,6 +21,7 @@ import { signOut } from 'firebase/auth';
 import { useRouter } from 'next/navigation';
 import { doc } from 'firebase/firestore';
 import type { User } from '@/lib/types';
+import { Skeleton } from '../ui/skeleton';
 
 
 export function UserNav() {
@@ -34,8 +35,11 @@ export function UserNav() {
     return doc(firestore, 'users', authUser.uid);
   }, [firestore, authUser]);
 
-  const { data: currentUser, isLoading: isProfileLoading } = useDoc<User>(userDocRef);
-  const isLoading = isAuthLoading || isProfileLoading;
+  const { data: currentUser, isLoading: isProfileLoading } = useDoc<User>(userDocRef, {
+      disabled: !authUser
+  });
+  
+  const isLoading = isAuthLoading || (authUser && isProfileLoading);
 
   const handleSignOut = async () => {
     if (auth) {
@@ -46,13 +50,11 @@ export function UserNav() {
   
   if (isLoading) {
     return (
-        <Button variant="ghost" className="relative h-8 w-8 rounded-full">
-            <Avatar className="h-9 w-9" />
-        </Button>
+      <Skeleton className="h-9 w-9 rounded-full" />
     )
   }
 
-  if (!currentUser) {
+  if (!authUser || !currentUser) {
     return (
       <Button asChild>
         <Link href="/login">Iniciar Sesión</Link>

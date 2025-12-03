@@ -57,13 +57,13 @@ export function ProfileCard() {
   }, [firestore, authUser]);
 
   const { data: user, isLoading: isProfileLoading } = useDoc<User>(userDocRef);
-  const isLoading = isAuthLoading || isProfileLoading;
+  const isLoading = isAuthLoading || (authUser && isProfileLoading);
 
   const form = useForm<ProfileFormValues>({
     resolver: zodResolver(profileSchema),
-    values: {
-        name: user?.name || '',
-        email: user?.email || '',
+    defaultValues: {
+        name: '',
+        email: '',
         currentPassword: '',
         newPassword: '',
     }
@@ -94,7 +94,13 @@ export function ProfileCard() {
     setDocumentNonBlocking(userRef, dataToUpdate, { merge: true });
 
     if (data.newPassword) {
+        // In a real app, this should trigger a Firebase Auth function to re-authenticate and update password.
         console.log('Password change requested. (Not implemented in prototype)');
+        toast({
+          title: 'Cambio de Contraseña',
+          description: 'La funcionalidad de cambio de contraseña no está implementada en este prototipo.',
+          variant: 'destructive',
+        });
     }
 
     toast({

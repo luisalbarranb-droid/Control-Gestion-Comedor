@@ -47,12 +47,19 @@ export default function AIPrioritizer() {
         // Map mock data to AI input schema
         const aiInput = {
           tasks: mockTasks.map(t => ({
-            ...t,
+            taskId: t.id,
+            titulo: t.titulo,
+            description: t.descripcion,
+            area: t.area,
+            asignadoA: t.asignadoA,
+            estado: t.estado,
+            prioridad: t.prioridad,
             fechaVencimiento: t.fechaVencimiento.toISOString(),
+            tiempoEstimado: t.tiempoEstimado,
           })),
           users: mockUsers.map(u => ({
-            userId: u.userId,
-            rol: u.rol,
+            userId: u.id,
+            rol: u.role,
             area: u.area,
           })),
         }

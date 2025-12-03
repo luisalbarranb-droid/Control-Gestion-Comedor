@@ -1,25 +1,13 @@
 
 /**
  * @fileoverview Firebase Security Rules for a Task Management Application
- * @version 9
+ * @version 10
  *
  * @description
- * This ruleset enforces a role-based access control (RBAC) model combined with
- * user ownership for specific data. It is designed for a task management system
- * where users have different levels of permissions (superadmin, admin, comun)
- * and can manage tasks assigned to them or created by them.
- *
- * Core Philosophy:
- * 1. Verified Identity: All authenticated users have access, but what they can
- *    do is strictly controlled.
- * 2. Role-Based Access: 'admin' and 'superadmin' roles grant elevated privileges.
- *    The 'superadmin' has full write access, while 'admin' has primarily read
- *    access in sensitive areas like user management.
- * 3. User Data Privacy: A user's document in `/users` can only be read by
- *   the user themselves or an admin/superadmin. Listing all users is restricted
- *   to admins/superadmins.
- * 4. Task Accessibility: Access to a task (and its related comments/evidence) is
- *   granted to the user it is assigned to, the user who created it, and admins.
+ * This ruleset enforces a role-based access control (RBAC) model.
+ * 'superadmin' has full write access to critical areas like user management.
+ * 'admin' has read access to most areas and limited write capabilities.
+ * 'comun' users have access only to data directly related to them.
  */
 rules_version = '2';
 service cloud.firestore {
@@ -29,248 +17,114 @@ service cloud.firestore {
     // Helper Functions
     // --------------------------------------------------------------------
 
-    /**
-     * Returns true if the user is authenticated.
-     */
     function isSignedIn() {
       return request.auth != null;
     }
 
-    /**
-     * Returns true if the requesting user's UID matches the provided userId.
-     * Used to verify ownership of a document or data tree.
-     */
     function isOwner(userId) {
       return request.auth.uid == userId;
     }
 
-    /**
-     * Returns true if the document being accessed already exists in Firestore.
-     * CRITICAL for all update and delete operations.
-     */
-    function docExists() {
-      return resource != null;
-    }
-
-    /**
-     * Retrieves the role of the currently authenticated user from their user document.
-     * The result of this get() call is automatically cached by Firestore for the
-     * duration of the rule evaluation, so multiple calls are not inefficient.
-     */
     function currentUserRole() {
-      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role;
+      // Use exists() to prevent errors on new user creation before their doc exists.
+      if (exists(/databases/$(database)/documents/users/$(request.auth.uid))) {
+        return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role;
+      }
+      return 'comun'; // Default to least privileged role if doc doesn't exist
     }
 
-    /**
-     * Returns true if the current user is a superadmin.
-     */
     function isSuperAdmin() {
       return isSignedIn() && currentUserRole() == 'superadmin';
     }
 
-    /**
-     * Returns true if the current user is an admin or superadmin.
-     */
     function isAdminOrHigher() {
       return isSignedIn() && currentUserRole() in ['admin', 'superadmin'];
     }
-
-    /**
-     * Checks if a user has access to a given task, either as the assignee,
-     * the creator, or as an admin. Requires a get() call to the task document.
-     */
-    function isTaskParticipant(taskId) {
-      let taskData = get(/databases/$(database)/documents/tasks/$(taskId)).data;
-      return isOwner(taskData.assignedTo) || isOwner(taskData.createdBy) || isAdminOrHigher();
-    }
-
-    /**
-     * Validates that the creator field in an incoming document matches the
-     * authenticated user. Essential for create operations to establish ownership.
-     */
+    
     function isCreator(ownerField) {
       return request.resource.data[ownerField] == request.auth.uid;
     }
 
-    /**
-     * Validates that the creator field in an existing document matches the
-     * authenticated user. Essential for update/delete operations to verify ownership.
-     */
-    function isExistingOwner(ownerField) {
-      return resource.data[ownerField] == request.auth.uid;
-    }
-
-    /**
-     * Ensures an owner field on a document cannot be changed during an update.
-     */
-    function isOwnerFieldImmutable(ownerField) {
-      return request.resource.data[ownerField] == resource.data[ownerField];
-    }
-
-    /**
-     * Ensures the document's internal `id` field matches its ID in the path.
-     * This maintains data consistency.
-     */
-    function isIdConsistent(docId) {
-       return request.resource.data.id == docId;
-    }
-
-
     // --------------------------------------------------------------------
-    // Collection Rules: /users
+    // Collection Rules
     // --------------------------------------------------------------------
 
-    /**
-     * @description Controls access to user profile documents.
-     * @path /users/{userId}
-     * @allow (get) An authenticated user to read their own profile, or an admin to read any.
-     * @allow (list) An admin or superadmin to list all user profiles.
-     * @allow (create, update, delete) Only a superadmin can create, update, or delete users.
-     */
     match /users/{userId} {
+      // READ: An admin can read any profile. A user can only read their own.
       allow get: if isSignedIn() && (isOwner(userId) || isAdminOrHigher());
+      
+      // LIST: Only admins and superadmins can list all users.
       allow list: if isAdminOrHigher();
+      
+      // WRITE: Only superadmins can create, update, or delete users.
       allow create, update, delete: if isSuperAdmin();
     }
 
-    // --------------------------------------------------------------------
-    // Collection Rules: /areas
-    // --------------------------------------------------------------------
-    /**
-     * @description Controls access to organizational area definitions.
-     * @path /areas/{areaId}
-     * @allow (get) Any authenticated user to read area information.
-     * @deny (create) A non-admin user trying to create a new area.
-     * @principle Treats this collection as public-read for authenticated users, with writes restricted to admins.
-     */
     match /areas/{areaId} {
       allow get, list: if isSignedIn();
-      allow create: if isSuperAdmin();
-      allow update: if docExists() && isSuperAdmin();
-      allow delete: if docExists() && isSuperAdmin();
+      allow create, update, delete: if isSuperAdmin();
     }
 
-    // --------------------------------------------------------------------
-    // Collection Rules: /tasks
-    // --------------------------------------------------------------------
-    /**
-     * @description Controls access to task documents.
-     * @path /tasks/{taskId}
-     * @allow (get) An assigned user ('assignedTo') to read their task.
-     * @deny (update) A user trying to update a task they did not create and are not assigned to.
-     * @principle Enforces document access based on multiple ownership fields ('createdBy', 'assignedTo') and admin roles.
-     */
     match /tasks/{taskId} {
-      allow get: if docExists() && isSignedIn() && (isExistingOwner('assignedTo') || isExistingOwner('createdBy') || isAdminOrHigher());
+      // Any authenticated user can list tasks (queries will filter them)
+      // Any participant (creator, assignee) or admin can get a specific task
+      allow get: if isSignedIn() && (get(/databases/$(database)/documents/tasks/$(taskId)).data.asignadoA == request.auth.uid || get(/databases/$(database)/documents/tasks/$(taskId)).data.creadoPor == request.auth.uid || isAdminOrHigher());
       allow list: if isSignedIn();
-      allow create: if isSignedIn() && isCreator('createdBy') && isIdConsistent(taskId);
-      allow update: if docExists() && isSignedIn() && (isExistingOwner('assignedTo') || isExistingOwner('createdBy') || isAdminOrHigher()) && isOwnerFieldImmutable('createdBy') && isIdConsistent(taskId);
-      allow delete: if docExists() && isSignedIn() && (isExistingOwner('createdBy') || isAdminOrHigher());
+      // Anyone can create a task, but they must be the creator
+      allow create: if isSignedIn() && isCreator('creadoPor');
+      // Only participants or admins can update, and creator is immutable
+      allow update: if isSignedIn() && (resource.data.asignadoA == request.auth.uid || resource.data.creadoPor == request.auth.uid || isAdminOrHigher()) && request.resource.data.creadoPor == resource.data.creadoPor;
+      // Only creator or admin can delete
+      allow delete: if isSignedIn() && (resource.data.creadoPor == request.auth.uid || isAdminOrHigher());
     }
     
-    // --------------------------------------------------------------------
-    // Collection Rules: /inventory
-    // --------------------------------------------------------------------
     match /inventory/{itemId} {
       allow get, list: if isSignedIn();
       allow create, update, delete: if isAdminOrHigher();
     }
     
-    // --------------------------------------------------------------------
-    // Collection Rules: /menus
-    // --------------------------------------------------------------------
     match /menus/{menuId} {
       allow get, list: if isSignedIn();
       allow create, update, delete: if isAdminOrHigher();
     }
 
-
-    // --------------------------------------------------------------------
-    // Collection Rules: /statistics
-    // --------------------------------------------------------------------
-    /**
-     * @description Controls access to aggregated system statistics.
-     * @path /statistics/{period}
-     * @allow (get) An admin to read statistical data.
-     * @deny (get) A non-admin user trying to read any statistical data.
-     * @principle Restricts access to sensitive, aggregated data to administrative roles only.
-     */
     match /statistics/{period} {
-      allow get, list: if isAdminOrHigher();
-      allow create: if isAdminOrHigher();
-      allow update: if docExists() && isAdminOrHigher();
-      allow delete: if docExists() && isAdminOrHigher();
+      allow get, list, create, update, delete: if isAdminOrHigher();
     }
 
-    // --------------------------------------------------------------------
-    // Collection Rules: /configuration
-    // --------------------------------------------------------------------
-    /**
-     * @description Controls access to global system configuration.
-     * @path /configuration/{id}
-     * @allow (list) Any authenticated user to list the system configurations.
-     * @deny (update) A non-admin user trying to modify the system configuration.
-     * @principle Treats this collection as public-read for authenticated users, with writes restricted to admins.
-     */
     match /configuration/{id} {
       allow get, list: if isSignedIn();
-      allow create: if isSuperAdmin();
-      allow update: if docExists() && isSuperAdmin();
-      allow delete: if docExists() && isSuperAdmin();
+      allow create, update, delete: if isSuperAdmin();
     }
 
-    // --------------------------------------------------------------------
-    // Collection Rules: /evidences
-    // --------------------------------------------------------------------
-    /**
-     * @description Controls access to task evidence (e.g., photos).
-     * @path /evidences/{evidenceId}
-     * @allow (create) A user who is a participant of the linked task to upload evidence.
-     * @deny (delete) A user trying to delete evidence they did not upload.
-     * @principle Secures child documents by referencing the parent document's (`task`) access rules, and enforces ownership for writes.
-     */
+    function isTaskParticipant(taskId) {
+      let taskData = get(/databases/$(database)/documents/tasks/$(taskId)).data;
+      return isOwner(taskData.asignadoA) || isOwner(taskData.creadoPor) || isAdminOrHigher();
+    }
+
     match /evidences/{evidenceId} {
-      allow get: if docExists() && isSignedIn() && isTaskParticipant(resource.data.taskId);
+      allow get: if isSignedIn() && isTaskParticipant(resource.data.taskId);
       allow list: if isSignedIn();
-      allow create: if isSignedIn() && isCreator('userId') && isTaskParticipant(request.resource.data.taskId) && isIdConsistent(evidenceId);
-      allow update: if docExists() && isExistingOwner('userId') && isOwnerFieldImmutable('userId') && isOwnerFieldImmutable('taskId') && isIdConsistent(evidenceId);
-      allow delete: if docExists() && isExistingOwner('userId');
+      allow create: if isSignedIn() && isCreator('userId') && isTaskParticipant(request.resource.data.taskId);
+      allow update, delete: if isSignedIn() && isOwner(resource.data.userId);
     }
 
-    // --------------------------------------------------------------------
-    // Collection Rules: /comments
-    // --------------------------------------------------------------------
-    /**
-     * @description Controls access to task comments.
-     * @path /comments/{commentId}
-     * @allow (create) A user who is a participant of the linked task to add a comment.
-     * @deny (update) A user trying to edit a comment they did not write.
-     * @principle Secures child documents by referencing the parent document's (`task`) access rules, and enforces ownership for writes.
-     */
     match /comments/{commentId} {
-      allow get: if docExists() && isSignedIn() && isTaskParticipant(resource.data.taskId);
+      allow get: if isSignedIn() && isTaskParticipant(resource.data.taskId);
       allow list: if isSignedIn();
-      allow create: if isSignedIn() && isCreator('userId') && isTaskParticipant(request.resource.data.taskId) && isIdConsistent(commentId);
-      allow update: if docExists() && isExistingOwner('userId') && isOwnerFieldImmutable('userId') && isOwnerFieldImmutable('taskId') && isIdConsistent(commentId);
-      allow delete: if docExists() && isExistingOwner('userId');
+      allow create: if isSignedIn() && isCreator('userId') && isTaskParticipant(request.resource.data.taskId);
+      allow update, delete: if isSignedIn() && isOwner(resource.data.userId);
     }
     
-    // --------------------------------------------------------------------
-    // Collection Rules: /attendance
-    // --------------------------------------------------------------------
     match /attendance/{recordId} {
       allow get: if isSignedIn() && (isOwner(resource.data.userId) || isAdminOrHigher());
       allow list: if isSignedIn(); // Users can only list their own records due to query constraints
       allow create, update, delete: if isAdminOrHigher(); // Only admins can manage records
     }
     
-    // --------------------------------------------------------------------
-    // Collection Rules: /daysOff
-    // --------------------------------------------------------------------
     match /daysOff/{dayOffId} {
       allow get, list: if isSignedIn();
       allow create, update, delete: if isAdminOrHigher();
     }
-
   }
 }

@@ -41,7 +41,9 @@ export function MainNav() {
     return doc(firestore, 'users', authUser.uid);
   }, [firestore, authUser]);
 
-  const { data: currentUser, isLoading: isProfileLoading } = useDoc<User>(userDocRef);
+  const { data: currentUser, isLoading: isProfileLoading } = useDoc<User>(userDocRef, {
+    disabled: !authUser
+  });
 
   const isLoading = isAuthLoading || isProfileLoading;
   
@@ -60,8 +62,9 @@ export function MainNav() {
 
   const navItems = allNavItems.filter(item => {
     if (!item.visibleForRoles) {
-        return true;
+        return true; // Always visible if no roles are specified
     }
+    // Visible if the user's role is in the list of visible roles
     if (currentUser?.role && item.visibleForRoles.includes(currentUser.role)) {
         return true;
     }
@@ -71,7 +74,7 @@ export function MainNav() {
   if (isLoading) {
     return (
       <SidebarMenu>
-        {Array.from({ length: 8 }).map((_, i) => (
+        {Array.from({ length: 10 }).map((_, i) => (
           <SidebarMenuItem key={i}>
              <div className="flex items-center gap-2 p-2">
               <div className="h-6 w-6 bg-muted rounded-md animate-pulse" />

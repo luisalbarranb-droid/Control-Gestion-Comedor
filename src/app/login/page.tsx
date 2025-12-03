@@ -34,11 +34,15 @@ export default function LoginPage() {
   const [password, setPassword] = useState('12345678');
   const [isLoading, setIsLoading] = useState(false);
 
-  const upsertUserData = (firebaseUser: FirebaseAuthUser) => {
-    if (!firestore) return;
+  const upsertSuperAdmin = (firebaseUser: FirebaseAuthUser) => {
+    if (!firestore) {
+        console.error("Firestore is not available to upsert user data.");
+        return;
+    };
     const userRef = doc(firestore, 'users', firebaseUser.uid);
     
-    const newUser: Omit<User, 'creationDate' | 'lastAccess'> = {
+    // Use the standardized User type from /lib/types.ts
+    const userData: Omit<User, 'creationDate' | 'lastAccess'> = {
       id: firebaseUser.uid,
       userId: firebaseUser.uid,
       email: firebaseUser.email!,
@@ -46,15 +50,17 @@ export default function LoginPage() {
       role: 'superadmin',
       area: 'administracion',
       isActive: true,
-      createdBy: 'system',
+      createdBy: 'system', // Indicates this user was created programmatically
     };
 
-    setDocumentNonBlocking(userRef, {
-      ...newUser,
-      creationDate: serverTimestamp(),
-      lastAccess: serverTimestamp(),
-    }, { merge: true });
+    // Use a single object for the data to be written
+    const dataToWrite = {
+        ...userData,
+        creationDate: serverTimestamp(),
+        lastAccess: serverTimestamp(),
+    };
 
+    setDocumentNonBlocking(userRef, dataToWrite, { merge: true });
     console.log('Super Admin user document created or updated:', firebaseUser.uid);
   };
 
@@ -74,7 +80,8 @@ export default function LoginPage() {
 
     try {
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
-      upsertUserData(userCredential.user);
+      // Always ensure the superadmin document is correct on login
+      upsertSuperAdmin(userCredential.user);
       
       toast({
         title: 'Inicio de sesión exitoso',
@@ -84,9 +91,10 @@ export default function LoginPage() {
 
     } catch (error: any) {
       if (error.code === 'auth/user-not-found') {
+        // If the user does not exist, create it as a superadmin.
         try {
             const newUserCredential = await createUserWithEmailAndPassword(auth, email, password);
-            upsertUserData(newUserCredential.user);
+            upsertSuperAdmin(newUserCredential.user);
             toast({
                 title: 'Cuenta de Super Admin Creada',
                 description: 'La cuenta de administrador inicial ha sido creada. ¡Bienvenido!',
@@ -126,7 +134,7 @@ export default function LoginPage() {
           <div className="grid gap-2 text-center">
             <h1 className="text-3xl font-bold font-headline">Comedor Control</h1>
             <p className="text-balance text-muted-foreground">
-              Ingrese su correo para iniciar sesión
+              Inicia sesión para gestionar tu comedor
             </p>
           </div>
           <form onSubmit={handleLogin}>

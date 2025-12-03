@@ -153,7 +153,7 @@ export function MenusReport({ menus }: MenusReportProps) {
         </div>
       </CardHeader>
       <CardContent>
-        {(menus.length > 0 && !isLoadingInventory) ? (
+        {(menus.length > 0 && !isLoadingInventory && inventoryItems) ? (
           <Table>
             <TableHeader>
               <TableRow>
@@ -194,18 +194,18 @@ export function MenusReport({ menus }: MenusReportProps) {
                       </TableCell>
                     </TableRow>
                     {item.ingredients.length > 0 ? (
-                      item.ingredients.map((ingredient) => {
-                        const invItem = inventoryItems?.find(
+                      item.ingredients.map((ingredient, idx) => {
+                        const invItem = inventoryItems.find(
                           (i) => i.id === ingredient.inventoryItemId
                         );
-                        if (!invItem) return <TableRow key={ingredient.inventoryItemId}><TableCell colSpan={6} className="text-center text-red-500">Ingrediente no encontrado</TableCell></TableRow>;
+                        if (!invItem) return <TableRow key={idx}><TableCell colSpan={6} className="text-center text-red-500">Ingrediente no encontrado</TableCell></TableRow>;
                         const netPerPax = ingredient.quantity;
                         const grossPerPax =
                           netPerPax / (1 - ingredient.wasteFactor);
                         const totalRequired = grossPerPax * menu.pax;
 
                         return (
-                          <TableRow key={ingredient.inventoryItemId}>
+                          <TableRow key={idx}>
                             <TableCell></TableCell>
                             <TableCell></TableCell>
                             <TableCell>{invItem.nombre}</TableCell>

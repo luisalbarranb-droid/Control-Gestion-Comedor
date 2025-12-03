@@ -152,7 +152,7 @@ export function CreateTaskForm({ onTaskCreate, users }: CreateTaskFormProps) {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Área</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <Select onValueChange={field.onChange} value={field.value}>
                       <FormControl>
                         <SelectTrigger>
                           <SelectValue placeholder="Selecciona un área" />
@@ -174,7 +174,7 @@ export function CreateTaskForm({ onTaskCreate, users }: CreateTaskFormProps) {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Asignado a</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <Select onValueChange={field.onChange} value={field.value}>
                       <FormControl>
                         <SelectTrigger>
                           <SelectValue placeholder="Selecciona un usuario" />
@@ -182,7 +182,7 @@ export function CreateTaskForm({ onTaskCreate, users }: CreateTaskFormProps) {
                       </FormControl>
                       <SelectContent>
                         {users.map(user => (
-                          <SelectItem key={user.id} value={user.id}>{user.nombre}</SelectItem>
+                          <SelectItem key={user.id} value={user.id}>{user.name}</SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
@@ -196,7 +196,7 @@ export function CreateTaskForm({ onTaskCreate, users }: CreateTaskFormProps) {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Prioridad</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <Select onValueChange={field.onChange} value={field.value}>
                       <FormControl>
                         <SelectTrigger>
                           <SelectValue placeholder="Selecciona una prioridad" />
@@ -218,7 +218,7 @@ export function CreateTaskForm({ onTaskCreate, users }: CreateTaskFormProps) {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Periodicidad</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <Select onValueChange={field.onChange} value={field.value}>
                       <FormControl>
                         <SelectTrigger>
                           <SelectValue placeholder="Selecciona una periodicidad" />

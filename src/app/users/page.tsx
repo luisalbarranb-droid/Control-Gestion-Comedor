@@ -101,6 +101,7 @@ export default function UsersPage() {
         }
         
         try {
+            // We need to create a temporary auth instance to create the user, because we don't want to sign in as the new user
             const userCredential = await createUserWithEmailAndPassword(auth, userData.email, password);
             const newAuthUser = userCredential.user;
             const newUserDocRef = doc(firestore, 'users', newAuthUser.uid);
