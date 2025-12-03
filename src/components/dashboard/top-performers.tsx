@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Medal } from 'lucide-react';

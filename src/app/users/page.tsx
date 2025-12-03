@@ -65,7 +65,7 @@ export default function UsersPage() {
   }, [firestore, authUser]);
   const { data: currentUser, isLoading: isProfileLoading } = useDoc<User>(userDocRef);
 
-  const role = currentUser?.role;
+  const role = currentUser?.rol;
   const isAdmin = role === 'admin' || role === 'superadmin';
 
   const usersCollectionRef = useMemoFirebase(
@@ -84,7 +84,7 @@ export default function UsersPage() {
     setFormOpen(true);
   }
 
-  const handleSaveUser = async (userData: Omit<User, 'id' | 'userId' | 'createdBy' | 'lastAccess' | 'creationDate'>, password?: string) => {
+  const handleSaveUser = async (userData: Omit<User, 'id' | 'userId' | 'creadoPor' | 'ultimoAcceso' | 'fechaCreacion'>, password?: string) => {
     if (!auth || !firestore || !currentUser) {
         toast({ variant: 'destructive', title: 'Error', description: 'No se ha podido autenticar la acción.' });
         return;
@@ -92,9 +92,9 @@ export default function UsersPage() {
 
     if (selectedUser) { // Editing existing user
         const userRef = doc(firestore, 'users', selectedUser.id);
-        const dataToUpdate = { ...userData, lastAccess: serverTimestamp() };
+        const dataToUpdate = { ...userData, ultimoAcceso: serverTimestamp() };
         setDocumentNonBlocking(userRef, dataToUpdate, { merge: true });
-        toast({ title: 'Usuario actualizado', description: `Los datos de ${userData.name} han sido guardados.` });
+        toast({ title: 'Usuario actualizado', description: `Los datos de ${userData.nombre} han sido guardados.` });
     } else { // Creating new user
         if (!password) {
             toast({ variant: 'destructive', title: 'Error', description: 'La contraseña es obligatoria para nuevos usuarios.' });
@@ -110,12 +110,12 @@ export default function UsersPage() {
                 ...userData,
                 id: newAuthUser.uid,
                 userId: newAuthUser.uid,
-                createdBy: currentUser.id,
-                creationDate: serverTimestamp(),
-                lastAccess: serverTimestamp(),
+                creadoPor: currentUser.id,
+                fechaCreacion: serverTimestamp(),
+                ultimoAcceso: serverTimestamp(),
             }, { merge: false });
             
-            toast({ title: 'Usuario Creado', description: `${userData.name} ha sido añadido con éxito.` });
+            toast({ title: 'Usuario Creado', description: `${userData.nombre} ha sido añadido con éxito.` });
         } catch (error: any) {
              console.error("Error creating user:", error);
             let description = 'Ocurrió un error inesperado.';
@@ -196,28 +196,28 @@ export default function UsersPage() {
                       <TableCell>
                          <Link href={`/users/${user.id}`} className="flex items-center gap-3 hover:underline">
                           <Avatar className="h-9 w-9">
-                            <AvatarImage src={user.avatarUrl} alt={user.name} />
+                            <AvatarImage src={user.avatarUrl} alt={user.nombre} />
                             <AvatarFallback>
-                              {getUserInitials(user.name)}
+                              {getUserInitials(user.nombre)}
                             </AvatarFallback>
                           </Avatar>
-                          <div className="font-medium">{user.name}</div>
+                          <div className="font-medium">{user.nombre}</div>
                         </Link>
                       </TableCell>
                       <TableCell className="hidden md:table-cell">
                         {user.email}
                       </TableCell>
                       <TableCell>
-                        <Badge variant="secondary" className={cn(roleVariant[user.role], 'capitalize')}>
-                          {user.role}
+                        <Badge variant="secondary" className={cn(roleVariant[user.rol], 'capitalize')}>
+                          {user.rol}
                         </Badge>
                       </TableCell>
                       <TableCell className="hidden sm:table-cell">
                         {getAreaName(user.area)}
                       </TableCell>
                        <TableCell className="hidden sm:table-cell">
-                        <Badge variant="secondary" className={cn(statusVariant[user.isActive], 'capitalize')}>
-                          {user.isActive ? 'Activo' : 'Inactivo'}
+                        <Badge variant="secondary" className={cn(statusVariant[user.activo], 'capitalize')}>
+                          {user.activo ? 'Activo' : 'Inactivo'}
                         </Badge>
                       </TableCell>
                       <TableCell>

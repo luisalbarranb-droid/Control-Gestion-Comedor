@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
@@ -266,7 +267,7 @@ export function InventoryExitForm({ isOpen, onOpenChange, onSave, inventoryItems
                             </FormControl>
                             <SelectContent>
                               {inventoryItems.map(item => (
-                                <SelectItem key={item.itemId} value={item.itemId}>{item.nombre} ({item.cantidad} {item.unidad})</SelectItem>
+                                <SelectItem key={item.id} value={item.id}>{item.nombre} ({item.cantidad} {item.unidad})</SelectItem>
                               ))}
                             </SelectContent>
                           </Select>

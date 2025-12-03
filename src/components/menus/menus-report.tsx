@@ -1,3 +1,4 @@
+
 'use client';
 
 import React from 'react';
@@ -65,7 +66,7 @@ export function MenusReport({ menus }: MenusReportProps) {
     const reportData: MenuReportData[] = [];
 
     menus.forEach((selectedMenu) => {
-      const menuDate = selectedMenu.date.toDate ? selectedMenu.date.toDate() : new Date(selectedMenu.date);
+      const menuDate = selectedMenu.date.toDate ? selectedMenu.date.toDate() : new Date(selectedMenu.date as any);
       selectedMenu.items.forEach((item) => {
         if (item.ingredients.length > 0) {
           item.ingredients.forEach((ingredient) => {
@@ -166,7 +167,7 @@ export function MenusReport({ menus }: MenusReportProps) {
             </TableHeader>
             <TableBody>
               {menus.map((menu) => {
-                const menuDate = menu.date.toDate ? menu.date.toDate() : new Date(menu.date);
+                const menuDate = menu.date.toDate ? menu.date.toDate() : new Date(menu.date as any);
                 return menu.items.map((item) => (
                   <React.Fragment key={`${menu.id}-${item.id}`}>
                     <TableRow className="bg-muted/50">

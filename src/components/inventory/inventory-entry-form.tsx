@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useEffect, useState, useTransition } from 'react';
@@ -109,7 +110,7 @@ export function InventoryEntryForm({ isOpen, onOpenChange, onSave, inventoryItem
               extractedItem.nombre.toLowerCase().includes(invItem.nombre.toLowerCase())
             );
             return {
-              itemId: foundItem?.itemId || '',
+              itemId: foundItem?.id || '',
               quantity: extractedItem.quantity,
               // We don't map cost here as the form doesn't handle it directly
             };
@@ -233,7 +234,7 @@ export function InventoryEntryForm({ isOpen, onOpenChange, onSave, inventoryItem
                             </FormControl>
                             <SelectContent>
                               {inventoryItems.map(item => (
-                                <SelectItem key={item.itemId} value={item.itemId}>{item.nombre}</SelectItem>
+                                <SelectItem key={item.id} value={item.id}>{item.nombre}</SelectItem>
                               ))}
                             </SelectContent>
                           </Select>

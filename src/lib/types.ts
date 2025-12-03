@@ -14,20 +14,20 @@ export interface User {
   id: string; // Document ID from Firestore
   userId: string;
   email: string;
-  name: string;
+  nombre: string;
   cedula?: string;
-  phone?: string;
-  address?: string;
-  role: Role;
+  telefono?: string;
+  direccion?: string;
+  rol: Role;
   area: AreaId;
-  isActive: boolean;
-  creationDate: Date | Timestamp; // Fecha de Ingreso
-  contractEndDate?: Date | Timestamp;
-  createdBy: string; // userId or 'system'
-  lastAccess: Date | Timestamp;
+  activo: boolean;
+  fechaCreacion: Date | Timestamp; // Fecha de Ingreso
+  fechaCulminacionContrato?: Date | Timestamp;
+  creadoPor: string; // userId or 'system'
+  ultimoAcceso: Date | Timestamp;
   avatarUrl?: string;
-  workerType?: WorkerType;
-  contractType?: ContractType;
+  tipoTrabajador?: WorkerType;
+  tipoContrato?: ContractType;
 }
 
 export interface Area {
@@ -270,6 +270,7 @@ export interface LeaveRecord {
 export type DayOfWeek = 0 | 1 | 2 | 3 | 4 | 5 | 6;
 
 export interface DayOff {
+  id: string;
   userId: string;
   weekStartDate: string; // YYYY-MM-DD
   dayOff: DayOfWeek; // The one flexible day off

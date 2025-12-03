@@ -1,3 +1,4 @@
+
 import {
   Table,
   TableBody,
@@ -57,12 +58,13 @@ export function RecentTasks() {
             {recentTasks.map((task) => {
                 const user = getUser(task.asignadoA);
                 const area = getArea(task.area);
+                const fechaVencimiento = task.fechaVencimiento instanceof Date ? task.fechaVencimiento : new Date(task.fechaVencimiento);
                 return (
                     <TableRow key={task.id}>
                         <TableCell>
                             <div className="font-medium">{task.titulo}</div>
                             <div className="hidden text-sm text-muted-foreground md:inline">
-                                Vence: {format(task.fechaVencimiento, 'dd/MM/yyyy')}
+                                Vence: {format(fechaVencimiento, 'dd/MM/yyyy')}
                             </div>
                         </TableCell>
                          <TableCell className="hidden sm:table-cell">{area?.nombre}</TableCell>

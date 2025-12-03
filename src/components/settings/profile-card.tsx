@@ -31,7 +31,7 @@ import type { User } from '@/lib/types';
 
 
 const profileSchema = z.object({
-  name: z.string().min(2, 'El nombre es requerido.'),
+  nombre: z.string().min(2, 'El nombre es requerido.'),
   email: z.string().email(),
   currentPassword: z.string().optional(),
   newPassword: z.string().optional(),
@@ -63,7 +63,7 @@ export function ProfileCard() {
   const form = useForm<ProfileFormValues>({
     resolver: zodResolver(profileSchema),
     defaultValues: {
-      name: '',
+      nombre: '',
       email: '',
       currentPassword: '',
       newPassword: '',
@@ -76,7 +76,7 @@ export function ProfileCard() {
   React.useEffect(() => {
     if (user) {
       form.reset({
-        name: user.name,
+        nombre: user.nombre,
         email: user.email,
         currentPassword: '',
         newPassword: '',
@@ -123,7 +123,7 @@ export function ProfileCard() {
           <CardContent className="space-y-4">
              <FormField
               control={form.control}
-              name="name"
+              name="nombre"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Nombre</FormLabel>

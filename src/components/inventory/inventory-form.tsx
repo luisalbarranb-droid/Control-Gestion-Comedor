@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useEffect } from 'react';
@@ -42,6 +43,7 @@ const formSchema = z.object({
   unidad: z.string({ required_error: 'Debes seleccionar una unidad de medida.' }),
   stockMinimo: z.coerce.number().min(0, 'El stock mínimo no puede ser negativo.'),
   proveedor: z.string().optional(),
+  costoUnitario: z.coerce.number().optional(),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -65,12 +67,16 @@ export function InventoryForm({ isOpen, onOpenChange, onSave, item }: InventoryF
       cantidad: 0,
       stockMinimo: 0,
       proveedor: '',
+      costoUnitario: 0,
     },
   });
 
   useEffect(() => {
     if (item) {
-      form.reset(item);
+      form.reset({
+        ...item,
+        costoUnitario: item.costoUnitario || 0,
+      });
     } else {
       form.reset({
         nombre: '',
@@ -80,6 +86,7 @@ export function InventoryForm({ isOpen, onOpenChange, onSave, item }: InventoryF
         unidad: undefined,
         stockMinimo: 0,
         proveedor: '',
+        costoUnitario: 0,
       });
     }
   }, [item, isOpen, form]);
@@ -220,6 +227,19 @@ export function InventoryForm({ isOpen, onOpenChange, onSave, item }: InventoryF
                   <FormLabel>Proveedor (Opcional)</FormLabel>
                   <FormControl>
                     <Input placeholder="Nombre del proveedor" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+             <FormField
+              control={form.control}
+              name="costoUnitario"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Costo Unitario (Opcional)</FormLabel>
+                  <FormControl>
+                    <Input type="number" placeholder="0.00" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>

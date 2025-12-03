@@ -76,8 +76,8 @@ export default function AttendanceReportsPage() {
     }, [firestore, authUser]);
     const { data: currentUser, isLoading: isProfileLoading } = useDoc<User>(userDocRef);
 
-    const role = currentUser?.rol;
-    const isAdmin = role === 'admin' || role === 'superadmin';
+    const rol = currentUser?.rol;
+    const isAdmin = rol === 'admin' || rol === 'superadmin';
 
     const [activeTab, setActiveTab] = useState('general');
     const [date, setDate] = useState<DateRange | undefined>({

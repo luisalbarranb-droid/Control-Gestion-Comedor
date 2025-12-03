@@ -76,8 +76,8 @@ export default function TasksPage() {
   }, [firestore, authUser]);
   const { data: currentUser, isLoading: isProfileLoading } = useDoc<User>(userDocRef);
 
-  const role = currentUser?.rol;
-  const isAdmin = role === 'admin' || role === 'superadmin';
+  const rol = currentUser?.rol;
+  const isAdmin = rol === 'admin' || rol === 'superadmin';
 
   const tasksQuery = useMemoFirebase(
     () => {
@@ -112,7 +112,7 @@ export default function TasksPage() {
     const collectionRef = collection(firestore, 'tasks');
     const docRef = doc(collectionRef);
 
-    const fullyNewTask: Omit<Task, 'id'> = {
+    const fullyNewTask = {
       ...newTaskData,
       id: docRef.id,
       creadoPor: currentUser.id,
@@ -192,7 +192,7 @@ export default function TasksPage() {
                       const area = getArea(task.area);
                       
                       // Handle Firestore Timestamp
-                      const dueDate = task.fechaVencimiento?.toDate ? task.fechaVencimiento.toDate() : new Date(task.fechaVencimiento);
+                      const fechaVencimiento = task.fechaVencimiento?.toDate ? task.fechaVencimiento.toDate() : new Date(task.fechaVencimiento as any);
 
                       return (
                         <TableRow key={task.id} onClick={() => setSelectedTask(task)} className="cursor-pointer">
@@ -200,7 +200,7 @@ export default function TasksPage() {
                             <div className="font-medium">{task.titulo}</div>
                             <div className="text-sm text-muted-foreground">
                               Vence:{' '}
-                              {format(dueDate, 'dd/MM/yyyy')}
+                              {format(fechaVencimiento, 'dd/MM/yyyy')}
                             </div>
                           </TableCell>
                           <TableCell>

@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -13,7 +14,7 @@ interface PlanningTableProps {
   week: Date;
   users: User[];
   initialDaysOff: DayOff[];
-  onSave: (daysOff: DayOff[]) => void;
+  onSave: (daysOff: Omit<DayOff, 'id'>[]) => void;
 }
 
 export function PlanningTable({ week, users, initialDaysOff, onSave }: PlanningTableProps) {
@@ -51,7 +52,7 @@ export function PlanningTable({ week, users, initialDaysOff, onSave }: PlanningT
   };
 
   const handleSave = () => {
-    const newDaysOff: DayOff[] = Object.entries(daysOffMap)
+    const newDaysOff: Omit<DayOff, 'id'>[] = Object.entries(daysOffMap)
       .filter(([, dayOff]) => dayOff !== undefined)
       .map(([userId, dayOff]) => ({
         userId,
@@ -132,5 +133,3 @@ export function PlanningTable({ week, users, initialDaysOff, onSave }: PlanningT
     </div>
   );
 }
-
-    

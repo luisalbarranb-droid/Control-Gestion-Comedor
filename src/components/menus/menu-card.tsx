@@ -1,3 +1,4 @@
+
 'use client';
 
 import { format } from 'date-fns';
@@ -38,7 +39,7 @@ const categoryOrder: MenuItemCategory[] = [
 
 export function MenuCard({ menu }: MenuCardProps) {
   const sortedItems = [...menu.items].sort((a, b) => categoryOrder.indexOf(a.category) - categoryOrder.indexOf(b.category));
-  const menuDateObj = menu.date.toDate ? menu.date.toDate() : new Date(menu.date);
+  const menuDateObj = menu.date.toDate ? menu.date.toDate() : new Date(menu.date as any);
   const menuDate = format(menuDateObj, 'yyyy-MM-dd');
 
   return (
@@ -74,7 +75,7 @@ export function MenuCard({ menu }: MenuCardProps) {
       <CardContent className="flex-grow">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
           {sortedItems.map(item => (
-            <MenuItemCard key={item.menuItemId} menuItem={item} pax={menu.pax} />
+            <MenuItemCard key={item.id} menuItem={item} pax={menu.pax} />
           ))}
           {sortedItems.length === 0 && (
             <div className="col-span-full flex items-center justify-center h-40 border-2 border-dashed rounded-md">
@@ -95,5 +96,3 @@ export function MenuCard({ menu }: MenuCardProps) {
     </Card>
   );
 }
-
-    

@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useEffect, useMemo } from 'react';
@@ -31,7 +32,7 @@ import {
 } from '@/components/ui/select';
 import { DatePicker } from '@/components/ui/datepicker';
 import { PlusCircle, Trash2 } from 'lucide-react';
-import type { InventoryItem } from '@/lib/types';
+import type { InventoryItem, InventoryOrderItem } from '@/lib/types';
 import { Separator } from '../ui/separator';
 
 const formSchema = z.object({
@@ -50,7 +51,7 @@ type FormValues = z.infer<typeof formSchema>;
 interface OrderFormProps {
   isOpen: boolean;
   onOpenChange: (isOpen: boolean) => void;
-  onSave: (data: FormValues) => void;
+  onSave: (data: Omit<FormValues, 'items'> & { items: { itemId: string; quantity: number }[] }) => void;
   inventoryItems: InventoryItem[];
 }
 
@@ -86,6 +87,17 @@ export function OrderForm({ isOpen, onOpenChange, onSave, inventoryItems }: Orde
       });
     }
   }, [isOpen, form]);
+  
+  const handleSave = (values: FormValues) => {
+    const orderData = {
+      ...values,
+      items: values.items.map(item => ({
+        itemId: item.itemId,
+        quantity: item.quantity,
+      })),
+    };
+    onSave(orderData);
+  }
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
@@ -97,7 +109,7 @@ export function OrderForm({ isOpen, onOpenChange, onSave, inventoryItems }: Orde
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSave)} className="space-y-4 max-h-[70vh] overflow-y-auto pr-6">
+          <form onSubmit={form.handleSubmit(handleSave)} className="space-y-4 max-h-[70vh] overflow-y-auto pr-6">
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <FormField
                 control={form.control}
@@ -166,7 +178,7 @@ export function OrderForm({ isOpen, onOpenChange, onSave, inventoryItems }: Orde
                             </FormControl>
                             <SelectContent>
                               {inventoryItems.map(item => (
-                                <SelectItem key={item.itemId} value={item.itemId}>
+                                <SelectItem key={item.id} value={item.id}>
                                   {item.nombre} ({item.unidad})
                                 </SelectItem>
                               ))}

@@ -35,7 +35,7 @@ export default function PlanningPage() {
   }, [firestore, authUser]);
   const { data: currentUser, isLoading: isProfileLoading } = useDoc<User>(userDocRef);
   
-  const role = currentUser?.rol;
+  const rol = currentUser?.rol;
 
   const [currentWeek, setCurrentWeek] = useState(new Date());
 
@@ -62,7 +62,7 @@ export default function PlanningPage() {
     setCurrentWeek(addWeeks(currentWeek, 1));
   };
   
-  const handleSave = (newDaysOff: DayOff[]) => {
+  const handleSave = (newDaysOff: Omit<DayOff, 'id'>[]) => {
     if (!firestore) {
       toast({
         variant: 'destructive',
@@ -74,14 +74,12 @@ export default function PlanningPage() {
   
     const weekStartDate = newDaysOff[0]?.weekStartDate;
   
-    // Delete existing days off for the current week to handle deselections
     const existingForWeek = daysOff?.filter(d => d.weekStartDate === weekStartDate) || [];
     existingForWeek.forEach(dayOffDoc => {
       const docRef = doc(firestore, 'daysOff', dayOffDoc.id);
       deleteDocumentNonBlocking(docRef);
     });
   
-    // Set new days off for the current week
     newDaysOff.forEach(dayOff => {
       const docId = `${dayOff.userId}_${dayOff.weekStartDate}`;
       const docRef = doc(firestore, 'daysOff', docId);
@@ -104,7 +102,7 @@ export default function PlanningPage() {
     )
   }
 
-  if (role !== 'admin' && role !== 'superadmin') {
+  if (rol !== 'admin' && rol !== 'superadmin') {
       return (
         <div className="min-h-screen w-full flex items-center justify-center">
             <p>No tienes permiso para acceder a esta página.</p>

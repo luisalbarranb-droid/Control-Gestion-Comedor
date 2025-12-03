@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useTransition } from 'react';
@@ -103,7 +104,7 @@ export default function AIPrioritizer() {
               </TableHeader>
               <TableBody>
                 {prioritizedTasks?.map((suggestion) => {
-                  const originalTask = mockTasks.find(t => t.taskId === suggestion.taskId);
+                  const originalTask = mockTasks.find(t => t.id === suggestion.taskId);
                   if (!originalTask) return null;
 
                   return (

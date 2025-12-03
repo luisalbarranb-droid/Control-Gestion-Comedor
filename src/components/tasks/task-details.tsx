@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -101,6 +102,8 @@ export function TaskDetails({
   const assignedUser = users.find((u) => u.userId === task.asignadoA);
   const creatorUser = users.find((u) => u.userId === task.creadoPor);
   const area = areas.find((a) => a.id === task.area);
+  const fechaCreacion = task.fechaCreacion.toDate ? task.fechaCreacion.toDate() : new Date(task.fechaCreacion as any);
+  const fechaVencimiento = task.fechaVencimiento.toDate ? task.fechaVencimiento.toDate() : new Date(task.fechaVencimiento as any);
 
   return (
     <div
@@ -147,7 +150,7 @@ export function TaskDetails({
                     <Calendar className="w-4 h-4 mt-0.5 text-muted-foreground" />
                     <div>
                         <p className="font-semibold">Vencimiento</p>
-                        <p>{format(new Date(task.fechaVencimiento), 'dd MMM, yyyy', { locale: es })}</p>
+                        <p>{format(fechaVencimiento, 'dd MMM, yyyy', { locale: es })}</p>
                     </div>
                 </div>
                  <div className="flex items-start gap-2">
@@ -240,8 +243,8 @@ export function TaskDetails({
             <Separator />
 
             <div className="text-xs text-muted-foreground">
-              <p>ID Tarea: {task.taskId}</p>
-              <p>Creada hace {formatDistanceToNow(new Date(task.fechaCreacion), { locale: es })}</p>
+              <p>ID Tarea: {task.id}</p>
+              <p>Creada hace {formatDistanceToNow(fechaCreacion, { locale: es })}</p>
             </div>
           </div>
         </div>

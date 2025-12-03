@@ -32,8 +32,8 @@ export default function AttendancePage() {
   }, [firestore, authUser]);
   const { data: currentUser, isLoading: isProfileLoading } = useDoc<User>(userDocRef);
   
-  const role = currentUser?.rol;
-  const isAdmin = role === 'admin' || role === 'superadmin';
+  const rol = currentUser?.rol;
+  const isAdmin = rol === 'admin' || rol === 'superadmin';
 
   // --- Fetch users: all if admin, otherwise just the current user ---
   const usersCollectionRef = useMemoFirebase(() => {

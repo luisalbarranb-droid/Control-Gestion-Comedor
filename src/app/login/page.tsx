@@ -43,28 +43,24 @@ export default function LoginPage() {
     try {
         const docSnap = await getDoc(userDocRef);
 
-        // Standardized English data structure
         const correctUserData = {
             id: userId,
             userId: userId,
             email: email,
-            name: 'Super Admin',
-            role: 'superadmin',
+            nombre: 'Super Admin',
+            rol: 'superadmin',
             area: 'administracion',
-            isActive: true,
-            creationDate: docSnap.exists() ? (docSnap.data().creationDate || new Date()) : new Date(),
-            createdBy: docSnap.exists() ? (docSnap.data().createdBy || 'system') : 'system',
-            lastAccess: new Date(),
+            activo: true,
+            fechaCreacion: docSnap.exists() ? (docSnap.data().fechaCreacion || new Date()) : new Date(),
+            creadoPor: docSnap.exists() ? (docSnap.data().creadoPor || 'system') : 'system',
+            ultimoAcceso: new Date(),
         };
 
-        // If the document doesn't exist, or if the 'role' field is missing (indicating an old/incorrect structure)
-        // forcefully overwrite it with the correct data.
-        if (!docSnap.exists() || !docSnap.data().role) {
-            setDocumentNonBlocking(userDocRef, correctUserData, { merge: false }); // Use merge:false to ensure a clean overwrite
+        if (!docSnap.exists() || !docSnap.data().rol) {
+            setDocumentNonBlocking(userDocRef, correctUserData, { merge: false });
             console.log('User document corrected/created for user:', userId);
         } else {
-             // If document exists and is correct, just update the last access time.
-            setDocumentNonBlocking(userDocRef, { lastAccess: new Date() }, { merge: true });
+            setDocumentNonBlocking(userDocRef, { ultimoAcceso: new Date() }, { merge: true });
         }
 
     } catch (error) {
@@ -88,7 +84,6 @@ export default function LoginPage() {
 
     try {
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
-      // After successful sign-in, ensure the user data is correct
       await upsertUserData(userCredential.user.uid, email);
       toast({
         title: 'Inicio de sesión exitoso',
@@ -101,7 +96,6 @@ export default function LoginPage() {
             const userCredential = await createUserWithEmailAndPassword(auth, email, password);
             const newUser = userCredential.user;
             
-            // On first creation, create the correct user document
             await upsertUserData(newUser.uid, email);
 
             toast({
