@@ -17,6 +17,8 @@ import { Label } from '@/components/ui/label';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2 } from 'lucide-react';
+import { useAuth } from '@/firebase';
+import { signInWithEmailAndPassword } from 'firebase/auth';
 
 export default function LoginPage() {
   const loginBg = PlaceHolderImages.find(
@@ -24,31 +26,41 @@ export default function LoginPage() {
   );
   const router = useRouter();
   const { toast } = useToast();
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const auth = useAuth();
+  const [email, setEmail] = useState('arvecladu@gmail.com');
+  const [password, setPassword] = useState('password');
   const [isLoading, setIsLoading] = useState(false);
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
 
-    // Simular llamada a API
-    setTimeout(() => {
-      if (email === 'arvecladu@gmail.com') {
-        toast({
-          title: 'Inicio de sesión exitoso',
-          description: '¡Bienvenido de nuevo!',
-        });
-        router.push('/');
-      } else {
-        toast({
-          variant: 'destructive',
-          title: 'Error de autenticación',
-          description: 'El correo electrónico o la contraseña son incorrectos.',
-        });
-        setIsLoading(false);
-      }
-    }, 1500);
+    try {
+      await signInWithEmailAndPassword(auth, email, password);
+      toast({
+        title: 'Inicio de sesión exitoso',
+        description: '¡Bienvenido de nuevo!',
+      });
+      router.push('/');
+    } catch (error: any) {
+      console.error('Firebase Auth Error:', error);
+       let description = 'El correo electrónico o la contraseña son incorrectos.';
+        if (error.code === 'auth/invalid-credential') {
+            description = 'Credenciales inválidas. Por favor, revisa tu correo y contraseña.';
+        } else if (error.code === 'auth/user-not-found') {
+            description = 'No se encontró un usuario con ese correo electrónico.';
+        } else if (error.code === 'auth/wrong-password') {
+            description = 'La contraseña es incorrecta.';
+        }
+      
+      toast({
+        variant: 'destructive',
+        title: 'Error de autenticación',
+        description: description,
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
