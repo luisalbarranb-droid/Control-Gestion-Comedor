@@ -31,7 +31,6 @@ import type { User } from '@/lib/types';
 
 const profileSchema = z.object({
   name: z.string().min(2, 'El nombre es requerido.'),
-  email: z.string().email('Debe ser un email válido.'),
   currentPassword: z.string().optional(),
   newPassword: z.string().optional(),
 }).refine(data => {
@@ -66,7 +65,6 @@ export function ProfileCard() {
     resolver: zodResolver(profileSchema),
     defaultValues: {
         name: '',
-        email: '',
         currentPassword: '',
         newPassword: '',
     }
@@ -78,7 +76,6 @@ export function ProfileCard() {
     if (user) {
       form.reset({
         name: user.name,
-        email: user.email,
         currentPassword: '',
         newPassword: '',
       });
@@ -149,19 +146,13 @@ export function ProfileCard() {
                 </FormItem>
               )}
             />
-            <FormField
-              control={form.control}
-              name="email"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Email</FormLabel>
-                  <FormControl>
-                    <Input {...field} type="email" disabled />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+            <FormItem>
+              <FormLabel>Email</FormLabel>
+              <FormControl>
+                <Input type="email" disabled value={user?.email || ''} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
             <FormField
               control={form.control}
               name="currentPassword"
