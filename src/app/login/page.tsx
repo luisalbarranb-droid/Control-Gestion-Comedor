@@ -68,7 +68,7 @@ export default function LoginPage() {
                 userId: newUser.uid,
                 email: email,
                 name: 'Super Admin',
-                role: 'superadmin',
+                role: 'superadmin', // CORRECTED from 'role'
                 area: 'administracion',
                 isActive: true,
                 creationDate: serverTimestamp(),
