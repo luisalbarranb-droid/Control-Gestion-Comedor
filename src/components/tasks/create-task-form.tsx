@@ -38,7 +38,7 @@ import { users, areas } from '@/lib/placeholder-data';
 import type { Task, TaskPriority, AreaId, TaskPeriodicity } from '@/lib/types';
 
 type CreateTaskFormProps = {
-  onTaskCreate: (task: Omit<Task, 'taskId' | 'creadoPor' | 'fechaCreacion' | 'estado' | 'checklist' | 'comentarios' | 'tags' | 'recurrente'>) => void;
+  onTaskCreate: (task: Omit<Task, 'taskId' | 'creadoPor' | 'fechaCreacion' | 'estado' | 'checklist' | 'comentarios' | 'tags' | 'recurrente' | 'evidencias' | 'id'>) => void;
 };
 
 export function CreateTaskForm({ onTaskCreate }: CreateTaskFormProps) {
@@ -90,7 +90,6 @@ export function CreateTaskForm({ onTaskCreate }: CreateTaskFormProps) {
         area: values.area as AreaId,
         tiempoEstimado: values.tiempoEstimado || 0,
         descripcion: values.descripcion || '',
-        evidencias: [],
     };
     onTaskCreate(taskData);
     

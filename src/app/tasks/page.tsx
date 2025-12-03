@@ -9,7 +9,7 @@ import {
 } from '@/components/ui/sidebar';
 import { Header } from '@/components/dashboard/header';
 import { MainNav } from '@/components/dashboard/main-nav';
-import { SquareCheck, MoreHorizontal } from 'lucide-react';
+import { MoreHorizontal, SquareCheck } from 'lucide-react';
 import {
   Table,
   TableBody,
@@ -36,13 +36,16 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { tasks as initialTasks, users, areas } from '@/lib/placeholder-data';
-import type { Task, TaskPriority, TaskStatus } from '@/lib/types';
+import { users, areas } from '@/lib/placeholder-data';
+import type { Task, TaskPriority, TaskStatus, AreaId } from '@/lib/types';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import { CreateTaskForm } from '@/components/tasks/create-task-form';
 import { TaskDetails } from '@/components/tasks/task-details';
-
+import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
+import { collection, doc, serverTimestamp } from 'firebase/firestore';
+import { setDocumentNonBlocking, addDocumentNonBlocking } from '@/firebase/non-blocking-updates';
+import { useCurrentUser } from '@/hooks/use-current-user';
 
 const priorityVariant: Record<TaskPriority, string> = {
   baja: 'bg-green-100 text-green-800 border-green-200 dark:bg-green-900/50 dark:text-green-300 dark:border-green-700',
@@ -62,26 +65,51 @@ const statusVariant: Record<TaskStatus, string> = {
 };
 
 export default function TasksPage() {
-  const [tasks, setTasks] = useState<Task[]>(initialTasks);
+  const firestore = useFirestore();
+  const { user: currentUser } = useCurrentUser();
+  
+  const tasksCollectionRef = useMemoFirebase(
+    () => (firestore ? collection(firestore, 'tasks') : null),
+    [firestore]
+  );
+  const { data: tasks, isLoading } = useCollection<Task>(tasksCollectionRef);
+
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
+  
+  // TODO: Fetch users and areas from Firestore instead of placeholder
   const getUser = (userId: string) => users.find((u) => u.userId === userId);
   const getArea = (areaId: string) => areas.find((a) => a.id === areaId);
 
-  const handleTaskCreate = (newTaskData: Omit<Task, 'taskId' | 'creadoPor' | 'fechaCreacion' | 'estado' | 'checklist' | 'comentarios' | 'tags' | 'recurrente' | 'periodicidad'>) => {
-    const fullyNewTask: Task = {
+  const handleTaskCreate = (newTaskData: Omit<Task, 'taskId' | 'creadoPor' | 'fechaCreacion' | 'estado' | 'checklist' | 'comentarios' | 'tags' | 'recurrente' | 'periodicidad' | 'evidencias'>) => {
+    if (!firestore || !currentUser) return;
+    
+    const collectionRef = collection(firestore, 'tasks');
+    const docRef = doc(collectionRef);
+
+    const fullyNewTask: Omit<Task, 'taskId'> = {
       ...newTaskData,
-      taskId: `task-${Date.now()}`,
-      creadoPor: 'user-superadmin-1', // Placeholder for current user
-      fechaCreacion: new Date(),
+      id: docRef.id,
+      creadoPor: currentUser.userId,
+      fechaCreacion: serverTimestamp(),
       estado: 'pendiente',
       periodicidad: 'unica',
       checklist: [],
+      evidencias: [],
       comentarios: [],
       tags: [],
       recurrente: false,
     };
-    setTasks(prevTasks => [fullyNewTask, ...prevTasks]);
+    
+    addDocumentNonBlocking(collectionRef, fullyNewTask);
   };
+
+  if (isLoading) {
+      return (
+          <div className="min-h-screen w-full flex items-center justify-center">
+              <p>Cargando tareas...</p>
+          </div>
+      )
+  }
 
   return (
     <div className="min-h-screen w-full">
@@ -131,19 +159,20 @@ export default function TasksPage() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {tasks.map((task) => {
+                    {tasks && tasks.map((task) => {
                       const user = getUser(task.asignadoA);
                       const area = getArea(task.area);
+                      
+                      // Handle Firestore Timestamp
+                      const dueDate = task.fechaVencimiento?.toDate ? task.fechaVencimiento.toDate() : new Date(task.fechaVencimiento);
+
                       return (
-                        <TableRow key={task.taskId} onClick={() => setSelectedTask(task)} className="cursor-pointer">
+                        <TableRow key={task.id} onClick={() => setSelectedTask(task)} className="cursor-pointer">
                           <TableCell>
                             <div className="font-medium">{task.titulo}</div>
                             <div className="text-sm text-muted-foreground">
                               Vence:{' '}
-                              {format(
-                                new Date(task.fechaVencimiento),
-                                'dd/MM/yyyy'
-                              )}
+                              {format(dueDate, 'dd/MM/yyyy')}
                             </div>
                           </TableCell>
                           <TableCell>

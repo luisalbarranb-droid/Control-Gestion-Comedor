@@ -1,3 +1,5 @@
+import { Timestamp } from 'firebase/firestore';
+
 export type Role = 'superadmin' | 'admin' | 'comun';
 export type AreaId = 'servicio' | 'cocina' | 'limpieza' | 'almacen' | 'equipos' | 'administracion' | 'operaciones' | 'rrhh';
 export type TaskStatus = 'pendiente' | 'en-progreso' | 'completada' | 'verificada' | 'rechazada';
@@ -8,6 +10,7 @@ export type ContractType = 'determinado' | 'indeterminado' | 'prueba';
 
 
 export interface User {
+  id: string; // Document ID from Firestore
   userId: string;
   email: string;
   nombre: string;
@@ -17,10 +20,10 @@ export interface User {
   rol: Role;
   area: AreaId;
   activo: boolean;
-  fechaCreacion: Date; // Fecha de Ingreso
-  fechaCulminacionContrato?: Date;
+  fechaCreacion: Date | Timestamp; // Fecha de Ingreso
+  fechaCulminacionContrato?: Date | Timestamp;
   creadoPor: string; // userId or 'system'
-  ultimoAcceso: Date;
+  ultimoAcceso: Date | Timestamp;
   avatarUrl?: string;
   tipoTrabajador?: WorkerType;
   tipoContrato?: ContractType;
@@ -57,7 +60,7 @@ export interface Comment {
 }
 
 export interface Task {
-  taskId: string;
+  id: string; // Document ID from Firestore
   titulo: string;
   descripcion: string;
   area: AreaId;
@@ -66,10 +69,10 @@ export interface Task {
   estado: TaskStatus;
   prioridad: TaskPriority;
   periodicidad: TaskPeriodicity;
-  fechaCreacion: Date;
-  fechaVencimiento: Date;
-  fechaCompletado?: Date;
-  proximaEjecucion?: Date;
+  fechaCreacion: Date | Timestamp;
+  fechaVencimiento: Date | Timestamp;
+  fechaCompletado?: Date | Timestamp;
+  proximaEjecucion?: Date | Timestamp;
   checklist: ChecklistItem[];
   evidencias: Evidence[];
   comentarios: Comment[];
