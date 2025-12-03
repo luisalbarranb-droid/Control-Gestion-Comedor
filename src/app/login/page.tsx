@@ -18,7 +18,7 @@ import { Label } from '@/components/ui/label';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2 } from 'lucide-react';
-import { useAuth, useFirestore, setDocumentNonBlocking, getDocument } from '@/firebase';
+import { useAuth, useFirestore, setDocumentNonBlocking } from '@/firebase';
 import { signInWithEmailAndPassword, createUserWithEmailAndPassword } from 'firebase/auth';
 import { doc, getDoc } from 'firebase/firestore';
 
@@ -47,20 +47,22 @@ export default function LoginPage() {
             id: userId,
             userId: userId,
             email: email,
-            nombre: 'Super Admin',
-            rol: 'superadmin',
+            name: 'Super Admin',
+            role: 'superadmin',
             area: 'administracion',
-            activo: true,
-            fechaCreacion: docSnap.exists() ? (docSnap.data().fechaCreacion || new Date()) : new Date(),
-            creadoPor: docSnap.exists() ? (docSnap.data().creadoPor || 'system') : 'system',
-            ultimoAcceso: new Date(),
+            isActive: true,
+            creationDate: docSnap.exists() ? (docSnap.data().creationDate || new Date()) : new Date(),
+            createdBy: docSnap.exists() ? (docSnap.data().createdBy || 'system') : 'system',
+            lastAccess: new Date(),
         };
 
-        if (!docSnap.exists() || !docSnap.data().rol) {
+        if (!docSnap.exists() || !docSnap.data().role) {
+            // Forcefully overwrite the document with correct fields if it's missing or malformed
             setDocumentNonBlocking(userDocRef, correctUserData, { merge: false });
             console.log('User document corrected/created for user:', userId);
         } else {
-            setDocumentNonBlocking(userDocRef, { ultimoAcceso: new Date() }, { merge: true });
+            // Otherwise, just update the last access time
+            setDocumentNonBlocking(userDocRef, { lastAccess: new Date() }, { merge: true });
         }
 
     } catch (error) {
@@ -83,7 +85,9 @@ export default function LoginPage() {
     }
 
     try {
+      // First, try to sign in
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
+      // On successful sign-in, immediately run the data correction function
       await upsertUserData(userCredential.user.uid, email);
       toast({
         title: 'Inicio de sesión exitoso',
@@ -91,11 +95,13 @@ export default function LoginPage() {
       });
       router.push('/');
     } catch (error: any) {
+      // If user doesn't exist, create it as a superadmin
       if (error.code === 'auth/invalid-credential' || error.code === 'auth/user-not-found') {
         try {
             const userCredential = await createUserWithEmailAndPassword(auth, email, password);
             const newUser = userCredential.user;
             
+            // Create the new user with the correct data structure
             await upsertUserData(newUser.uid, email);
 
             toast({
@@ -119,6 +125,7 @@ export default function LoginPage() {
             });
         }
       } else {
+         // Handle other login errors (e.g., wrong password)
          console.error('Firebase Auth Error:', error);
          toast({
             variant: 'destructive',
