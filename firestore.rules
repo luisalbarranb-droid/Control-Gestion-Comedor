@@ -1,7 +1,7 @@
 
 /**
  * @fileoverview Firebase Security Rules for a Task Management Application
- * @version 8
+ * @version 9
  *
  * @description
  * This ruleset enforces a role-based access control (RBAC) model combined with
@@ -15,17 +15,10 @@
  * 2. Role-Based Access: 'admin' and 'superadmin' roles grant elevated privileges.
  *    The 'superadmin' has full write access, while 'admin' has primarily read
  *    access in sensitive areas like user management.
- * 3. User Ownership: Users have explicit control over the data they create, such
- *    as their own user profile, comments, and evidence uploads.
- *
- * Key Security Decisions:
- * - Admin Supremacy: Admins and Superadmins have wide-ranging read access.
- * - Superadmin Write Control: The 'superadmin' role has exclusive write
- *   privileges for creating and modifying users and critical configurations.
- * - User Data Privacy: A user's document in `/users` can only be read by
+ * 3. User Data Privacy: A user's document in `/users` can only be read by
  *   the user themselves or an admin/superadmin. Listing all users is restricted
  *   to admins/superadmins.
- * - Task Accessibility: Access to a task (and its related comments/evidence) is
+ * 4. Task Accessibility: Access to a task (and its related comments/evidence) is
  *   granted to the user it is assigned to, the user who created it, and admins.
  */
 rules_version = '2';
@@ -137,8 +130,7 @@ service cloud.firestore {
     match /users/{userId} {
       allow get: if isSignedIn() && (isOwner(userId) || isAdminOrHigher());
       allow list: if isAdminOrHigher();
-      allow create: if isSuperAdmin();
-      allow update, delete: if isSuperAdmin();
+      allow create, update, delete: if isSuperAdmin();
     }
 
     // --------------------------------------------------------------------
@@ -269,8 +261,7 @@ service cloud.firestore {
     match /attendance/{recordId} {
       allow get: if isSignedIn() && (isOwner(resource.data.userId) || isAdminOrHigher());
       allow list: if isSignedIn(); // Users can only list their own records due to query constraints
-      allow create: if isAdminOrHigher(); // Only admins can create records (e.g., via scanner or manual entry)
-      allow update, delete: if isAdminOrHigher();
+      allow create, update, delete: if isAdminOrHigher(); // Only admins can manage records
     }
     
     // --------------------------------------------------------------------

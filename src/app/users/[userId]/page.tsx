@@ -45,11 +45,9 @@ const contractTypeVariant: Record<ContractType, string> = {
 
 const formatDate = (date: any) => {
     if (!date) return 'N/A';
-    // Firestore Timestamps can be converted to JS Date objects
     if (date.toDate) {
       return format(date.toDate(), 'dd MMMM, yyyy', { locale: es });
     }
-    // Handle cases where it might already be a JS Date or a string
     return format(new Date(date), 'dd MMMM, yyyy', { locale: es });
 };
 
@@ -59,7 +57,6 @@ export default function UserProfilePage() {
   const userId = params.userId as string;
   const firestore = useFirestore();
 
-  // First, check for auth state of the logged-in user
   const { user: authUser, isUserLoading: isAuthLoading } = useUser();
 
   const userDocRef = useMemoFirebase(
@@ -70,7 +67,6 @@ export default function UserProfilePage() {
       disabled: !userId
   });
   
-  // Redirect if auth is done and there's no user
   useEffect(() => {
     if (!isAuthLoading && !authUser) {
       router.push('/login');

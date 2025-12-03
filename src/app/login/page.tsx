@@ -38,7 +38,6 @@ export default function LoginPage() {
     if (!firestore) return;
     const userRef = doc(firestore, 'users', firebaseUser.uid);
     
-    // Standardized user object using English field names
     const newUser: Omit<User, 'creationDate' | 'lastAccess'> = {
       id: firebaseUser.uid,
       userId: firebaseUser.uid,
@@ -47,10 +46,9 @@ export default function LoginPage() {
       role: 'superadmin',
       area: 'administracion',
       isActive: true,
-      createdBy: 'system', // Indicates this user was created programmatically
+      createdBy: 'system',
     };
 
-    // Use setDoc with merge:true to create or update the document.
     setDocumentNonBlocking(userRef, {
       ...newUser,
       creationDate: serverTimestamp(),
@@ -75,9 +73,7 @@ export default function LoginPage() {
     }
 
     try {
-      // 1. Attempt to sign in
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
-      // On successful login, always ensure the user document is correct
       upsertUserData(userCredential.user);
       
       toast({
@@ -87,11 +83,9 @@ export default function LoginPage() {
       router.push('/');
 
     } catch (error: any) {
-      // 2. If user does not exist, create it
       if (error.code === 'auth/user-not-found') {
         try {
             const newUserCredential = await createUserWithEmailAndPassword(auth, email, password);
-            // After creation, create the standardized user document
             upsertUserData(newUserCredential.user);
             toast({
                 title: 'Cuenta de Super Admin Creada',
@@ -107,7 +101,6 @@ export default function LoginPage() {
             });
         }
       } else if (error.code === 'auth/invalid-credential' || error.code === 'auth/wrong-password') {
-         // 3. Handle incorrect password and other errors
          toast({
             variant: 'destructive',
             title: 'Credenciales Incorrectas',

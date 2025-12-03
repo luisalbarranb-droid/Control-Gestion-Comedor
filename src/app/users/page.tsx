@@ -64,9 +64,8 @@ export default function UsersPage() {
   }, [firestore, authUser]);
   const { data: currentUser, isLoading: isProfileLoading } = useDoc<User>(userDocRef);
 
-  const role = currentUser?.role;
-  const isSuperAdmin = role === 'superadmin';
-  const isAdminOrHigher = role === 'admin' || role === 'superadmin';
+  const isSuperAdmin = currentUser?.role === 'superadmin';
+  const isAdminOrHigher = currentUser?.role === 'admin' || currentUser?.role === 'superadmin';
 
   const usersCollectionRef = useMemoFirebase(
     () => (firestore && isAdminOrHigher ? collection(firestore, 'users') : null),

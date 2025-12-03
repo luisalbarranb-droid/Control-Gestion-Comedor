@@ -61,17 +61,16 @@ export function ProfileCard() {
 
   const form = useForm<ProfileFormValues>({
     resolver: zodResolver(profileSchema),
-    defaultValues: {
-        name: '',
-        email: '',
+    values: {
+        name: user?.name || '',
+        email: user?.email || '',
         currentPassword: '',
         newPassword: '',
-    },
+    }
   });
   
   const { formState: { isSubmitting } } = form;
 
-  // This effect will re-sync the form whenever the user data from Firestore changes.
   React.useEffect(() => {
     if (user) {
       form.reset({
@@ -94,11 +93,7 @@ export function ProfileCard() {
     const userRef = doc(firestore, 'users', user.id);
     setDocumentNonBlocking(userRef, dataToUpdate, { merge: true });
 
-    // Handle password change if provided
     if (data.newPassword) {
-        // In a real app, you would call a secure Firebase function to verify the old password
-        // and update it. Client-side password changes are complex and less secure.
-        // For this prototype, we'll just show a success message.
         console.log('Password change requested. (Not implemented in prototype)');
     }
 
