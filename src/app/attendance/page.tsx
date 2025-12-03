@@ -52,15 +52,14 @@ export default function AttendancePage() {
   }, [firestore, weekStartDateString, currentUser]);
   const { data: daysOff, isLoading: isLoadingDaysOff } = useCollection(daysOffQuery);
 
-  // Correctly determine the overall loading state.
-  // We must wait for the current user to be loaded before knowing if we need to load all users.
+  // Determine overall loading state. We must wait for all relevant data to be fetched.
   const isLoading = isCurrentUserLoading || isLoadingAttendance || isLoadingDaysOff || (isAdmin && isLoadingUsers);
 
   // Determine which users to display. Wait until loading is complete.
   // This logic runs only when isLoading is false.
   const displayedUsers = isLoading 
     ? [] 
-    : (isAdmin ? usersData : (currentUser ? [currentUser] : []));
+    : (isAdmin ? (usersData || []) : (currentUser ? [currentUser] : []));
 
   return (
     <div className="min-h-screen w-full">
@@ -100,7 +99,7 @@ export default function AttendancePage() {
            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             <div className="lg:col-span-2">
                 <AttendanceTable 
-                    users={displayedUsers || []} 
+                    users={displayedUsers} 
                     records={todayRecords || []} 
                     daysOff={daysOff || []}
                     isLoading={isLoading} 
