@@ -18,11 +18,10 @@ import { collection, query, where } from 'firebase/firestore';
 import { AttendanceTable } from '@/components/attendance/attendance-table';
 import { ScannerCard } from '@/components/attendance/scanner-card';
 import { format, startOfDay, endOfDay, startOfWeek } from 'date-fns';
-import { es } from 'date-fns/locale';
 
 export default function AttendancePage() {
   const { user: currentUser, role, isLoading: isCurrentUserLoading } = useCurrentUser();
-  const isAdmin = !!(currentUser && (currentUser.rol === 'admin' || currentUser.rol === 'superadmin'));
+  const isAdmin = !!(currentUser && (role === 'admin' || role === 'superadmin'));
   const firestore = useFirestore();
 
   // --- Fetch users (Only for admins) ---
@@ -53,11 +52,15 @@ export default function AttendancePage() {
   }, [firestore, weekStartDateString, currentUser]);
   const { data: daysOff, isLoading: isLoadingDaysOff } = useCollection(daysOffQuery);
 
-  // Correctly determine the loading state
+  // Correctly determine the overall loading state.
+  // We must wait for the current user to be loaded before knowing if we need to load all users.
   const isLoading = isCurrentUserLoading || isLoadingAttendance || isLoadingDaysOff || (isAdmin && isLoadingUsers);
 
   // Determine which users to display. Wait until loading is complete.
-  const displayedUsers = isCurrentUserLoading ? [] : (isAdmin ? usersData : (currentUser ? [currentUser] : []));
+  // This logic runs only when isLoading is false.
+  const displayedUsers = isLoading 
+    ? [] 
+    : (isAdmin ? usersData : (currentUser ? [currentUser] : []));
 
   return (
     <div className="min-h-screen w-full">
