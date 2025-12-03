@@ -104,7 +104,7 @@ export function MainNav() {
             <Link href="/users">
               <SidebarMenuButton isActive={pathname.startsWith('/users')}>
                 <Users />
-                <span>Usuarios</span>
+                <span>Gestión de Usuarios</span>
               </SidebarMenuButton>
             </Link>
           </SidebarMenuItem>
@@ -141,3 +141,5 @@ export function MainNav() {
     </SidebarMenu>
   );
 }
+
+    

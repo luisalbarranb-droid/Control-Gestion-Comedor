@@ -41,6 +41,7 @@ export default function LoginPage() {
     const userSnap = await getDoc(userRef);
 
     if (!userSnap.exists()) {
+      // Create new user document with standardized English fields
       const newUser: Omit<User, 'lastAccess' | 'creationDate' | 'id'> = {
         userId: firebaseUser.uid,
         email: firebaseUser.email!,
@@ -58,6 +59,7 @@ export default function LoginPage() {
       });
       console.log('Super Admin user document created:', firebaseUser.uid);
     } else {
+       // On subsequent logins, just update the last access time.
        await setDoc(userRef, { lastAccess: serverTimestamp() }, { merge: true });
     }
   };
@@ -88,6 +90,7 @@ export default function LoginPage() {
 
     } catch (error: any) {
       if (error.code === 'auth/user-not-found') {
+        // If user does not exist, create a new superadmin account
         try {
             const newUserCredential = await createUserWithEmailAndPassword(auth, email, password);
             await upsertUserData(newUserCredential.user);
@@ -182,3 +185,4 @@ export default function LoginPage() {
   );
 }
 
+    
