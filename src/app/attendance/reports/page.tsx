@@ -36,10 +36,9 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { attendanceRecords, users } from '@/lib/placeholder-data';
-import type { AttendanceRecord, AttendanceStatus, LeaveType, ConsolidatedRecord } from '@/lib/types';
+import type { AttendanceRecord, AttendanceStatus, LeaveType, ConsolidatedRecord, User } from '@/lib/types';
 import { cn } from '@/lib/utils';
-import { format, differenceInHours } from 'date-fns';
+import { format, differenceInHours, startOfMonth, endOfMonth } from 'date-fns';
 import { es } from 'date-fns/locale';
 import * as XLSX from 'xlsx';
 import { saveAs } from 'file-saver';
@@ -48,6 +47,8 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { DateRange } from 'react-day-picker';
 import { Calendar } from '@/components/ui/calendar';
 import Link from 'next/link';
+import { useCollection, useFirestore, useMemoFirebase, updateDocumentNonBlocking } from '@/firebase';
+import { collection, query, where, doc } from 'firebase/firestore';
 
 const statusConfig: Record<AttendanceStatus, { label: string, className: string, icon: React.ElementType }> = {
     presente: { label: 'Presente', className: 'bg-green-100 text-green-800', icon: UserCheck },
@@ -63,31 +64,45 @@ const statusConfig: Record<AttendanceStatus, { label: string, className: string,
 
 export default function AttendanceReportsPage() {
     const { toast } = useToast();
-    const [records, setRecords] = useState<AttendanceRecord[]>(attendanceRecords);
+    const firestore = useFirestore();
     const [activeTab, setActiveTab] = useState('general');
     const [date, setDate] = useState<DateRange | undefined>({
-        from: new Date(new Date().getFullYear(), new Date().getMonth(), 1),
-        to: new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0),
+        from: startOfMonth(new Date()),
+        to: endOfMonth(new Date()),
     });
 
-    const getUser = (userId: string) => users.find((u) => u.userId === userId);
-    const getUserInitials = (name: string) => name.split(' ').map((n) => n[0]).join('');
+    // --- Fetch Users ---
+    const usersCollectionRef = useMemoFirebase(
+        () => (firestore ? collection(firestore, 'users') : null),
+        [firestore]
+    );
+    const { data: users, isLoading: isLoadingUsers } = useCollection<User>(usersCollectionRef);
 
-    const filteredRecords = records.filter(record => {
-        if (!date?.from) return true;
-        const recordDate = new Date(record.checkIn);
+    // --- Fetch Attendance Records for date range ---
+    const recordsQuery = useMemoFirebase(() => {
+        if (!firestore || !date?.from) return null;
         const from = new Date(date.from);
         from.setHours(0,0,0,0);
-        if (!date.to) return recordDate >= from;
-        const to = new Date(date.to);
+        const to = date.to ? new Date(date.to) : from;
         to.setHours(23,59,59,999);
-        return recordDate >= from && recordDate <= to;
-    });
+        
+        return query(
+            collection(firestore, 'attendance'),
+            where('checkIn', '>=', from),
+            where('checkIn', '<=', to)
+        );
+    }, [firestore, date]);
+    const { data: filteredRecords, isLoading: isLoadingRecords } = useCollection<AttendanceRecord>(recordsQuery);
+
+    const getUser = (userId: string) => users?.find((u) => u.id === userId);
+    const getUserInitials = (name: string) => name ? name.split(' ').map((n) => n[0]).join('') : '';
     
     const consolidatedData = useMemo(() => {
+        if (!users || !filteredRecords) return [];
+
         const userStats: Record<string, ConsolidatedRecord> = users.reduce((acc, user) => {
-            acc[user.userId] = {
-                userId: user.userId,
+            acc[user.id] = {
+                userId: user.id,
                 userName: user.nombre,
                 attendedDays: 0,
                 absentDays: 0,
@@ -101,13 +116,16 @@ export default function AttendanceReportsPage() {
         filteredRecords.forEach(record => {
             const userStat = userStats[record.userId];
             if (!userStat) return;
+            
+            const checkInDate = record.checkIn.toDate ? record.checkIn.toDate() : new Date(record.checkIn);
+            const checkOutDate = record.checkOut?.toDate ? record.checkOut.toDate() : record.checkOut ? new Date(record.checkOut) : null;
 
             switch (record.status) {
                 case 'presente':
                 case 'retardo':
                     userStat.attendedDays += 1;
-                    if (record.checkIn && record.checkOut) {
-                        userStat.totalHours += differenceInHours(new Date(record.checkOut), new Date(record.checkIn));
+                    if (checkInDate && checkOutDate) {
+                        userStat.totalHours += differenceInHours(checkOutDate, checkInDate);
                     }
                     break;
                 case 'ausente':
@@ -125,14 +143,14 @@ export default function AttendanceReportsPage() {
         });
 
         return Object.values(userStats);
-    }, [filteredRecords]);
+    }, [users, filteredRecords]);
 
-    const absenceRecords = filteredRecords.filter(r => r.status === 'ausente' || r.status === 'justificado' || r.status === 'no-justificado' || r.status === 'vacaciones');
-    const tardyRecords = filteredRecords.filter(r => r.status === 'retardo');
+    const absenceRecords = filteredRecords?.filter(r => r.status === 'ausente' || r.status === 'justificado' || r.status === 'no-justificado' || r.status === 'vacaciones') || [];
+    const tardyRecords = filteredRecords?.filter(r => r.status === 'retardo') || [];
 
     const totalAbsences = absenceRecords.length;
     const totalTardies = tardyRecords.length;
-    const totalAttendances = filteredRecords.filter(r => r.status === 'presente' || r.status === 'retardo').length;
+    const totalAttendances = filteredRecords?.filter(r => r.status === 'presente' || r.status === 'retardo').length || 0;
 
     const kpiCards = [
         { title: 'Total Asistencias', value: totalAttendances, icon: UserCheck },
@@ -141,20 +159,17 @@ export default function AttendanceReportsPage() {
     ];
     
     const handleAbsenceClassification = (recordId: string, type: LeaveType) => {
-        setRecords(prev => prev.map(rec => {
-            if (rec.recordId === recordId) {
-                return { ...rec, status: type, leaveType: type };
-            }
-            return rec;
-        }));
+        if (!firestore) return;
+        const docRef = doc(firestore, 'attendance', recordId);
+        updateDocumentNonBlocking(docRef, { status: type, leaveType: type });
         toast({
             title: 'Ausencia Actualizada',
             description: `El registro ha sido clasificado como ${type}.`,
-        })
+        });
     };
 
-
     const handleExport = () => {
+        if (!filteredRecords) return;
         let dataToExport: any[] = [];
         let sheetName = 'Reporte';
         let fileName = `Reporte_Asistencia_${format(new Date(), 'yyyy-MM-dd')}.xlsx`;
@@ -162,12 +177,14 @@ export default function AttendanceReportsPage() {
         const baseMapping = (record: AttendanceRecord) => {
             const user = getUser(record.userId);
             const statusInfo = statusConfig[record.status];
+            const checkInDate = record.checkIn.toDate ? record.checkIn.toDate() : new Date(record.checkIn);
+            const checkOutDate = record.checkOut?.toDate ? record.checkOut.toDate() : record.checkOut ? new Date(record.checkOut) : null;
             return {
                 'Empleado': user?.nombre || 'N/A',
                 'Cédula': user?.cedula || 'N/A',
-                'Fecha': format(record.checkIn, 'dd/MM/yyyy'),
-                'Hora Entrada': record.status !== 'ausente' ? format(record.checkIn, 'HH:mm:ss') : 'N/A',
-                'Hora Salida': record.checkOut ? format(record.checkOut, 'HH:mm:ss') : 'N/A',
+                'Fecha': format(checkInDate, 'dd/MM/yyyy'),
+                'Hora Entrada': record.status !== 'ausente' ? format(checkInDate, 'HH:mm:ss') : 'N/A',
+                'Hora Salida': checkOutDate ? format(checkOutDate, 'HH:mm:ss') : 'N/A',
                 'Estado': statusInfo.label,
             };
         };
@@ -230,8 +247,12 @@ export default function AttendanceReportsPage() {
                 const user = getUser(record.userId);
                 const statusInfo = statusConfig[record.status];
                 if (!user) return null;
+
+                const checkInDate = record.checkIn.toDate ? record.checkIn.toDate() : new Date(record.checkIn);
+                const checkOutDate = record.checkOut?.toDate ? record.checkOut.toDate() : record.checkOut ? new Date(record.checkOut) : null;
+
                 return (
-                <TableRow key={record.recordId}>
+                <TableRow key={record.id}>
                     <TableCell>
                         <div className="flex items-center gap-3">
                             <Avatar className="h-9 w-9">
@@ -241,12 +262,12 @@ export default function AttendanceReportsPage() {
                             <div className="font-medium">{user.nombre}</div>
                         </div>
                     </TableCell>
-                    <TableCell>{format(record.checkIn, 'dd/MM/yyyy')}</TableCell>
+                    <TableCell>{format(checkInDate, 'dd/MM/yyyy')}</TableCell>
                     <TableCell className="font-mono">
-                        {record.status !== 'ausente' && record.status !== 'justificado' && record.status !== 'no-justificado' && record.status !== 'vacaciones' ? format(record.checkIn, 'HH:mm:ss') : 'N/A'}
+                        {record.status !== 'ausente' && record.status !== 'justificado' && record.status !== 'no-justificado' && record.status !== 'vacaciones' ? format(checkInDate, 'HH:mm:ss') : 'N/A'}
                     </TableCell>
                     <TableCell className="font-mono">
-                        {record.checkOut ? format(record.checkOut, 'HH:mm:ss') : '--:--'}
+                        {checkOutDate ? format(checkOutDate, 'HH:mm:ss') : '--:--'}
                     </TableCell>
                     <TableCell>
                         <Badge variant="secondary" className={cn(statusInfo.className, 'capitalize')}>
@@ -264,13 +285,13 @@ export default function AttendanceReportsPage() {
                                         </Button>
                                     </DropdownMenuTrigger>
                                     <DropdownMenuContent>
-                                        <DropdownMenuItem onClick={() => handleAbsenceClassification(record.recordId, 'justificado')}>
+                                        <DropdownMenuItem onClick={() => handleAbsenceClassification(record.id, 'justificado')}>
                                             <Check className="mr-2 h-4 w-4" /> Marcar como Justificada
                                         </DropdownMenuItem>
-                                        <DropdownMenuItem onClick={() => handleAbsenceClassification(record.recordId, 'no-justificado')}>
+                                        <DropdownMenuItem onClick={() => handleAbsenceClassification(record.id, 'no-justificado')}>
                                             <X className="mr-2 h-4 w-4" /> Marcar como No Justificada
                                         </DropdownMenuItem>
-                                         <DropdownMenuItem onClick={() => handleAbsenceClassification(record.recordId, 'vacaciones')}>
+                                         <DropdownMenuItem onClick={() => handleAbsenceClassification(record.id, 'vacaciones')}>
                                             <CalendarIcon className="mr-2 h-4 w-4" /> Registrar Vacaciones
                                         </DropdownMenuItem>
                                     </DropdownMenuContent>
@@ -285,6 +306,9 @@ export default function AttendanceReportsPage() {
         </Table>
     )
 
+    if (isLoadingUsers || isLoadingRecords) {
+        return <div className="flex items-center justify-center h-screen">Cargando reportes...</div>;
+    }
 
     return (
         <div className="min-h-screen w-full">
@@ -354,7 +378,7 @@ export default function AttendanceReportsPage() {
                                     <CardDescription>Detalle de todos los registros de asistencia para el período seleccionado.</CardDescription>
                                 </CardHeader>
                                 <CardContent>
-                                    {renderTable(filteredRecords, 'general-table')}
+                                    {renderTable(filteredRecords || [], 'general-table')}
                                 </CardContent>
                             </Card>
                         </TabsContent>
@@ -428,3 +452,5 @@ export default function AttendanceReportsPage() {
         </div>
     );
 }
+
+    

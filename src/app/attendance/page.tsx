@@ -21,15 +21,16 @@ import {
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { users, attendanceRecords } from '@/lib/placeholder-data';
-import type { AttendanceRecord, AttendanceStatus, DayOff } from '@/lib/types';
+import type { AttendanceRecord, AttendanceStatus, DayOff, User } from '@/lib/types';
 import { cn } from '@/lib/utils';
-import { format, getDay, startOfWeek } from 'date-fns';
+import { format, getDay, startOfWeek, startOfDay, endOfDay } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { ScannerCard } from '@/components/attendance/scanner-card';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { useCurrentUser } from '@/hooks/use-current-user';
+import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
+import { collection, query, where } from 'firebase/firestore';
 
 const statusConfig: Record<AttendanceStatus, { label: string, className: string, icon: React.ElementType }> = {
     presente: { label: 'Presente', className: 'bg-green-100 text-green-800', icon: UserCheck },
@@ -42,29 +43,56 @@ const statusConfig: Record<AttendanceStatus, { label: string, className: string,
     'dia-libre': { label: 'Día Libre', className: 'bg-sky-100 text-sky-800', icon: CalendarOff },
 };
 
-const MOCK_DAYS_OFF: DayOff[] = [
-    // Simula algunos días libres planificados para la semana actual
-    { userId: 'user-comun-1', weekStartDate: format(startOfWeek(new Date(), { weekStartsOn: 1 }), 'yyyy-MM-dd'), dayOff: 1 }, // Martes para Carlos
-    { userId: 'user-comun-2', weekStartDate: format(startOfWeek(new Date(), { weekStartsOn: 1 }), 'yyyy-MM-dd'), dayOff: 3 }, // Jueves para María
-];
-
-
 export default function AttendancePage() {
-  const [records, setRecords] = useState<AttendanceRecord[]>(attendanceRecords);
-  const [daysOff] = useState<DayOff[]>(MOCK_DAYS_OFF);
-  const { user, role } = useCurrentUser();
+  const { user: currentUser, role } = useCurrentUser();
   const isAdmin = role === 'admin' || role === 'superadmin';
+  const firestore = useFirestore();
 
-  const getUser = (userId: string) => users.find((u) => u.userId === userId);
-  const getUserInitials = (name: string) => name.split(' ').map((n) => n[0]).join('');
+  // --- Fetch users ---
+  const usersCollectionRef = useMemoFirebase(
+    () => (firestore && isAdmin ? collection(firestore, 'users') : null),
+    [firestore, isAdmin]
+  );
+  const { data: users, isLoading: isLoadingUsers } = useCollection<User>(usersCollectionRef);
 
-  const todayRecords = records.filter(r => format(new Date(r.checkIn), 'yyyy-MM-dd') === format(new Date(), 'yyyy-MM-dd'));
+  // --- Fetch today's attendance records ---
+  const attendanceQuery = useMemoFirebase(() => {
+    if (!firestore) return null;
+    const todayStart = startOfDay(new Date());
+    const todayEnd = endOfDay(new Date());
+    return query(
+        collection(firestore, 'attendance'), 
+        where('checkIn', '>=', todayStart), 
+        where('checkIn', '<=', todayEnd)
+    );
+  }, [firestore]);
+  const { data: todayRecords, isLoading: isLoadingAttendance } = useCollection<AttendanceRecord>(attendanceQuery);
+
+  // --- Fetch this week's days off ---
+  const weekStartDateString = format(startOfWeek(new Date(), { weekStartsOn: 1 }), 'yyyy-MM-dd');
+  const daysOffQuery = useMemoFirebase(() => {
+    if (!firestore) return null;
+    return query(collection(firestore, 'daysOff'), where('weekStartDate', '==', weekStartDateString));
+  }, [firestore, weekStartDateString]);
+  const { data: daysOff, isLoading: isLoadingDaysOff } = useCollection<DayOff>(daysOffQuery);
+
+  const getUserInitials = (name: string) => name ? name.split(' ').map((n) => n[0]).join('') : '';
+
   const today = new Date();
   const todayDayOfWeek = (getDay(today) + 6) % 7; // Monday is 0, Sunday is 6
-  const weekStartDateString = format(startOfWeek(today, { weekStartsOn: 1 }), 'yyyy-MM-dd');
   
-  const displayedUsers = isAdmin ? users : (user ? [user] : []);
+  // If not admin, the displayed user is only the current user
+  const displayedUsers = isAdmin ? users : (currentUser ? [currentUser] : []);
 
+  const isLoading = isLoadingUsers || isLoadingAttendance || isLoadingDaysOff;
+  
+  if (isLoading) {
+      return (
+          <div className="min-h-screen w-full flex items-center justify-center">
+              <p>Cargando datos de asistencia...</p>
+          </div>
+      )
+  }
 
   return (
     <div className="min-h-screen w-full">
@@ -121,9 +149,9 @@ export default function AttendancePage() {
                         </TableRow>
                         </TableHeader>
                         <TableBody>
-                        {displayedUsers.map(user => {
-                            const record = todayRecords.find(r => r.userId === user.userId);
-                            const userDayOff = daysOff.find(d => d.userId === user.userId && d.weekStartDate === weekStartDateString);
+                        {displayedUsers?.map(user => {
+                            const record = todayRecords?.find(r => r.userId === user.id);
+                            const userDayOff = daysOff?.find(d => d.userId === user.id);
                             const isSunday = todayDayOfWeek === 6;
                             
                             let status: AttendanceStatus;
@@ -135,9 +163,11 @@ export default function AttendancePage() {
                             }
 
                             const config = statusConfig[status];
+                            const checkInDate = record?.checkIn.toDate ? record.checkIn.toDate() : new Date(record?.checkIn || 0);
+                            const checkOutDate = record?.checkOut?.toDate ? record.checkOut.toDate() : new Date(record?.checkOut || 0);
 
                             return (
-                                <TableRow key={user.userId}>
+                                <TableRow key={user.id}>
                                     <TableCell>
                                         <div className="flex items-center gap-3">
                                         <Avatar className="h-9 w-9">
@@ -150,10 +180,10 @@ export default function AttendancePage() {
                                         </div>
                                     </TableCell>
                                     <TableCell className="font-mono">
-                                        {record?.checkIn && status !== 'dia-libre' ? format(new Date(record.checkIn), 'HH:mm:ss') : '--:--'}
+                                        {record?.checkIn && status !== 'dia-libre' ? format(checkInDate, 'HH:mm:ss') : '--:--'}
                                     </TableCell>
                                      <TableCell className="font-mono">
-                                        {record?.checkOut && status !== 'dia-libre' ? format(new Date(record.checkOut), 'HH:mm:ss') : '--:--'}
+                                        {record?.checkOut && status !== 'dia-libre' ? format(checkOutDate, 'HH:mm:ss') : '--:--'}
                                     </TableCell>
                                     <TableCell>
                                         <Badge variant="secondary" className={cn(config.className, 'capitalize')}>
@@ -180,3 +210,5 @@ export default function AttendancePage() {
     </div>
   );
 }
+
+    

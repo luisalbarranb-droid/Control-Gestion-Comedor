@@ -6,7 +6,6 @@ import { es } from 'date-fns/locale';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
-import { useToast } from '@/hooks/use-toast';
 import type { User, DayOff, DayOfWeek } from '@/lib/types';
 import { cn } from '@/lib/utils';
 
@@ -18,7 +17,6 @@ interface PlanningTableProps {
 }
 
 export function PlanningTable({ week, users, initialDaysOff, onSave }: PlanningTableProps) {
-  const { toast } = useToast();
   const [daysOffMap, setDaysOffMap] = useState<Record<string, DayOfWeek | undefined>>({});
 
   const weekStartDate = startOfWeek(week, { weekStartsOn: 1 });
@@ -33,7 +31,7 @@ export function PlanningTable({ week, users, initialDaysOff, onSave }: PlanningT
     setDaysOffMap(initialMap);
   }, [week, initialDaysOff, weekStartDateString]);
 
-  const handleDayClick = (userId: string, dayIndex: DayOfWeek) => {
+  const handleDayClick = (userId: string, dayIndex: number) => {
     // Sunday is day 0 from getDay, but we consider it day 6 for our 0-6 week starting Monday
     if (dayIndex === 0) return; // Cannot change Sunday
 
@@ -53,17 +51,15 @@ export function PlanningTable({ week, users, initialDaysOff, onSave }: PlanningT
   };
 
   const handleSave = () => {
-    const newDaysOff: DayOff[] = Object.entries(daysOffMap).map(([userId, dayOff]) => ({
-      userId,
-      weekStartDate: weekStartDateString,
-      dayOff: dayOff as DayOfWeek,
-    }));
+    const newDaysOff: DayOff[] = Object.entries(daysOffMap)
+      .filter(([, dayOff]) => dayOff !== undefined)
+      .map(([userId, dayOff]) => ({
+        userId,
+        weekStartDate: weekStartDateString,
+        dayOff: dayOff as DayOfWeek,
+      }));
     
     onSave(newDaysOff);
-    toast({
-        title: "Planificación Guardada",
-        description: "Los días libres para la semana han sido actualizados."
-    });
   };
 
   const weekdays = Array.from({ length: 7 }).map((_, i) => {
@@ -78,7 +74,7 @@ export function PlanningTable({ week, users, initialDaysOff, onSave }: PlanningT
     };
   });
 
-  const getUserInitials = (name: string) => name.split(' ').map((n) => n[0]).join('');
+  const getUserInitials = (name: string) => name ? name.split(' ').map((n) => n[0]).join('') : '';
 
   return (
     <div>
@@ -96,9 +92,9 @@ export function PlanningTable({ week, users, initialDaysOff, onSave }: PlanningT
             </TableHeader>
             <TableBody>
                 {users.map(user => {
-                    const userDayOffIndex = daysOffMap[user.userId];
+                    const userDayOffIndex = daysOffMap[user.id];
                     return (
-                        <TableRow key={user.userId}>
+                        <TableRow key={user.id}>
                             <TableCell>
                                 <div className="flex items-center gap-3">
                                     <Avatar className="h-9 w-9">
@@ -119,7 +115,7 @@ export function PlanningTable({ week, users, initialDaysOff, onSave }: PlanningT
                                         day.isSunday ? 'bg-muted/50 font-bold text-primary cursor-not-allowed' : 'cursor-pointer hover:bg-accent',
                                         isSelected && 'bg-primary/20 border-2 border-primary'
                                     )}
-                                    onClick={() => handleDayClick(user.userId, getDay(day.date) as DayOfWeek)}
+                                    onClick={() => handleDayClick(user.id, getDay(day.date))}
                                 >
                                     {day.isSunday && <span>L</span>}
                                     {isSelected && <span className="font-bold text-primary">L</span>}
@@ -136,3 +132,5 @@ export function PlanningTable({ week, users, initialDaysOff, onSave }: PlanningT
     </div>
   );
 }
+
+    

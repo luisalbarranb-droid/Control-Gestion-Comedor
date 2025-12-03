@@ -563,6 +563,69 @@
         "quantity",
         "wasteFactor"
       ]
+    },
+    "AttendanceRecord": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Attendance Record",
+      "type": "object",
+      "description": "Represents a single attendance record for a user.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the record."
+        },
+        "userId": {
+          "type": "string",
+          "description": "The ID of the user this record belongs to."
+        },
+        "checkIn": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Timestamp of the check-in event."
+        },
+        "checkOut": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Timestamp of the check-out event (optional)."
+        },
+        "status": {
+          "type": "string",
+          "enum": ["presente", "ausente", "retardo", "fuera-de-horario", "justificado", "no-justificado", "vacaciones", "dia-libre"],
+          "description": "The status of the attendance for that day."
+        },
+        "leaveType": {
+          "type": "string",
+          "enum": ["justificado", "no-justificado", "vacaciones"],
+          "description": "If the status is a leave of absence, this specifies the type."
+        }
+      },
+      "required": ["id", "userId", "checkIn", "status"]
+    },
+    "DayOff": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Day Off",
+      "type": "object",
+      "description": "Represents a planned day off for a user for a specific week.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier, usually in the format {userId}_{weekStartDate}."
+        },
+        "userId": {
+          "type": "string",
+          "description": "The ID of the user this day off belongs to."
+        },
+        "weekStartDate": {
+          "type": "string",
+          "format": "date",
+          "description": "The start date of the week (Monday) for which this day off is planned (YYYY-MM-DD)."
+        },
+        "dayOff": {
+          "type": "number",
+          "description": "The day of the week for the day off (0=Monday, 1=Tuesday, ..., 5=Saturday)."
+        }
+      },
+      "required": ["id", "userId", "weekStartDate", "dayOff"]
     }
   },
   "auth": {
@@ -716,9 +779,42 @@
             }
           ]
         }
+      },
+      {
+        "path": "/attendance/{recordId}",
+        "definition": {
+          "entityName": "AttendanceRecord",
+          "schema": {
+            "$ref": "#/backend/entities/AttendanceRecord"
+          },
+          "description": "Stores individual attendance records for each user check-in/out.",
+          "params": [
+            {
+              "name": "recordId",
+              "description": "The unique identifier for the attendance record."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/daysOff/{dayOffId}",
+        "definition": {
+          "entityName": "DayOff",
+          "schema": {
+            "$ref": "#/backend/entities/DayOff"
+          },
+          "description": "Stores the planned weekly day off for each user.",
+          "params": [
+            {
+              "name": "dayOffId",
+              "description": "The unique identifier for the day off record, combining userId and week start date."
+            }
+          ]
+        }
       }
     ],
     "reasoning": "The Firestore structure is designed to support a task management system with role-based access control. It prioritizes authorization independence through denormalization and structural segregation.  \n\n**Authorization Independence (Denormalization):**\n*   `tasks` collection: The `area` and `assignedTo` fields are present in each task document. This denormalization allows security rules to validate access based on the user's role, the task's assigned area, and the assigned user without needing to perform expensive `get()` operations to retrieve the area or user details from other collections.  The inclusion of `createdBy` also allows for tracing and potential access control based on task creator.\n\n**Structural Segregation:**\n*   User data (`users` collection) is separated from task data (`tasks` collection).  \n*   Area definitions (`areas` collection) are separate from both users and tasks.\n*   Configuration data (`configuration` collection) is separate. This ensures that different types of data with varying access requirements are not mixed in the same collection.\n\n**Access Modeling:**\n*   **Private Data:** The `users` collection follows a path-based ownership model (`/users/{userId}`).\n\n**QAPs (Rules are not Filters):**\n*   Secure `list` operations for tasks are supported because each task document contains the `assignedTo` field. Rules can efficiently filter tasks based on the authenticated user's ID.\n\n**Invariants:**\n*   The structure supports invariants like ownership (through `createdBy` and `assignedTo` in the `tasks` collection) and timestamps (through `creationDate`, `dueDate`, `completionDate` in the `tasks` collection).\n\n**Additional Notes:**\n*   The `statistics` collection is designed to store aggregated data, which can be updated via backend processes. Access to this collection is restricted to admins and superadmins.\n*   The `evidence` and `comments` subcollections are intentionally avoided to minimize read costs when accessing task data. Instead, `evidenceIds` and `commentIds` are used in the `Task` entity to store references to `Evidence` and `Comment` entities which are stored as top-level collections. The `Evidence` collection denormalizes the `taskId` to allow performant security rules.\n*   The `configuration` collection allows storing application-wide settings.\n"
   }
 }
+
     

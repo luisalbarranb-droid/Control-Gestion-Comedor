@@ -14,16 +14,30 @@ import { SquareCheck, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/components/ui/card';
 import { PlanningTable } from '@/components/attendance/planning-table';
-import { users } from '@/lib/placeholder-data';
-import type { DayOff } from '@/lib/types';
+import type { DayOff, User } from '@/lib/types';
 import { startOfWeek, endOfWeek, addWeeks, subWeeks, format } from 'date-fns';
 import { es } from 'date-fns/locale';
+import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
+import { collection, writeBatch, doc } from 'firebase/firestore';
+import { useToast } from '@/hooks/use-toast';
 
 export default function PlanningPage() {
-  // Using a date to represent the current week
+  const { toast } = useToast();
+  const firestore = useFirestore();
+  
   const [currentWeek, setCurrentWeek] = useState(new Date());
 
-  const [daysOff, setDaysOff] = useState<DayOff[]>([]);
+  const usersCollectionRef = useMemoFirebase(
+    () => (firestore ? collection(firestore, 'users') : null),
+    [firestore]
+  );
+  const { data: users, isLoading: isLoadingUsers } = useCollection<User>(usersCollectionRef);
+  
+  const daysOffCollectionRef = useMemoFirebase(
+    () => (firestore ? collection(firestore, 'daysOff') : null),
+    [firestore]
+  );
+  const { data: daysOff, isLoading: isLoadingDaysOff } = useCollection<DayOff>(daysOffCollectionRef);
 
   const weekStart = startOfWeek(currentWeek, { weekStartsOn: 1 }); // Monday
   const weekEnd = endOfWeek(currentWeek, { weekStartsOn: 1 }); // Sunday
@@ -36,14 +50,50 @@ export default function PlanningPage() {
     setCurrentWeek(addWeeks(currentWeek, 1));
   };
   
-  const handleSave = (newDaysOff: DayOff[]) => {
-    // In a real app, you would save this to a database
-    // For this prototype, we'll merge the new data with existing data
-    setDaysOff(prev => {
-        const otherWeeksData = prev.filter(d => d.weekStartDate !== newDaysOff[0]?.weekStartDate);
-        return [...otherWeeksData, ...newDaysOff];
-    })
+  const handleSave = async (newDaysOff: DayOff[]) => {
+    if (!firestore) {
+      toast({
+        variant: 'destructive',
+        title: "Error de conexión",
+        description: "No se pudo conectar a la base de datos."
+      });
+      return;
+    }
+  
+    const batch = writeBatch(firestore);
+    const weekStartDate = newDaysOff[0]?.weekStartDate;
+  
+    // Delete existing days off for the current week to handle deselections
+    const existingForWeek = daysOff?.filter(d => d.weekStartDate === weekStartDate) || [];
+    existingForWeek.forEach(dayOffDoc => {
+      const docRef = doc(firestore, 'daysOff', dayOffDoc.id);
+      batch.delete(docRef);
+    });
+  
+    // Set new days off for the current week
+    newDaysOff.forEach(dayOff => {
+      const docId = `${dayOff.userId}_${dayOff.weekStartDate}`;
+      const docRef = doc(firestore, 'daysOff', docId);
+      batch.set(docRef, { ...dayOff, id: docId });
+    });
+  
+    try {
+      await batch.commit();
+      toast({
+          title: "Planificación Guardada",
+          description: "Los días libres para la semana han sido actualizados."
+      });
+    } catch (error) {
+      console.error("Error saving days off: ", error);
+      toast({
+        variant: 'destructive',
+        title: "Error al guardar",
+        description: "No se pudo actualizar la planificación. Inténtalo de nuevo."
+      });
+    }
   };
+
+  const isLoading = isLoadingUsers || isLoadingDaysOff;
 
   return (
     <div className="min-h-screen w-full">
@@ -91,12 +141,16 @@ export default function PlanningPage() {
               </div>
             </CardHeader>
             <CardContent>
-              <PlanningTable 
-                week={currentWeek} 
-                users={users} 
-                initialDaysOff={daysOff} 
-                onSave={handleSave}
-              />
+              {isLoading ? (
+                <p>Cargando datos de planificación...</p>
+              ) : (
+                <PlanningTable 
+                    week={currentWeek} 
+                    users={users || []} 
+                    initialDaysOff={daysOff || []} 
+                    onSave={handleSave}
+                />
+              )}
             </CardContent>
           </Card>
         </main>
@@ -104,3 +158,5 @@ export default function PlanningPage() {
     </div>
   );
 }
+
+    

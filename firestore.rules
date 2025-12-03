@@ -283,6 +283,24 @@ service cloud.firestore {
       allow update: if docExists() && isExistingOwner('userId') && isOwnerFieldImmutable('userId') && isOwnerFieldImmutable('taskId') && isIdConsistent(commentId);
       allow delete: if docExists() && isExistingOwner('userId');
     }
+    
+    // --------------------------------------------------------------------
+    // Collection Rules: /attendance
+    // --------------------------------------------------------------------
+    match /attendance/{recordId} {
+      allow get: if isSignedIn() && (isOwner(resource.data.userId) || isAdminOrHigher());
+      allow list: if isSignedIn(); // Users can only list their own records due to query constraints
+      allow create: if isAdminOrHigher(); // Only admins can create records (e.g., via scanner or manual entry)
+      allow update, delete: if isAdminOrHigher();
+    }
+    
+    // --------------------------------------------------------------------
+    // Collection Rules: /daysOff
+    // --------------------------------------------------------------------
+    match /daysOff/{dayOffId} {
+      allow get, list: if isSignedIn();
+      allow create, update, delete: if isAdminOrHigher();
+    }
 
   }
 }
