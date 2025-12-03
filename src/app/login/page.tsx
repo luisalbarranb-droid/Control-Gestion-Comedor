@@ -16,7 +16,7 @@ import { Label } from '@/components/ui/label';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2 } from 'lucide-react';
-import { useAuth, useUser, useFirestore, addDocumentNonBlocking } from '@/firebase';
+import { useAuth, useUser, useFirestore } from '@/firebase';
 import { signInWithEmailAndPassword, createUserWithEmailAndPassword, User as FirebaseAuthUser, updateProfile } from 'firebase/auth';
 import { doc, getDoc, serverTimestamp, setDoc, updateDoc } from 'firebase/firestore';
 import type { User } from '@/lib/types';
@@ -107,6 +107,7 @@ export default function LoginPage() {
                  description = 'El correo electrónico ya está en uso. Intentando iniciar sesión de nuevo...';
                  try {
                     await signInWithEmailAndPassword(auth, email, password);
+                    await upsertUserDocument((await auth.currentUser) as FirebaseAuthUser);
                     router.push('/');
                  } catch (e) {
                     // ignore

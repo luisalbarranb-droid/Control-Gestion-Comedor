@@ -25,7 +25,7 @@ import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2 } from 'lucide-react';
 import { useUser, useDoc, useFirestore, useMemoFirebase, setDocumentNonBlocking } from '@/firebase';
-import { doc, serverTimestamp } from 'firebase/firestore';
+import { doc } from 'firebase/firestore';
 import type { User } from '@/lib/types';
 
 
@@ -96,7 +96,7 @@ export function ProfileCard() {
     setDocumentNonBlocking(userRef, dataToUpdate, { merge: true });
 
     if (data.newPassword) {
-        // In a real app, this should trigger a Firebase Auth function to re-authenticate and update password.
+        // En una aplicación real, esto debería activar una función de Firebase Auth para reautenticar y actualizar la contraseña.
         console.log('Password change requested. (Not implemented in prototype)');
         toast({
           title: 'Cambio de Contraseña',
