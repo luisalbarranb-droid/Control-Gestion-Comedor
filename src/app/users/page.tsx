@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState } from 'react';
@@ -10,7 +11,7 @@ import {
 } from '@/components/ui/sidebar';
 import { Header } from '@/components/dashboard/header';
 import { MainNav } from '@/components/dashboard/main-nav';
-import { MoreHorizontal, SquareCheck } from 'lucide-react';
+import { MoreHorizontal, SquareCheck, PlusCircle } from 'lucide-react';
 import {
   Table,
   TableBody,
@@ -36,8 +37,11 @@ import { cn } from '@/lib/utils';
 import Link from 'next/link';
 import { useToast } from '@/hooks/use-toast';
 import { useCollection, useDoc, useFirestore, useMemoFirebase, useUser } from '@/firebase';
-import { collection, doc } from 'firebase/firestore';
+import { collection, doc, serverTimestamp } from 'firebase/firestore';
 import { Loader2 } from 'lucide-react';
+import { UserForm } from '@/components/users/user-form';
+import { setDocumentNonBlocking } from '@/firebase/non-blocking-updates';
+import { createUserWithEmailAndPassword } from 'firebase/auth';
 
 export const dynamic = 'force-dynamic';
 
@@ -53,8 +57,9 @@ const statusVariant: Record<boolean, string> = {
 };
 
 export default function UsersPage() {
-  const { user: authUser, isUserLoading: isAuthLoading } = useUser();
+  const { user: authUser, isUserLoading: isAuthLoading, auth } = useUser();
   const firestore = useFirestore();
+  const { toast } = useToast();
 
   const userDocRef = useMemoFirebase(() => {
     if (!firestore || !authUser) return null;
@@ -72,6 +77,53 @@ export default function UsersPage() {
   const { data: allUsers, isLoading: isLoadingUsers } = useCollection<User>(usersCollectionRef, {
     disabled: !isAdmin,
   });
+  
+  const [isFormOpen, setFormOpen] = useState(false);
+  const [selectedUser, setSelectedUser] = useState<User | null>(null);
+  
+  const handleOpenForm = (user: User | null = null) => {
+    setSelectedUser(user);
+    setFormOpen(true);
+  }
+
+  const handleSaveUser = async (userData: Omit<User, 'id'>) => {
+    if (!auth || !firestore || !currentUser) return;
+
+    if (selectedUser) { // Editing existing user
+      const userRef = doc(firestore, 'users', selectedUser.id);
+      setDocumentNonBlocking(userRef, { ...userData, ultimaActualizacion: serverTimestamp() }, { merge: true });
+      toast({ title: 'Usuario actualizado', description: `Los datos de ${userData.nombre} han sido guardados.` });
+    } else { // Creating new user
+        // TODO: This should be a cloud function for security
+        try {
+            // Step 1: Create user in Firebase Auth
+            const userCredential = await createUserWithEmailAndPassword(auth, userData.email, '12345678'); // Default password, user should change it
+            const newAuthUser = userCredential.user;
+
+            // Step 2: Create user document in Firestore
+            const newUserDocRef = doc(firestore, 'users', newAuthUser.uid);
+            const newUser: User = {
+                ...userData,
+                id: newAuthUser.uid,
+                userId: newAuthUser.uid,
+                creadoPor: currentUser.id,
+                ultimoAcceso: serverTimestamp(),
+            };
+            await setDocumentNonBlocking(newUserDocRef, newUser, {merge: false});
+            
+            toast({ title: 'Usuario Creado', description: `${userData.nombre} ha sido añadido. La contraseña inicial es "12345678".` });
+        } catch (error: any) {
+             console.error("Error creating user:", error);
+            let description = 'Ocurrió un error inesperado.';
+            if (error.code === 'auth/email-already-in-use') {
+                description = 'Este correo electrónico ya está registrado.';
+            } else if (error.code === 'auth/weak-password') {
+                description = 'La contraseña es demasiado débil.';
+            }
+            toast({ variant: 'destructive', title: 'Error al crear usuario', description });
+        }
+    }
+  };
 
   const getAreaName = (areaId: string) => areas.find((a) => a.id === areaId)?.nombre || 'N/A';
   const getUserInitials = (name: string) => name ? name.split(' ').map((n) => n[0]).join('') : '';
@@ -106,6 +158,12 @@ export default function UsersPage() {
             <h1 className="font-headline text-2xl font-bold md:text-3xl">
               Gestión de Usuarios
             </h1>
+            {isAdmin && (
+              <Button onClick={() => handleOpenForm()}>
+                <PlusCircle className="mr-2 h-4 w-4" />
+                Añadir Usuario
+              </Button>
+            )}
           </div>
           <Card>
             <CardHeader>
@@ -173,7 +231,7 @@ export default function UsersPage() {
                           <DropdownMenuContent align="end">
                             <DropdownMenuLabel>Acciones</DropdownMenuLabel>
                             <DropdownMenuItem asChild><Link href={`/users/${user.id}`}>Ver Perfil</Link></DropdownMenuItem>
-                            {isAdmin && <DropdownMenuItem>Editar</DropdownMenuItem>}
+                            {isAdmin && <DropdownMenuItem onClick={() => handleOpenForm(user)}>Editar</DropdownMenuItem>}
                             {isAdmin && <DropdownMenuItem>Desactivar</DropdownMenuItem>}
                           </DropdownMenuContent>
                         </DropdownMenu>
@@ -186,6 +244,12 @@ export default function UsersPage() {
           </Card>
         </main>
       </SidebarInset>
+      <UserForm 
+        isOpen={isFormOpen}
+        onOpenChange={setFormOpen}
+        onSave={handleSaveUser}
+        user={selectedUser}
+      />
     </div>
   );
 }

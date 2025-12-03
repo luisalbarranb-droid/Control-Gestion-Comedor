@@ -1,4 +1,5 @@
-import type { User, Area, Task, AreaId, Role, InventoryItem, InventoryCategory, InventoryTransaction, InventoryOrder, InventoryOrderItem, Menu, MenuItem, Ingredient, DailyClosing, AttendanceRecord } from './types';
+
+import type { User, Area, Task, AreaId, Role, InventoryItem, InventoryCategory, InventoryTransaction, InventoryOrder, InventoryOrderItem, Menu, MenuItem, Ingredient, DailyClosing, AttendanceRecord, WorkerType, ContractType } from './types';
 import { addDays, startOfWeek, set, subDays } from 'date-fns';
 
 export const areas: Area[] = [
@@ -14,6 +15,7 @@ export const areas: Area[] = [
 
 export const users: User[] = [
   {
+    id: 'user-superadmin-1',
     userId: 'user-superadmin-1',
     email: 'arvecladu@gmail.com',
     nombre: 'Super Admin',
@@ -31,6 +33,7 @@ export const users: User[] = [
     tipoContrato: 'indeterminado',
   },
   {
+    id: 'user-admin-1',
     userId: 'user-admin-1',
     email: 'erika.esquivel0603@gmail.com',
     nombre: 'Erika Esquivel',
@@ -48,6 +51,7 @@ export const users: User[] = [
     tipoContrato: 'determinado',
   },
   {
+    id: 'user-admin-2',
     userId: 'user-admin-2',
     email: 'admin2@comedor.com',
     nombre: 'Luis Pérez',
@@ -64,6 +68,7 @@ export const users: User[] = [
     tipoContrato: 'indeterminado',
   },
   {
+    id: 'user-comun-1',
     userId: 'user-comun-1',
     email: 'carlos@comedor.com',
     nombre: 'Carlos Ruiz',
@@ -80,6 +85,7 @@ export const users: User[] = [
     tipoContrato: 'indeterminado',
   },
   {
+    id: 'user-comun-2',
     userId: 'user-comun-2',
     email: 'maria@comedor.com',
     nombre: 'María Fernández',
@@ -96,6 +102,7 @@ export const users: User[] = [
     tipoContrato: 'indeterminado',
   },
   {
+    id: 'user-comun-3',
     userId: 'user-comun-3',
     email: 'jose@comedor.com',
     nombre: 'José Martínez',
@@ -116,7 +123,7 @@ export const users: User[] = [
 
 export const tasks: Task[] = [
   {
-    taskId: 'task-1',
+    id: 'task-1',
     titulo: 'Limpieza profunda de la cocina',
     descripcion: 'Realizar una limpieza exhaustiva de todas las superficies, equipos y suelos de la cocina principal.',
     area: 'cocina',
@@ -139,7 +146,7 @@ export const tasks: Task[] = [
     recurrente: true,
   },
   {
-    taskId: 'task-2',
+    id: 'task-2',
     titulo: 'Inventario de almacén seco',
     descripcion: 'Contar y registrar todas las existencias en el almacén de productos secos.',
     area: 'almacen',
@@ -158,7 +165,7 @@ export const tasks: Task[] = [
     recurrente: true,
   },
   {
-    taskId: 'task-3',
+    id: 'task-3',
     titulo: 'Servir almuerzo',
     descripcion: 'Atender a los comensales durante el servicio de almuerzo.',
     area: 'servicio',
@@ -178,7 +185,7 @@ export const tasks: Task[] = [
     recurrente: true,
   },
     {
-    taskId: 'task-4',
+    id: 'task-4',
     titulo: 'Revisión de extintores',
     descripcion: 'Verificar la fecha de caducidad y la presión de todos los extintores del comedor.',
     area: 'equipos',
@@ -197,7 +204,7 @@ export const tasks: Task[] = [
     recurrente: true,
   },
   {
-    taskId: 'task-5',
+    id: 'task-5',
     titulo: 'Preparar Mise en Place para cena',
     descripcion: 'Cortar vegetales, preparar salsas y aderezos para el servicio de la cena.',
     area: 'cocina',
@@ -249,7 +256,7 @@ export const inventoryCategories: InventoryCategory[] = [
 
 export const inventoryItems: InventoryItem[] = [
   {
-    itemId: 'inv-1',
+    id: 'inv-1',
     nombre: 'Pechuga de Pollo',
     categoriaId: 'carnes',
     cantidad: 25,
@@ -261,7 +268,7 @@ export const inventoryItems: InventoryItem[] = [
     costoUnitario: 5.50,
   },
   {
-    itemId: 'inv-2',
+    id: 'inv-2',
     nombre: 'Arroz Grano Largo',
     categoriaId: 'viveres',
     cantidad: 50,
@@ -273,7 +280,7 @@ export const inventoryItems: InventoryItem[] = [
     costoUnitario: 1.20,
   },
   {
-    itemId: 'inv-3',
+    id: 'inv-3',
     nombre: 'Tomates',
     categoriaId: 'verduras',
     cantidad: 15,
@@ -285,7 +292,7 @@ export const inventoryItems: InventoryItem[] = [
     costoUnitario: 2.10,
   },
     {
-    itemId: 'inv-3a',
+    id: 'inv-3a',
     nombre: 'Cebolla',
     categoriaId: 'verduras',
     cantidad: 20,
@@ -297,7 +304,7 @@ export const inventoryItems: InventoryItem[] = [
     costoUnitario: 1.50,
   },
   {
-    itemId: 'inv-4',
+    id: 'inv-4',
     nombre: 'Manzanas Fuji',
     categoriaId: 'frutas',
     cantidad: 30,
@@ -309,7 +316,7 @@ export const inventoryItems: InventoryItem[] = [
     costoUnitario: 1.80,
   },
   {
-    itemId: 'inv-5',
+    id: 'inv-5',
     nombre: 'Servilletas de Papel',
     categoriaId: 'descartables',
     cantidad: 10,
@@ -321,7 +328,7 @@ export const inventoryItems: InventoryItem[] = [
     costoUnitario: 3.00,
   },
   {
-    itemId: 'inv-6',
+    id: 'inv-6',
     nombre: 'Resma de Papel Bond',
     categoriaId: 'oficina',
     cantidad: 5,
@@ -333,7 +340,7 @@ export const inventoryItems: InventoryItem[] = [
     costoUnitario: 25.00,
   },
    {
-    itemId: 'inv-7',
+    id: 'inv-7',
     nombre: 'Carne Molida de Res',
     categoriaId: 'carnes',
     cantidad: 20,
