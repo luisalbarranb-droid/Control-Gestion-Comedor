@@ -51,6 +51,8 @@ import { useCollection, useFirestore, useMemoFirebase, updateDocumentNonBlocking
 import { collection, query, where, doc } from 'firebase/firestore';
 import { useCurrentUser } from '@/hooks/use-current-user';
 
+export const dynamic = 'force-dynamic';
+
 const statusConfig: Record<AttendanceStatus, { label: string, className: string, icon: React.ElementType }> = {
     presente: { label: 'Presente', className: 'bg-green-100 text-green-800', icon: UserCheck },
     ausente: { label: 'Ausente', className: 'bg-red-100 text-red-800', icon: UserX },

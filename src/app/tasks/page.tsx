@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -36,7 +37,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { areas, users as mockUsers } from '@/lib/placeholder-data';
+import { areas } from '@/lib/placeholder-data';
 import type { Task, TaskPriority, TaskStatus, AreaId, User } from '@/lib/types';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
@@ -46,6 +47,8 @@ import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
 import { collection, doc, serverTimestamp, query, where } from 'firebase/firestore';
 import { setDocumentNonBlocking, addDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import { useCurrentUser } from '@/hooks/use-current-user';
+
+export const dynamic = 'force-dynamic';
 
 const priorityVariant: Record<TaskPriority, string> = {
   baja: 'bg-green-100 text-green-800 border-green-200 dark:bg-green-900/50 dark:text-green-300 dark:border-green-700',

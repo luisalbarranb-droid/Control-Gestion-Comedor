@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useParams } from 'next/navigation';
@@ -21,6 +22,8 @@ import QRCode from 'react-qr-code';
 import { useDoc, useFirestore, useMemoFirebase } from '@/firebase';
 import { doc } from 'firebase/firestore';
 import { areas } from '@/lib/placeholder-data';
+
+export const dynamic = 'force-dynamic';
 
 const roleVariant: Record<Role, string> = {
   superadmin: 'bg-purple-100 text-purple-800',

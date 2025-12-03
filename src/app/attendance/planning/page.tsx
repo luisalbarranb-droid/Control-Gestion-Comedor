@@ -23,6 +23,8 @@ import { collection, writeBatch, doc } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import { useCurrentUser } from '@/hooks/use-current-user';
 
+export const dynamic = 'force-dynamic';
+
 export default function PlanningPage() {
   const { toast } = useToast();
   const firestore = useFirestore();

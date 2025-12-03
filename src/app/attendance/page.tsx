@@ -1,3 +1,4 @@
+
 'use client';
 
 import {
@@ -17,6 +18,8 @@ import { collection, query, where } from 'firebase/firestore';
 import { AttendanceTable } from '@/components/attendance/attendance-table';
 import { ScannerCard } from '@/components/attendance/scanner-card';
 import { format, startOfWeek } from 'date-fns';
+
+export const dynamic = 'force-dynamic';
 
 export default function AttendancePage() {
   const { user: currentUser, role, isLoading: isCurrentUserLoading } = useCurrentUser();
