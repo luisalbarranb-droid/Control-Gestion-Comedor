@@ -62,18 +62,18 @@ export default function LoginPage() {
 
             const userDocRef = doc(firestore, 'users', newUser.uid);
             
-            // DEFINITIVE FIX: Use the exact field names from the User type in types.ts
+            // DEFINITIVE FIX: Use the exact Spanish field names from the User type in types.ts
             setDocumentNonBlocking(userDocRef, {
                 id: newUser.uid,
                 userId: newUser.uid,
                 email: email,
-                nombre: 'Super Admin', // CORRECTED from 'name'
-                rol: 'superadmin', // CORRECTED from 'role'
+                nombre: 'Super Admin',
+                rol: 'superadmin',
                 area: 'administracion',
-                activo: true, // CORRECTED from 'isActive'
-                fechaCreacion: serverTimestamp(), // CORRECTED from 'creationDate'
-                creadoPor: 'system', // CORRECTED from 'createdBy'
-                ultimoAcceso: serverTimestamp(), // CORRECTED from 'lastAccess'
+                activo: true,
+                fechaCreacion: serverTimestamp(),
+                creadoPor: 'system',
+                ultimoAcceso: serverTimestamp(),
             }, { merge: false });
 
             toast({

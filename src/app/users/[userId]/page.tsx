@@ -131,13 +131,13 @@ export default function UserProfilePage() {
   const userDetails = [
     { label: 'Cédula', value: user.cedula, icon: FileText },
     { label: 'Email', value: user.email, icon: Mail },
-    { label: 'Teléfono', value: user.phone, icon: Phone },
+    { label: 'Teléfono', value: user.telefono, icon: Phone },
     { label: 'Dirección', value: user.direccion, icon: Home },
-    { label: 'Rol', value: user.role, icon: Briefcase, isBadge: true, badgeClass: roleVariant[user.role] },
+    { label: 'Rol', value: user.rol, icon: Briefcase, isBadge: true, badgeClass: roleVariant[user.rol] },
     { label: 'Área', value: getAreaName(user.area), icon: Building },
     { label: 'Tipo de Trabajador', value: user.tipoTrabajador, icon: User, isBadge: true },
     { label: 'Tipo de Contrato', value: user.tipoContrato, icon: FileText, isBadge: true, badgeClass: user.tipoContrato ? contractTypeVariant[user.tipoContrato] : '' },
-    { label: 'Fecha de Ingreso', value: formatDate(user.creationDate), icon: Calendar },
+    { label: 'Fecha de Ingreso', value: formatDate(user.fechaCreacion), icon: Calendar },
     { label: 'Fin de Contrato', value: formatDate(user.fechaCulminacionContrato), icon: FileCheck2 },
   ];
 
@@ -164,15 +164,15 @@ export default function UserProfilePage() {
                     <Card>
                         <CardContent className="pt-6 flex flex-col items-center text-center">
                              <Avatar className="h-24 w-24 mb-4">
-                                <AvatarImage src={user.avatarUrl} alt={user.name} />
+                                <AvatarImage src={user.avatarUrl} alt={user.nombre} />
                                 <AvatarFallback className="text-3xl">
-                                {getUserInitials(user.name)}
+                                {getUserInitials(user.nombre)}
                                 </AvatarFallback>
                             </Avatar>
-                            <h2 className="text-xl font-bold">{user.name}</h2>
+                            <h2 className="text-xl font-bold">{user.nombre}</h2>
                             <p className="text-muted-foreground">{user.email}</p>
-                             <Badge variant="secondary" className={cn(statusVariant[user.isActive], 'capitalize mt-4')}>
-                                {user.isActive ? 'Activo' : 'Inactivo'}
+                             <Badge variant="secondary" className={cn(statusVariant[user.activo], 'capitalize mt-4')}>
+                                {user.activo ? 'Activo' : 'Inactivo'}
                             </Badge>
                         </CardContent>
                     </Card>
