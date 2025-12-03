@@ -63,7 +63,7 @@ export default function UserProfilePage() {
     () => (firestore && userId ? doc(firestore, 'users', userId) : null),
     [firestore, userId]
   );
-  const { data: user, isLoading: isProfileLoading } } from useDoc<UserType>(userDocRef, {
+  const { data: user, isLoading: isProfileLoading } = useDoc<UserType>(userDocRef, {
       disabled: !userId || !authUser
   });
   
