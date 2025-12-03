@@ -85,6 +85,9 @@ export function UserForm({ isOpen, onOpenChange, onSave, user }: UserFormProps) 
       if (user) {
         form.reset({
             ...user,
+            nombre: user.nombre,
+            rol: user.rol,
+            activo: user.activo,
             password: '', // Password should not be shown when editing
             fechaCreacion: user.fechaCreacion?.toDate ? user.fechaCreacion.toDate() : new Date(user.fechaCreacion as any),
             fechaCulminacionContrato: user.fechaCulminacionContrato?.toDate ? user.fechaCulminacionContrato.toDate() : user.fechaCulminacionContrato ? new Date(user.fechaCulminacionContrato as any) : undefined,
@@ -117,6 +120,10 @@ export function UserForm({ isOpen, onOpenChange, onSave, user }: UserFormProps) 
         area: values.area as AreaId,
         tipoTrabajador: values.tipoTrabajador as WorkerType | undefined,
         tipoContrato: values.tipoContrato as ContractType | undefined,
+        // Ensure dates are correctly formatted for Firestore if needed,
+        // but for setDoc, Date objects are fine.
+        fechaCreacion: values.fechaCreacion,
+        ultimoAcceso: new Date(), // Set last access on save
     };
     onSave(dataToSave, password);
     onOpenChange(false);
