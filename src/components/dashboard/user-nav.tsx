@@ -16,18 +16,16 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import Link from 'next/link';
-import { useAuth, useDoc, useFirestore, useMemoFirebase, useUser } from '@/firebase';
+import { useUser, useDoc, useFirestore, useMemoFirebase } from '@/firebase';
 import { signOut } from 'firebase/auth';
 import { useRouter } from 'next/navigation';
 import { doc } from 'firebase/firestore';
 import type { User } from '@/lib/types';
 import { Skeleton } from '../ui/skeleton';
 
-
 export function UserNav() {
-  const { user: authUser, isUserLoading: isAuthLoading } = useUser();
+  const { user: authUser, isUserLoading: isAuthLoading, auth } = useUser();
   const firestore = useFirestore();
-  const auth = useAuth();
   const router = useRouter();
 
   const userDocRef = useMemoFirebase(() => {
@@ -36,11 +34,10 @@ export function UserNav() {
   }, [firestore, authUser]);
 
   const { data: currentUser, isLoading: isProfileLoading } = useDoc<User>(userDocRef, {
-      disabled: !authUser
+      disabled: !authUser || isAuthLoading,
   });
   
-  // Combine loading states: true if auth is loading OR if auth is done but profile is still loading
-  const isLoading = isAuthLoading || (!!authUser && isProfileLoading);
+  const isLoading = isAuthLoading || (authUser && isProfileLoading);
 
   const handleSignOut = async () => {
     if (auth) {

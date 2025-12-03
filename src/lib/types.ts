@@ -8,7 +8,6 @@ export type TaskPeriodicity = 'diaria' | 'semanal' | 'quincenal' | 'mensual' | '
 export type WorkerType = 'obrero' | 'empleado';
 export type ContractType = 'determinado' | 'indeterminado' | 'prueba';
 
-
 export interface User {
   id: string; // Document ID from Firestore, should be same as uid
   email: string;
@@ -19,7 +18,6 @@ export interface User {
   creationDate: Date | Timestamp;
   createdBy: string;
   lastAccess: Date | Timestamp;
-  userId?: string; // DEPRECATED, use id
   cedula?: string;
   phone?: string;
   address?: string;

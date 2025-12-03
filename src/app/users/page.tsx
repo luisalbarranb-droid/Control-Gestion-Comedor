@@ -34,7 +34,7 @@ import type { User, Role } from '@/lib/types';
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
 import { useToast } from '@/hooks/use-toast';
-import { useCollection, useDoc, useFirestore, useMemoFirebase, useUser, setDocumentNonBlocking } from '@/firebase';
+import { useCollection, useDoc, useFirestore, useMemoFirebase, useUser, setDocumentNonBlocking, addDocumentNonBlocking } from '@/firebase';
 import { collection, doc, serverTimestamp } from 'firebase/firestore';
 import { Loader2 } from 'lucide-react';
 import { UserForm } from '@/components/users/user-form';
@@ -62,7 +62,10 @@ export default function UsersPage() {
     if (!firestore || !authUser) return null;
     return doc(firestore, 'users', authUser.uid);
   }, [firestore, authUser]);
-  const { data: currentUser, isLoading: isProfileLoading } = useDoc<User>(userDocRef);
+  
+  const { data: currentUser, isLoading: isProfileLoading } = useDoc<User>(userDocRef, {
+      disabled: !authUser || isAuthLoading
+  });
 
   const isSuperAdmin = currentUser?.role === 'superadmin';
   const isAdminOrHigher = currentUser?.role === 'admin' || currentUser?.role === 'superadmin';
@@ -83,7 +86,7 @@ export default function UsersPage() {
     setFormOpen(true);
   }
 
-  const handleSaveUser = async (userData: Omit<User, 'id' | 'userId' | 'createdBy' | 'lastAccess' | 'creationDate'>, password?: string) => {
+  const handleSaveUser = async (userData: Omit<User, 'id'>, password?: string) => {
     if (!auth || !firestore || !currentUser) {
         toast({ variant: 'destructive', title: 'Error', description: 'No se ha podido autenticar la acción.' });
         return;
@@ -101,19 +104,21 @@ export default function UsersPage() {
         }
         
         try {
-            // We need to create a temporary auth instance to create the user, because we don't want to sign in as the new user
+            // NOTE: This creates the user in Firebase Auth. The Firestore document is created via a trigger or manually.
+            // For this prototype, we'll assume a separate process handles the doc, or we handle it here.
             const userCredential = await createUserWithEmailAndPassword(auth, userData.email, password);
             const newAuthUser = userCredential.user;
             const newUserDocRef = doc(firestore, 'users', newAuthUser.uid);
             
-            setDocumentNonBlocking(newUserDocRef, {
+            const newUserDoc = {
                 ...userData,
                 id: newAuthUser.uid,
-                userId: newAuthUser.uid,
                 createdBy: currentUser.id,
                 creationDate: serverTimestamp(),
                 lastAccess: serverTimestamp(),
-            }, { merge: false });
+            }
+
+            addDocumentNonBlocking(collection(firestore, 'users'), newUserDoc);
             
             toast({ title: 'Usuario Creado', description: `${userData.name} ha sido añadido con éxito.` });
         } catch (error: any) {
@@ -128,6 +133,7 @@ export default function UsersPage() {
         }
     }
     setFormOpen(false);
+    setSelectedUser(null);
   };
 
   const getAreaName = (areaId: string) => areas.find((a) => a.id === areaId)?.nombre || 'N/A';
@@ -249,12 +255,14 @@ export default function UsersPage() {
           </Card>
         </main>
       </SidebarInset>
-      <UserForm 
-        isOpen={isFormOpen}
-        onOpenChange={setFormOpen}
-        onSave={handleSaveUser}
-        user={selectedUser}
-      />
+      {isFormOpen && (
+        <UserForm 
+          isOpen={isFormOpen}
+          onOpenChange={setFormOpen}
+          onSave={handleSaveUser}
+          user={selectedUser}
+        />
+      )}
     </div>
   );
 }

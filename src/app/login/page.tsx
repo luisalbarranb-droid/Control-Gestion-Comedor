@@ -16,9 +16,9 @@ import { Label } from '@/components/ui/label';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2 } from 'lucide-react';
-import { useAuth, useFirestore } from '@/firebase';
+import { useAuth, useFirestore, setDocumentNonBlocking } from '@/firebase';
 import { signInWithEmailAndPassword, createUserWithEmailAndPassword, User as FirebaseAuthUser } from 'firebase/auth';
-import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
+import { doc, getDoc, serverTimestamp } from 'firebase/firestore';
 import type { User } from '@/lib/types';
 
 
@@ -48,29 +48,37 @@ export default function LoginPage() {
         return;
     }
     
-    const upsertSuperAdmin = async (firebaseUser: FirebaseAuthUser) => {
+    // This function creates/updates the user document in Firestore.
+    // It's designed to be called only when a user successfully signs in or is created.
+    const upsertUserDocument = async (firebaseUser: FirebaseAuthUser) => {
       const userRef = doc(firestore, 'users', firebaseUser.uid);
-      
-      const userData: Partial<User> = {
-        id: firebaseUser.uid,
-        email: firebaseUser.email!,
-        name: 'Super Admin',
-        role: 'superadmin',
-        area: 'administracion',
-        isActive: true,
-        createdBy: 'system',
-        creationDate: serverTimestamp(),
-        lastAccess: serverTimestamp(),
-      };
-  
-      // Use setDoc with merge:true to create or update.
-      await setDoc(userRef, userData, { merge: true });
-      console.log('Super Admin user document ensured:', firebaseUser.uid);
+      const userSnap = await getDoc(userRef);
+
+      if (!userSnap.exists()) {
+        // User document does not exist, create it (this is the first login for this user)
+        // We'll create a superadmin by default for the first user.
+        const newUser: User = {
+          id: firebaseUser.uid,
+          email: firebaseUser.email!,
+          name: 'Super Admin',
+          role: 'superadmin',
+          area: 'administracion',
+          isActive: true,
+          createdBy: 'system',
+          creationDate: serverTimestamp(),
+          lastAccess: serverTimestamp(),
+        };
+        // Use a blocking set here to ensure the doc exists before navigating
+        await setDoc(userRef, newUser);
+      } else {
+        // User document exists, just update last access time
+        await setDoc(userRef, { lastAccess: serverTimestamp() }, { merge: true });
+      }
     };
 
     try {
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
-      await upsertSuperAdmin(userCredential.user);
+      await upsertUserDocument(userCredential.user);
       
       toast({
         title: 'Inicio de sesión exitoso',
@@ -81,24 +89,23 @@ export default function LoginPage() {
     } catch (error: any) {
       if (error.code === 'auth/user-not-found' || error.code === 'auth/invalid-credential') {
         try {
-            // If user does not exist, or creds are wrong for an existing user but we want to bootstrap a superadmin...
-            // We attempt to create it. If it already exists and pw is wrong, this will fail as 'auth/email-already-in-use'.
+            // Attempt to create the user if they don't exist.
+            // This is specific logic for bootstrapping the first superadmin account.
             const newUserCredential = await createUserWithEmailAndPassword(auth, email, password);
-            await upsertSuperAdmin(newUserCredential.user);
+            await upsertUserDocument(newUserCredential.user);
             toast({
                 title: 'Cuenta de Super Admin Creada',
                 description: 'La cuenta de administrador inicial ha sido creada. ¡Bienvenido!',
             });
             router.push('/');
         } catch (creationError: any) {
-            console.error('Super Admin Creation/Login Error:', creationError);
-            let description = 'Ocurrió un error inesperado.';
-            if (creationError.code === 'auth/email-already-in-use') {
-                description = 'Credenciales incorrectas. Por favor, verifica tu correo y contraseña.';
-            } else if (creationError.code === 'auth/weak-password') {
+            let description = 'Credenciales incorrectas. Por favor, verifica tu correo y contraseña.';
+            if (creationError.code === 'auth/weak-password') {
                 description = 'La contraseña es demasiado débil. Debe tener al menos 6 caracteres.'
+            } else if (creationError.code !== 'auth/email-already-in-use') {
+                description = 'Ocurrió un error inesperado al intentar crear la cuenta.'
             }
-            toast({
+             toast({
                 variant: 'destructive',
                 title: 'Error de Autenticación',
                 description: description,

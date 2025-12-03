@@ -1,14 +1,4 @@
 
-/**
- * @fileoverview Firebase Security Rules for a Task Management Application
- * @version 10
- *
- * @description
- * This ruleset enforces a role-based access control (RBAC) model.
- * 'superadmin' has full write access to critical areas like user management.
- * 'admin' has read access to most areas and limited write capabilities.
- * 'comun' users have access only to data directly related to them.
- */
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
@@ -25,20 +15,16 @@ service cloud.firestore {
       return request.auth.uid == userId;
     }
 
-    function currentUserRole() {
-      // Use exists() to prevent errors on new user creation before their doc exists.
-      if (exists(/databases/$(database)/documents/users/$(request.auth.uid))) {
-        return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role;
-      }
-      return 'comun'; // Default to least privileged role if doc doesn't exist
+    function getRole() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role;
     }
 
     function isSuperAdmin() {
-      return isSignedIn() && currentUserRole() == 'superadmin';
+      return isSignedIn() && getRole() == 'superadmin';
     }
 
     function isAdminOrHigher() {
-      return isSignedIn() && currentUserRole() in ['admin', 'superadmin'];
+      return isSignedIn() && getRole() in ['admin', 'superadmin'];
     }
     
     function isCreator(ownerField) {
@@ -68,14 +54,14 @@ service cloud.firestore {
     match /tasks/{taskId} {
       // Any authenticated user can list tasks (queries will filter them)
       // Any participant (creator, assignee) or admin can get a specific task
-      allow get: if isSignedIn() && (get(/databases/$(database)/documents/tasks/$(taskId)).data.asignadoA == request.auth.uid || get(/databases/$(database)/documents/tasks/$(taskId)).data.creadoPor == request.auth.uid || isAdminOrHigher());
+      allow get: if isSignedIn() && (get(/databases/$(database)/documents/tasks/$(taskId)).data.assignedTo == request.auth.uid || get(/databases/$(database)/documents/tasks/$(taskId)).data.createdBy == request.auth.uid || isAdminOrHigher());
       allow list: if isSignedIn();
       // Anyone can create a task, but they must be the creator
-      allow create: if isSignedIn() && isCreator('creadoPor');
+      allow create: if isSignedIn() && isCreator('createdBy');
       // Only participants or admins can update, and creator is immutable
-      allow update: if isSignedIn() && (resource.data.asignadoA == request.auth.uid || resource.data.creadoPor == request.auth.uid || isAdminOrHigher()) && request.resource.data.creadoPor == resource.data.creadoPor;
+      allow update: if isSignedIn() && (resource.data.assignedTo == request.auth.uid || resource.data.createdBy == request.auth.uid || isAdminOrHigher()) && request.resource.data.createdBy == resource.data.createdBy;
       // Only creator or admin can delete
-      allow delete: if isSignedIn() && (resource.data.creadoPor == request.auth.uid || isAdminOrHigher());
+      allow delete: if isSignedIn() && (resource.data.createdBy == request.auth.uid || isAdminOrHigher());
     }
     
     match /inventory/{itemId} {
@@ -99,7 +85,7 @@ service cloud.firestore {
 
     function isTaskParticipant(taskId) {
       let taskData = get(/databases/$(database)/documents/tasks/$(taskId)).data;
-      return isOwner(taskData.asignadoA) || isOwner(taskData.creadoPor) || isAdminOrHigher();
+      return isOwner(taskData.assignedTo) || isOwner(taskData.createdBy) || isAdminOrHigher();
     }
 
     match /evidences/{evidenceId} {

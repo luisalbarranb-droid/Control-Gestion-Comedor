@@ -11,8 +11,7 @@ import {
   BookOpen,
   ClipboardCheck,
   QrCode,
-  FileSpreadsheet,
-  Loader2
+  FileSpreadsheet
 } from 'lucide-react';
 import {
   SidebarMenu,
@@ -21,7 +20,7 @@ import {
   SidebarSkeleton,
 } from '@/components/ui/sidebar';
 import Link from 'next/link';
-import { useDoc, useFirestore, useMemoFirebase, useUser } from '@/firebase';
+import { useUser, useDoc, useFirestore, useMemoFirebase } from '@/firebase';
 import type { User } from '@/lib/types';
 import { doc } from 'firebase/firestore';
 
@@ -37,16 +36,16 @@ export function MainNav() {
   const { user: authUser, isUserLoading: isAuthLoading } = useUser();
   const firestore = useFirestore();
 
+  // Memoize the document reference
   const userDocRef = useMemoFirebase(() => {
     if (!firestore || !authUser) return null;
     return doc(firestore, 'users', authUser.uid);
   }, [firestore, authUser]);
 
+  // Fetch the user profile from Firestore
   const { data: currentUser, isLoading: isProfileLoading } = useDoc<User>(userDocRef, {
-    disabled: !authUser
+    disabled: !authUser || isAuthLoading
   });
-
-  const isLoading = isAuthLoading || isProfileLoading;
   
   const allNavItems: NavItem[] = [
     { href: '/', label: 'Dashboard', icon: <Home /> },
@@ -61,32 +60,30 @@ export function MainNav() {
     { href: '/settings', label: 'Configuración', icon: <Settings /> },
   ];
 
-  const navItems = allNavItems.filter(item => {
-    // If item has no specific roles, it's visible to everyone
-    if (!item.visibleForRoles) {
-        return true; 
-    }
-    // If item has roles, check if the current user's role is included
-    if (currentUser?.role && item.visibleForRoles.includes(currentUser.role)) {
-        return true;
-    }
-    // Otherwise, hide it
-    return false;
-  });
-
-  if (isLoading) {
+  // While auth state is resolving, or if auth is resolved but profile is still loading, show skeleton
+  if (isAuthLoading || (authUser && isProfileLoading)) {
     return (
       <SidebarMenu>
-        {allNavItems.map((item, i) => (
+        {Array(10).fill(0).map((_, i) => (
           <SidebarSkeleton key={i} showIcon={true} />
         ))}
       </SidebarMenu>
     );
   }
-  
+
+  // If auth is done and there's no user, render nothing
   if (!authUser) {
-    return null; // Don't show nav items if user is not logged in
+    return null; 
   }
+  
+  // Filter nav items based on the user's role
+  const navItems = allNavItems.filter(item => {
+    if (!item.visibleForRoles) {
+      return true; // Visible to all authenticated users
+    }
+    // Check if the current user's role is in the visibleForRoles array
+    return currentUser?.role && item.visibleForRoles.includes(currentUser.role);
+  });
 
   return (
     <SidebarMenu>

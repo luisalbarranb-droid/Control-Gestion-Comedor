@@ -64,7 +64,7 @@ export default function UserProfilePage() {
     [firestore, userId]
   );
   const { data: user, isLoading: isProfileLoading } = useDoc<UserType>(userDocRef, {
-      disabled: !userId
+      disabled: !userId || !authUser
   });
   
   useEffect(() => {
@@ -73,7 +73,7 @@ export default function UserProfilePage() {
     }
   }, [isAuthLoading, authUser, router]);
 
-  const isLoading = isAuthLoading || isProfileLoading;
+  const isLoading = isAuthLoading || (authUser && isProfileLoading);
 
   if (isLoading) {
     return (
