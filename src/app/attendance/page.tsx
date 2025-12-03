@@ -1,4 +1,3 @@
-
 'use client';
 
 import {
@@ -9,7 +8,7 @@ import {
 } from '@/components/ui/sidebar';
 import { Header } from '@/components/dashboard/header';
 import { MainNav } from '@/components/dashboard/main-nav';
-import { SquareCheck, FileSpreadsheet, CalendarDays, startOfWeek } from 'lucide-react';
+import { SquareCheck, FileSpreadsheet, CalendarDays } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { useCurrentUser } from '@/hooks/use-current-user';
@@ -17,7 +16,7 @@ import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
 import { collection, query, where } from 'firebase/firestore';
 import { AttendanceTable } from '@/components/attendance/attendance-table';
 import { ScannerCard } from '@/components/attendance/scanner-card';
-import { format } from 'date-fns';
+import { format, startOfWeek } from 'date-fns';
 
 export default function AttendancePage() {
   const { user: currentUser, role, isLoading: isCurrentUserLoading } = useCurrentUser();
