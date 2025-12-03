@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -20,10 +21,12 @@ import { es } from 'date-fns/locale';
 import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
 import { collection, writeBatch, doc } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
+import { useCurrentUser } from '@/hooks/use-current-user';
 
 export default function PlanningPage() {
   const { toast } = useToast();
   const firestore = useFirestore();
+  const { user: currentUser, isLoading: isCurrentUserLoading, role } = useCurrentUser();
   
   const [currentWeek, setCurrentWeek] = useState(new Date());
 
@@ -93,7 +96,23 @@ export default function PlanningPage() {
     }
   };
 
-  const isLoading = isLoadingUsers || isLoadingDaysOff;
+  const isLoading = isCurrentUserLoading || isLoadingUsers || isLoadingDaysOff;
+
+  if (isCurrentUserLoading || !currentUser) {
+    return (
+        <div className="min-h-screen w-full flex items-center justify-center">
+            <p>Cargando...</p>
+        </div>
+    )
+  }
+
+  if (role !== 'admin' && role !== 'superadmin') {
+      return (
+        <div className="min-h-screen w-full flex items-center justify-center">
+            <p>No tienes permiso para acceder a esta página.</p>
+        </div>
+      )
+  }
 
   return (
     <div className="min-h-screen w-full">
@@ -158,5 +177,3 @@ export default function PlanningPage() {
     </div>
   );
 }
-
-    

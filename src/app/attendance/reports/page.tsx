@@ -47,7 +47,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { DateRange } from 'react-day-picker';
 import { Calendar } from '@/components/ui/calendar';
 import Link from 'next/link';
-import { useCollection, useFirestore, useMemoFirebase, updateDocumentNonBlocking, useUser } from '@/firebase';
+import { useCollection, useFirestore, useMemoFirebase, updateDocumentNonBlocking } from '@/firebase';
 import { collection, query, where, doc } from 'firebase/firestore';
 import { useCurrentUser } from '@/hooks/use-current-user';
 
@@ -92,15 +92,14 @@ export default function AttendanceReportsPage() {
         const to = date.to ? new Date(date.to) : from;
         to.setHours(23,59,59,999);
         
-        const baseQuery = query(
+        let baseQuery = query(
             collection(firestore, 'attendance'),
             where('checkIn', '>=', from),
             where('checkIn', '<=', to)
         );
 
-        // If user is not admin, filter records by their own ID
         if (!isAdmin) {
-             return query(baseQuery, where('userId', '==', currentUser.id));
+             baseQuery = query(baseQuery, where('userId', '==', currentUser.id));
         }
 
         return baseQuery;
@@ -111,7 +110,7 @@ export default function AttendanceReportsPage() {
     const getUserInitials = (name: string) => name ? name.split(' ').map((n) => n[0]).join('') : '';
     
     const consolidatedData = useMemo(() => {
-        if (!users || !filteredRecords) return [];
+        if (isLoadingUsers || isLoadingRecords || !users || !filteredRecords) return [];
 
         const userStats: Record<string, ConsolidatedRecord> = users.reduce((acc, user) => {
             acc[user.id] = {
@@ -130,8 +129,8 @@ export default function AttendanceReportsPage() {
             const userStat = userStats[record.userId];
             if (!userStat) return;
             
-            const checkInDate = record.checkIn.toDate ? record.checkIn.toDate() : new Date(record.checkIn);
-            const checkOutDate = record.checkOut?.toDate ? record.checkOut.toDate() : record.checkOut ? new Date(record.checkOut) : null;
+            const checkInDate = record.checkIn.toDate ? record.checkIn.toDate() : new Date(record.checkIn as any);
+            const checkOutDate = record.checkOut?.toDate ? record.checkOut.toDate() : record.checkOut ? new Date(record.checkOut as any) : null;
 
             switch (record.status) {
                 case 'presente':
@@ -156,7 +155,7 @@ export default function AttendanceReportsPage() {
         });
 
         return Object.values(userStats);
-    }, [users, filteredRecords]);
+    }, [users, filteredRecords, isLoadingUsers, isLoadingRecords]);
 
     const absenceRecords = filteredRecords?.filter(r => r.status === 'ausente' || r.status === 'justificado' || r.status === 'no-justificado' || r.status === 'vacaciones') || [];
     const tardyRecords = filteredRecords?.filter(r => r.status === 'retardo') || [];
@@ -190,8 +189,8 @@ export default function AttendanceReportsPage() {
         const baseMapping = (record: AttendanceRecord) => {
             const user = getUser(record.userId);
             const statusInfo = statusConfig[record.status];
-            const checkInDate = record.checkIn.toDate ? record.checkIn.toDate() : new Date(record.checkIn);
-            const checkOutDate = record.checkOut?.toDate ? record.checkOut.toDate() : record.checkOut ? new Date(record.checkOut) : null;
+            const checkInDate = record.checkIn.toDate ? record.checkIn.toDate() : new Date(record.checkIn as any);
+            const checkOutDate = record.checkOut?.toDate ? record.checkOut.toDate() : record.checkOut ? new Date(record.checkOut as any) : null;
             return {
                 'Empleado': user?.nombre || 'N/A',
                 'Cédula': user?.cedula || 'N/A',
@@ -261,8 +260,8 @@ export default function AttendanceReportsPage() {
                 const statusInfo = statusConfig[record.status];
                 if (!user) return null;
 
-                const checkInDate = record.checkIn.toDate ? record.checkIn.toDate() : new Date(record.checkIn);
-                const checkOutDate = record.checkOut?.toDate ? record.checkOut.toDate() : record.checkOut ? new Date(record.checkOut) : null;
+                const checkInDate = record.checkIn.toDate ? record.checkIn.toDate() : new Date(record.checkIn as any);
+                const checkOutDate = record.checkOut?.toDate ? record.checkOut.toDate() : record.checkOut ? new Date(record.checkOut as any) : null;
 
                 return (
                 <TableRow key={record.id}>
@@ -321,8 +320,8 @@ export default function AttendanceReportsPage() {
 
     const isLoading = isCurrentUserLoading || isLoadingRecords || (isAdmin && isLoadingUsers);
 
-    if (isLoading) {
-        return <div className="flex items-center justify-center h-screen">Cargando reportes...</div>;
+    if (isLoading && !currentUser) { // Still waiting for auth
+        return <div className="flex items-center justify-center h-screen">Cargando...</div>;
     }
 
     return (
@@ -373,7 +372,7 @@ export default function AttendanceReportsPage() {
                                 <kpi.icon className={cn("h-4 w-4 text-muted-foreground", kpi.className)} />
                                 </CardHeader>
                                 <CardContent>
-                                <div className={cn("text-2xl font-bold", kpi.className)}>{kpi.value}</div>
+                                <div className={cn("text-2xl font-bold", kpi.className)}>{isLoading ? '...' : kpi.value}</div>
                                 </CardContent>
                             </Card>
                         ))}
@@ -393,7 +392,7 @@ export default function AttendanceReportsPage() {
                                     <CardDescription>Detalle de todos los registros de asistencia para el período seleccionado.</CardDescription>
                                 </CardHeader>
                                 <CardContent>
-                                    {renderTable(filteredRecords || [], 'general-table')}
+                                    {isLoading ? <p>Cargando registros...</p> : renderTable(filteredRecords || [], 'general-table')}
                                 </CardContent>
                             </Card>
                         </TabsContent>
@@ -404,7 +403,7 @@ export default function AttendanceReportsPage() {
                                     <CardDescription>Detalle de todos los empleados ausentes para el período seleccionado.</CardDescription>
                                 </CardHeader>
                                 <CardContent>
-                                    {renderTable(absenceRecords, 'absences-table', true)}
+                                    {isLoading ? <p>Cargando registros...</p> : renderTable(absenceRecords, 'absences-table', true)}
                                 </CardContent>
                             </Card>
                         </TabsContent>
@@ -415,7 +414,7 @@ export default function AttendanceReportsPage() {
                                     <CardDescription>Detalle de todos los empleados con retardo para el período seleccionado.</CardDescription>
                                 </CardHeader>
                                 <CardContent>
-                                    {renderTable(tardyRecords, 'tardies-table')}
+                                    {isLoading ? <p>Cargando registros...</p> : renderTable(tardyRecords, 'tardies-table')}
                                 </CardContent>
                             </Card>
                         </TabsContent>
@@ -426,38 +425,40 @@ export default function AttendanceReportsPage() {
                                     <CardDescription>Resumen de asistencia y horas trabajadas por empleado en el período seleccionado.</CardDescription>
                                 </CardHeader>
                                 <CardContent>
-                                    <Table>
-                                        <TableHeader>
-                                            <TableRow>
-                                                <TableHead>Empleado</TableHead>
-                                                <TableHead className="text-center">Días Asistidos</TableHead>
-                                                <TableHead className="text-center">Días Ausente</TableHead>
-                                                <TableHead className="text-center">Días Libres</TableHead>
-                                                <TableHead className="text-center">Reposos</TableHead>
-                                                <TableHead className="text-center">Total Horas</TableHead>
-                                            </TableRow>
-                                        </TableHeader>
-                                        <TableBody>
-                                            {consolidatedData.map(data => (
-                                                <TableRow key={data.userId}>
-                                                    <TableCell>
-                                                        <div className="flex items-center gap-3">
-                                                            <Avatar className="h-9 w-9">
-                                                                <AvatarImage src={getUser(data.userId)?.avatarUrl} alt={data.userName} />
-                                                                <AvatarFallback>{getUserInitials(data.userName)}</AvatarFallback>
-                                                            </Avatar>
-                                                            <div className="font-medium">{data.userName}</div>
-                                                        </div>
-                                                    </TableCell>
-                                                    <TableCell className="text-center font-mono">{data.attendedDays}</TableCell>
-                                                    <TableCell className="text-center font-mono">{data.absentDays}</TableCell>
-                                                    <TableCell className="text-center font-mono">{data.freeDays}</TableCell>
-                                                    <TableCell className="text-center font-mono">{data.justifiedRestDays}</TableCell>
-                                                    <TableCell className="text-center font-mono">{data.totalHours.toFixed(1)}</TableCell>
+                                    {isLoading ? <p>Cargando resumen...</p> : (
+                                        <Table>
+                                            <TableHeader>
+                                                <TableRow>
+                                                    <TableHead>Empleado</TableHead>
+                                                    <TableHead className="text-center">Días Asistidos</TableHead>
+                                                    <TableHead className="text-center">Días Ausente</TableHead>
+                                                    <TableHead className="text-center">Días Libres</TableHead>
+                                                    <TableHead className="text-center">Reposos</TableHead>
+                                                    <TableHead className="text-center">Total Horas</TableHead>
                                                 </TableRow>
-                                            ))}
-                                        </TableBody>
-                                    </Table>
+                                            </TableHeader>
+                                            <TableBody>
+                                                {consolidatedData.map(data => (
+                                                    <TableRow key={data.userId}>
+                                                        <TableCell>
+                                                            <div className="flex items-center gap-3">
+                                                                <Avatar className="h-9 w-9">
+                                                                    <AvatarImage src={getUser(data.userId)?.avatarUrl} alt={data.userName} />
+                                                                    <AvatarFallback>{getUserInitials(data.userName)}</AvatarFallback>
+                                                                </Avatar>
+                                                                <div className="font-medium">{data.userName}</div>
+                                                            </div>
+                                                        </TableCell>
+                                                        <TableCell className="text-center font-mono">{data.attendedDays}</TableCell>
+                                                        <TableCell className="text-center font-mono">{data.absentDays}</TableCell>
+                                                        <TableCell className="text-center font-mono">{data.freeDays}</TableCell>
+                                                        <TableCell className="text-center font-mono">{data.justifiedRestDays}</TableCell>
+                                                        <TableCell className="text-center font-mono">{data.totalHours.toFixed(1)}</TableCell>
+                                                    </TableRow>
+                                                ))}
+                                            </TableBody>
+                                        </Table>
+                                    )}
                                 </CardContent>
                             </Card>
                         </TabsContent>
