@@ -29,12 +29,15 @@ import {
   DropdownMenuLabel,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { users as initialUsers, areas } from '@/lib/placeholder-data';
+import { areas } from '@/lib/placeholder-data';
 import type { User, Role } from '@/lib/types';
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
 import { UserForm } from '@/components/users/user-form';
 import { useToast } from '@/hooks/use-toast';
+import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
+import { collection, doc, setDoc, serverTimestamp, writeBatch } from 'firebase/firestore';
+import { setDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 
 const roleVariant: Record<Role, string> = {
   superadmin: 'bg-purple-100 text-purple-800',
@@ -49,39 +52,57 @@ const statusVariant: Record<boolean, string> = {
 
 export default function UsersPage() {
   const { toast } = useToast();
-  const [users, setUsers] = useState<User[]>(initialUsers);
+  const firestore = useFirestore();
+
+  const usersCollectionRef = useMemoFirebase(
+    () => (firestore ? collection(firestore, 'users') : null),
+    [firestore]
+  );
+  const { data: users, isLoading } = useCollection<User>(usersCollectionRef);
+
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [isFormOpen, setFormOpen] = useState(false);
 
   const getAreaName = (areaId: string) => areas.find((a) => a.id === areaId)?.nombre || 'N/A';
-  const getUserInitials = (name: string) => name.split(' ').map((n) => n[0]).join('');
+  const getUserInitials = (name: string) => name ? name.split(' ').map((n) => n[0]).join('') : '';
 
-  const handleCreateUser = (newUserData: Omit<User, 'userId' | 'creadoPor' | 'ultimoAcceso' | 'avatarUrl'>) => {
-    const newUser: User = {
-        ...newUserData,
-        userId: `user-${Date.now()}`,
-        creadoPor: 'user-superadmin-1', // Placeholder for current user
-        ultimoAcceso: new Date(),
-        avatarUrl: `https://i.pravatar.cc/150?u=${newUserData.email}`
+  const handleSaveUser = (userData: Omit<User, 'userId'> | User) => {
+    if (!firestore) return;
+
+    const isEditing = 'userId' in userData;
+    const userToSave = {
+      ...userData,
+      // In a real app, you'd get the current user's ID
+      creadoPor: 'userId' in userData ? userData.creadoPor : 'user-superadmin-1', 
+      ultimoAcceso: serverTimestamp(),
+      avatarUrl: 'avatarUrl' in userData ? userData.avatarUrl : `https://i.pravatar.cc/150?u=${userData.email}`
     };
-    setUsers(prev => [newUser, ...prev]);
-    toast({
-        title: 'Usuario Creado',
-        description: `El usuario ${newUser.nombre} ha sido añadido.`,
-    });
-  };
 
-  const handleUpdateUser = (updatedUserData: User) => {
-     setUsers(prev => prev.map(u => u.userId === updatedUserData.userId ? updatedUserData : u));
-     toast({
-        title: 'Usuario Actualizado',
-        description: `Los datos de ${updatedUserData.nombre} han sido actualizados.`,
+    const docRef = isEditing
+      ? doc(firestore, 'users', (userData as User).userId)
+      : doc(collection(firestore, 'users'));
+    
+    const finalData = { ...userToSave, userId: docRef.id };
+
+    setDocumentNonBlocking(docRef, finalData, { merge: isEditing });
+
+    toast({
+      title: `Usuario ${isEditing ? 'actualizado' : 'creado'}`,
+      description: `El usuario ${userData.nombre} ha sido guardado.`,
     });
   };
 
   const openForm = (user: User | null) => {
     setSelectedUser(user);
     setFormOpen(true);
+  }
+
+  if (isLoading) {
+    return (
+        <div className="min-h-screen w-full flex items-center justify-center">
+            <p>Cargando usuarios...</p>
+        </div>
+    )
   }
 
   return (
@@ -128,10 +149,10 @@ export default function UsersPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {users.map((user) => (
-                    <TableRow key={user.userId}>
+                  {users && users.map((user) => (
+                    <TableRow key={user.id}>
                       <TableCell>
-                         <Link href={`/users/${user.userId}`} className="flex items-center gap-3 hover:underline">
+                         <Link href={`/users/${user.id}`} className="flex items-center gap-3 hover:underline">
                           <Avatar className="h-9 w-9">
                             <AvatarImage src={user.avatarUrl} alt={user.nombre} />
                             <AvatarFallback>
@@ -171,7 +192,7 @@ export default function UsersPage() {
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
                             <DropdownMenuLabel>Acciones</DropdownMenuLabel>
-                            <DropdownMenuItem asChild><Link href={`/users/${user.userId}`}>Ver Perfil</Link></DropdownMenuItem>
+                            <DropdownMenuItem asChild><Link href={`/users/${user.id}`}>Ver Perfil</Link></DropdownMenuItem>
                             <DropdownMenuItem onClick={() => openForm(user)}>Editar</DropdownMenuItem>
                             <DropdownMenuItem>Desactivar</DropdownMenuItem>
                           </DropdownMenuContent>
@@ -188,7 +209,7 @@ export default function UsersPage() {
       <UserForm
         isOpen={isFormOpen}
         onOpenChange={setFormOpen}
-        onSave={selectedUser ? handleUpdateUser : handleCreateUser}
+        onSave={handleSaveUser}
         user={selectedUser}
       />
     </div>

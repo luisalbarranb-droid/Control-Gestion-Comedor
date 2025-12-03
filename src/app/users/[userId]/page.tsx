@@ -1,7 +1,6 @@
 'use client';
 
 import { useParams } from 'next/navigation';
-import { users, areas } from '@/lib/placeholder-data';
 import {
   Sidebar,
   SidebarContent,
@@ -17,8 +16,11 @@ import { Badge } from '@/components/ui/badge';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
-import type { Role, WorkerType, ContractType } from '@/lib/types';
+import type { Role, WorkerType, ContractType, User as UserType } from '@/lib/types';
 import QRCode from 'react-qr-code';
+import { useDoc, useFirestore, useMemoFirebase } from '@/firebase';
+import { doc } from 'firebase/firestore';
+import { areas } from '@/lib/placeholder-data';
 
 const roleVariant: Record<Role, string> = {
   superadmin: 'bg-purple-100 text-purple-800',
@@ -37,22 +39,41 @@ const contractTypeVariant: Record<ContractType, string> = {
     prueba: 'bg-yellow-100 text-yellow-800',
 }
 
+const formatDate = (date: any) => {
+    if (!date) return 'N/A';
+    // Firestore Timestamps can be converted to JS Date objects
+    if (date.toDate) {
+      return format(date.toDate(), 'dd MMMM, yyyy', { locale: es });
+    }
+    // Handle cases where it might already be a JS Date or a string
+    return format(new Date(date), 'dd MMMM, yyyy', { locale: es });
+};
+
 export default function UserProfilePage() {
   const params = useParams();
   const userId = params.userId as string;
+  const firestore = useFirestore();
 
-  const user = users.find(u => u.userId === userId);
+  const userDocRef = useMemoFirebase(
+    () => (firestore && userId ? doc(firestore, 'users', userId) : null),
+    [firestore, userId]
+  );
+  const { data: user, isLoading } = useDoc<UserType>(userDocRef);
+
+  if (isLoading) {
+    return <div className="flex items-center justify-center h-screen">Cargando perfil...</div>;
+  }
 
   if (!user) {
     return (
-      <div className="flex items-center justify-center h-full">
+      <div className="flex items-center justify-center h-screen">
         <p>Usuario no encontrado.</p>
       </div>
     );
   }
   
   const getAreaName = (areaId: string) => areas.find(a => a.id === areaId)?.nombre || 'N/A';
-  const getUserInitials = (name: string) => name.split(' ').map((n) => n[0]).join('');
+  const getUserInitials = (name: string) => name ? name.split(' ').map((n) => n[0]).join('') : '';
 
   const userDetails = [
     { label: 'Cédula', value: user.cedula, icon: FileText },
@@ -63,8 +84,8 @@ export default function UserProfilePage() {
     { label: 'Área', value: getAreaName(user.area), icon: Building },
     { label: 'Tipo de Trabajador', value: user.tipoTrabajador, icon: User, isBadge: true },
     { label: 'Tipo de Contrato', value: user.tipoContrato, icon: FileText, isBadge: true, badgeClass: user.tipoContrato ? contractTypeVariant[user.tipoContrato] : '' },
-    { label: 'Fecha de Ingreso', value: format(user.fechaCreacion, 'dd MMMM, yyyy', { locale: es }), icon: Calendar },
-    { label: 'Fin de Contrato', value: user.fechaCulminacionContrato ? format(user.fechaCulminacionContrato, 'dd MMMM, yyyy', { locale: es }) : 'N/A', icon: FileCheck2 },
+    { label: 'Fecha de Ingreso', value: formatDate(user.fechaCreacion), icon: Calendar },
+    { label: 'Fin de Contrato', value: formatDate(user.fechaCulminacionContrato), icon: FileCheck2 },
   ];
 
   return (
@@ -111,7 +132,7 @@ export default function UserProfilePage() {
                            <QRCode
                                 size={256}
                                 style={{ height: "auto", maxWidth: "100%", width: "100%" }}
-                                value={user.userId}
+                                value={user.id}
                                 viewBox={`0 0 256 256`}
                             />
                         </CardContent>
@@ -137,7 +158,7 @@ export default function UserProfilePage() {
                                                     </Badge>
                                                 </dd>
                                             ) : (
-                                                <dd className="text-sm font-semibold">{detail.value}</dd>
+                                                <dd className="text-sm font-semibold">{String(detail.value)}</dd>
                                             )}
                                         </div>
                                     </div>

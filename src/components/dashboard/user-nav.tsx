@@ -17,12 +17,35 @@ import {
 } from '@/components/ui/dropdown-menu';
 import Link from 'next/link';
 import { useCurrentUser } from '@/hooks/use-current-user';
+import { useAuth } from '@/firebase';
+import { signOut } from 'firebase/auth';
+import { useRouter } from 'next/navigation';
 
 export function UserNav() {
-  const { user: currentUser, role } = useCurrentUser();
+  const { user: currentUser, role, isLoading } = useCurrentUser();
+  const auth = useAuth();
+  const router = useRouter();
+
+  const handleSignOut = () => {
+    signOut(auth).then(() => {
+      router.push('/login');
+    });
+  };
+  
+  if (isLoading) {
+    return (
+        <Button variant="ghost" className="relative h-8 w-8 rounded-full">
+            <Avatar className="h-9 w-9" />
+        </Button>
+    )
+  }
 
   if (!currentUser) {
-    return null;
+    return (
+      <Button asChild>
+        <Link href="/login">Iniciar Sesión</Link>
+      </Button>
+    )
   }
 
   const userInitials = currentUser.nombre
@@ -52,7 +75,7 @@ export function UserNav() {
         <DropdownMenuSeparator />
         <DropdownMenuGroup>
           <DropdownMenuItem asChild>
-            <Link href="/settings">Perfil</Link>
+            <Link href={`/users/${currentUser.id}`}>Perfil</Link>
           </DropdownMenuItem>
           {role === 'superadmin' && (
             <DropdownMenuItem>Facturación</DropdownMenuItem>
@@ -62,8 +85,8 @@ export function UserNav() {
           </DropdownMenuItem>
         </DropdownMenuGroup>
         <DropdownMenuSeparator />
-        <DropdownMenuItem asChild>
-            <Link href="/login">Cerrar sesión</Link>
+        <DropdownMenuItem onClick={handleSignOut}>
+            Cerrar sesión
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

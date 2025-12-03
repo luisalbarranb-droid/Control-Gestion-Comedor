@@ -1,23 +1,39 @@
 'use client';
-// In a real app, this hook would use context or a state manager
-// to get the current user's role from your authentication system.
-// For now, we'll simulate it based on the mock data.
-import { users } from "@/lib/placeholder-data";
-import type { User, Role } from "@/lib/types";
 
-// Simulate getting the current logged-in user.
-// We'll just grab the first 'superadmin' user for this example.
-const currentUser = users.find(u => u.rol === 'superadmin');
+import { useUser, useDoc, useMemoFirebase, useFirestore } from '@/firebase';
+import type { User, Role } from '@/lib/types';
+import { doc } from 'firebase/firestore';
 
 interface CurrentUser {
     user: User | null;
     role: Role | null;
+    isLoading: boolean;
 }
 
 export function useCurrentUser(): CurrentUser {
-    // In a real scenario, you might have loading states, etc.
-    return { 
-        user: currentUser || null,
-        role: currentUser?.rol || 'comun' 
+    const { user: authUser, isLoading: isAuthLoading } = useUser();
+    const firestore = useFirestore();
+
+    const userDocRef = useMemoFirebase(() => {
+        if (!firestore || !authUser) return null;
+        return doc(firestore, 'users', authUser.uid);
+    }, [firestore, authUser]);
+
+    const { data: userProfile, isLoading: isProfileLoading } = useDoc<User>(userDocRef);
+
+    const isLoading = isAuthLoading || isProfileLoading;
+
+    if (isLoading || !userProfile) {
+        return { 
+            user: null,
+            role: null,
+            isLoading: true 
+        };
+    }
+    
+    return {
+        user: userProfile,
+        role: userProfile.rol,
+        isLoading: false
     };
 }
