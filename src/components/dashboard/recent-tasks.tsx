@@ -58,7 +58,7 @@ export function RecentTasks() {
                 const user = getUser(task.asignadoA);
                 const area = getArea(task.area);
                 return (
-                    <TableRow key={task.taskId}>
+                    <TableRow key={task.id}>
                         <TableCell>
                             <div className="font-medium">{task.titulo}</div>
                             <div className="hidden text-sm text-muted-foreground md:inline">
