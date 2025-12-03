@@ -37,13 +37,13 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { areas, users as mockUsers } from '@/lib/placeholder-data';
-import type { Task, TaskPriority, TaskStatus, AreaId } from '@/lib/types';
+import type { Task, TaskPriority, TaskStatus, AreaId, User } from '@/lib/types';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import { CreateTaskForm } from '@/components/tasks/create-task-form';
 import { TaskDetails } from '@/components/tasks/task-details';
 import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
-import { collection, doc, serverTimestamp } from 'firebase/firestore';
+import { collection, doc, serverTimestamp, query, where } from 'firebase/firestore';
 import { setDocumentNonBlocking, addDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import { useCurrentUser } from '@/hooks/use-current-user';
 
@@ -66,18 +66,33 @@ const statusVariant: Record<TaskStatus, string> = {
 
 export default function TasksPage() {
   const firestore = useFirestore();
-  const { user: currentUser } = useCurrentUser();
-  
-  const tasksCollectionRef = useMemoFirebase(
-    () => (firestore && currentUser ? collection(firestore, 'tasks') : null),
-    [firestore, currentUser]
+  const { user: currentUser, role } = useCurrentUser();
+  const isAdmin = role === 'admin' || role === 'superadmin';
+
+  const tasksQuery = useMemoFirebase(
+    () => {
+        if (!firestore || !currentUser) return null;
+        // Admins can see all tasks, common users only see tasks assigned to them
+        return isAdmin 
+            ? collection(firestore, 'tasks')
+            : query(collection(firestore, 'tasks'), where('asignadoA', '==', currentUser.id));
+    },
+    [firestore, currentUser, isAdmin]
   );
-  const { data: tasks, isLoading } = useCollection<Task>(tasksCollectionRef);
+  const { data: tasks, isLoading: isLoadingTasks } = useCollection<Task>(tasksQuery);
+
+  const usersQuery = useMemoFirebase(
+    () => {
+      // Only fetch all users if the current user is an admin
+      if (!firestore || !isAdmin) return null;
+      return collection(firestore, 'users');
+    },
+    [firestore, isAdmin]
+  );
+  const { data: users, isLoading: isLoadingUsers } = useCollection<User>(usersQuery);
 
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   
-  // TODO: Fetch users from Firestore instead of placeholder
-  const { data: users } = useCollection<any>(useMemoFirebase(() => (firestore ? collection(firestore, 'users') : null), [firestore]));
   const getArea = (areaId: string) => areas.find((a) => a.id === areaId);
   const getUser = (userId: string) => users?.find((u) => u.id === userId);
 
@@ -103,6 +118,8 @@ export default function TasksPage() {
     
     addDocumentNonBlocking(collectionRef, fullyNewTask);
   };
+
+  const isLoading = isLoadingTasks || (isAdmin && isLoadingUsers);
 
   if (isLoading) {
       return (
