@@ -22,9 +22,12 @@ import {
   FormMessage,
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
-import { useCurrentUser } from '@/hooks/use-current-user';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2 } from 'lucide-react';
+import { useUser, useDoc, useFirestore, useMemoFirebase } from '@/firebase';
+import { doc } from 'firebase/firestore';
+import type { User } from '@/lib/types';
+
 
 const profileSchema = z.object({
   nombre: z.string().min(2, 'El nombre es requerido.'),
@@ -44,8 +47,17 @@ const profileSchema = z.object({
 type ProfileFormValues = z.infer<typeof profileSchema>;
 
 export function ProfileCard() {
-  const { user, isLoading: isUserLoading } = useCurrentUser();
+  const { user: authUser, isUserLoading: isAuthLoading } = useUser();
+  const firestore = useFirestore();
   const { toast } = useToast();
+
+  const userDocRef = useMemoFirebase(() => {
+    if (!firestore || !authUser) return null;
+    return doc(firestore, 'users', authUser.uid);
+  }, [firestore, authUser]);
+
+  const { data: user, isLoading: isProfileLoading } = useDoc<User>(userDocRef);
+  const isLoading = isAuthLoading || isProfileLoading;
 
   const form = useForm<ProfileFormValues>({
     resolver: zodResolver(profileSchema),
@@ -83,7 +95,7 @@ export function ProfileCard() {
     });
   };
 
-  if (isUserLoading) {
+  if (isLoading) {
       return (
           <Card>
               <CardHeader>

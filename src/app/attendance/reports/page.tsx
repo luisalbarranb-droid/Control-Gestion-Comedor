@@ -47,9 +47,9 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { DateRange } from 'react-day-picker';
 import { Calendar } from '@/components/ui/calendar';
 import Link from 'next/link';
-import { useCollection, useFirestore, useMemoFirebase, updateDocumentNonBlocking } from '@/firebase';
+import { useCollection, useDoc, useFirestore, useMemoFirebase, useUser, updateDocumentNonBlocking } from '@/firebase';
 import { collection, query, where, doc } from 'firebase/firestore';
-import { useCurrentUser } from '@/hooks/use-current-user';
+
 
 export const dynamic = 'force-dynamic';
 
@@ -68,8 +68,17 @@ const statusConfig: Record<AttendanceStatus, { label: string, className: string,
 export default function AttendanceReportsPage() {
     const { toast } = useToast();
     const firestore = useFirestore();
-    const { user: currentUser, role, isLoading: isCurrentUserLoading } = useCurrentUser();
+    const { user: authUser, isUserLoading: isAuthLoading } = useUser();
+
+    const userDocRef = useMemoFirebase(() => {
+        if (!firestore || !authUser) return null;
+        return doc(firestore, 'users', authUser.uid);
+    }, [firestore, authUser]);
+    const { data: currentUser, isLoading: isProfileLoading } = useDoc<User>(userDocRef);
+
+    const role = currentUser?.rol;
     const isAdmin = role === 'admin' || role === 'superadmin';
+
     const [activeTab, setActiveTab] = useState('general');
     const [date, setDate] = useState<DateRange | undefined>({
         from: startOfMonth(new Date()),
@@ -88,7 +97,7 @@ export default function AttendanceReportsPage() {
 
     // --- Fetch Attendance Records for date range ---
     const recordsQuery = useMemoFirebase(() => {
-        if (!firestore || !currentUser || !date?.from) return null;
+        if (!firestore || !authUser || !date?.from) return null;
         const from = new Date(date.from);
         from.setHours(0,0,0,0);
         const to = date.to ? new Date(date.to) : from;
@@ -101,11 +110,11 @@ export default function AttendanceReportsPage() {
         );
 
         if (!isAdmin) {
-             baseQuery = query(baseQuery, where('userId', '==', currentUser.id));
+             baseQuery = query(baseQuery, where('userId', '==', authUser.uid));
         }
 
         return baseQuery;
-    }, [firestore, date, currentUser, isAdmin]);
+    }, [firestore, date, authUser, isAdmin]);
     const { data: filteredRecords, isLoading: isLoadingRecords } = useCollection<AttendanceRecord>(recordsQuery);
 
     const getUser = (userId: string) => users?.find((u) => u.id === userId);
@@ -322,9 +331,9 @@ export default function AttendanceReportsPage() {
         </Table>
     )
 
-    const isLoading = isCurrentUserLoading || isLoadingRecords || (isAdmin && isLoadingUsers);
+    const isLoading = isAuthLoading || isProfileLoading || isLoadingRecords || (isAdmin && isLoadingUsers);
 
-    if (isCurrentUserLoading) { // Still waiting for auth
+    if (isAuthLoading) { // Still waiting for auth
         return <div className="flex items-center justify-center h-screen">Cargando...</div>;
     }
 

@@ -13,24 +13,33 @@ import { MainNav } from '@/components/dashboard/main-nav';
 import { SquareCheck, FileSpreadsheet, CalendarDays } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { useCurrentUser } from '@/hooks/use-current-user';
-import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
-import { collection, query, where } from 'firebase/firestore';
+import { useCollection, useDoc, useFirestore, useMemoFirebase, useUser } from '@/firebase';
+import { collection, query, where, doc } from 'firebase/firestore';
 import { AttendanceTable } from '@/components/attendance/attendance-table';
 import { ScannerCard } from '@/components/attendance/scanner-card';
+import type { User } from '@/lib/types';
+import { Loader2 } from 'lucide-react';
 
 export const dynamic = 'force-dynamic';
 
 export default function AttendancePage() {
-  const { user: currentUser, role, isLoading: isCurrentUserLoading } = useCurrentUser();
-  const isAdmin = role === 'admin' || role === 'superadmin';
+  const { user: authUser, isUserLoading: isAuthLoading } = useUser();
   const firestore = useFirestore();
+
+  const userDocRef = useMemoFirebase(() => {
+    if (!firestore || !authUser) return null;
+    return doc(firestore, 'users', authUser.uid);
+  }, [firestore, authUser]);
+  const { data: currentUser, isLoading: isProfileLoading } = useDoc<User>(userDocRef);
+  
+  const role = currentUser?.rol;
+  const isAdmin = role === 'admin' || role === 'superadmin';
 
   // --- Fetch users: all if admin, otherwise just the current user ---
   const usersCollectionRef = useMemoFirebase(() => {
-    if (!firestore) return null;
+    if (!firestore || !isAdmin) return null;
     return collection(firestore, 'users');
-  }, [firestore]);
+  }, [firestore, isAdmin]);
   
   const { data: allUsers, isLoading: isLoadingUsers } = useCollection(usersCollectionRef, {
     disabled: !isAdmin,
@@ -40,7 +49,7 @@ export default function AttendancePage() {
 
   // --- Fetch today's attendance records ---
   const attendanceQuery = useMemoFirebase(() => {
-    if (!firestore || !currentUser) return null;
+    if (!firestore || !authUser) return null;
     const todayStart = new Date();
     todayStart.setHours(0, 0, 0, 0);
     const todayEnd = new Date();
@@ -50,20 +59,29 @@ export default function AttendancePage() {
         where('checkIn', '>=', todayStart), 
         where('checkIn', '<=', todayEnd)
     );
-  }, [firestore, currentUser]);
-  const { data: todayRecords, isLoading: isLoadingAttendance } = useCollection(attendanceQuery);
+  }, [firestore, authUser]);
+  const { data: todayRecords, isLoading: isLoadingAttendance } = useCollection(attendanceQuery, { disabled: !authUser });
 
   // --- Fetch this week's days off ---
     const weekStartDateString = format(startOfWeek(new Date(), { weekStartsOn: 1 }), 'yyyy-MM-dd');
     const daysOffQuery = useMemoFirebase(() => {
-        if (!firestore || !currentUser) return null;
+        if (!firestore || !authUser) return null;
         return query(collection(firestore, 'daysOff'), where('weekStartDate', '==', weekStartDateString));
-    }, [firestore, currentUser, weekStartDateString]);
-  const { data: daysOff, isLoading: isLoadingDaysOff } = useCollection(daysOffQuery);
+    }, [firestore, authUser, weekStartDateString]);
+  const { data: daysOff, isLoading: isLoadingDaysOff } = useCollection(daysOffQuery, { disabled: !authUser });
 
-  const isLoading = isCurrentUserLoading || (isAdmin && isLoadingUsers) || isLoadingAttendance || isLoadingDaysOff;
+  const isLoading = isAuthLoading || isProfileLoading || (isAdmin && isLoadingUsers) || isLoadingAttendance || isLoadingDaysOff;
 
-  if (!currentUser && !isCurrentUserLoading) {
+  if (isLoading) {
+    return (
+        <div className="min-h-screen w-full flex items-center justify-center">
+            <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+            <p className="ml-2">Cargando datos de asistencia...</p>
+        </div>
+    )
+  }
+
+  if (!authUser && !isAuthLoading) {
     return (
         <div className="min-h-screen w-full flex items-center justify-center">
             <p>Por favor, inicie sesión para ver la asistencia.</p>
@@ -112,7 +130,7 @@ export default function AttendancePage() {
                     users={usersToDisplay || []}
                     records={todayRecords || []} 
                     daysOff={daysOff || []}
-                    isLoading={isLoading} 
+                    isLoading={false} // Loading is handled by the parent page
                     date={new Date()}
                 />
             </div>

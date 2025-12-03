@@ -24,7 +24,6 @@ import { doc } from 'firebase/firestore';
 import { areas } from '@/lib/placeholder-data';
 import { useEffect } from 'react';
 import { Loader2 } from 'lucide-react';
-import { useCurrentUser } from '@/hooks/use-current-user';
 
 export const dynamic = 'force-dynamic';
 
@@ -61,25 +60,25 @@ export default function UserProfilePage() {
   const userId = params.userId as string;
   const firestore = useFirestore();
 
-  // First, check for auth state and role of the logged-in user
-  const { user: currentUser, isLoading: isCurrentUserLoading, role } = useCurrentUser();
+  // First, check for auth state of the logged-in user
+  const { user: authUser, isUserLoading: isAuthLoading } = useUser();
 
   const userDocRef = useMemoFirebase(
     () => (firestore && userId ? doc(firestore, 'users', userId) : null),
     [firestore, userId]
   );
   const { data: user, isLoading: isProfileLoading } = useDoc<UserType>(userDocRef, {
-      disabled: isCurrentUserLoading // Don't fetch until we know who the current user is
+      disabled: !userId
   });
   
   // Redirect if auth is done and there's no user
   useEffect(() => {
-    if (!isCurrentUserLoading && !currentUser) {
+    if (!isAuthLoading && !authUser) {
       router.push('/login');
     }
-  }, [isCurrentUserLoading, currentUser, router]);
+  }, [isAuthLoading, authUser, router]);
 
-  const isLoading = isCurrentUserLoading || isProfileLoading;
+  const isLoading = isAuthLoading || isProfileLoading;
 
   if (isLoading) {
     return (

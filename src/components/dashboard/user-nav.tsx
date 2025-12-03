@@ -16,15 +16,27 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import Link from 'next/link';
-import { useCurrentUser } from '@/hooks/use-current-user';
-import { useAuth } from '@/firebase';
+import { useAuth, useDoc, useFirestore, useMemoFirebase, useUser } from '@/firebase';
 import { signOut } from 'firebase/auth';
 import { useRouter } from 'next/navigation';
+import { doc } from 'firebase/firestore';
+import type { User } from '@/lib/types';
+
 
 export function UserNav() {
-  const { user: currentUser, role, isLoading } = useCurrentUser();
+  const { user: authUser, isUserLoading: isAuthLoading } = useUser();
+  const firestore = useFirestore();
   const auth = useAuth();
   const router = useRouter();
+
+  const userDocRef = useMemoFirebase(() => {
+    if (!firestore || !authUser) return null;
+    return doc(firestore, 'users', authUser.uid);
+  }, [firestore, authUser]);
+
+  const { data: currentUser, isLoading: isProfileLoading } = useDoc<User>(userDocRef);
+  const isLoading = isAuthLoading || isProfileLoading;
+  const role = currentUser?.rol;
 
   const handleSignOut = () => {
     signOut(auth).then(() => {

@@ -43,10 +43,10 @@ import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import { CreateTaskForm } from '@/components/tasks/create-task-form';
 import { TaskDetails } from '@/components/tasks/task-details';
-import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
+import { useCollection, useDoc, useFirestore, useMemoFirebase, useUser } from '@/firebase';
 import { collection, doc, serverTimestamp, query, where } from 'firebase/firestore';
-import { setDocumentNonBlocking, addDocumentNonBlocking } from '@/firebase/non-blocking-updates';
-import { useCurrentUser } from '@/hooks/use-current-user';
+import { addDocumentNonBlocking } from '@/firebase/non-blocking-updates';
+
 
 export const dynamic = 'force-dynamic';
 
@@ -69,18 +69,26 @@ const statusVariant: Record<TaskStatus, string> = {
 
 export default function TasksPage() {
   const firestore = useFirestore();
-  const { user: currentUser, role } = useCurrentUser();
+  const { user: authUser, isUserLoading: isAuthLoading } = useUser();
+  
+  const userDocRef = useMemoFirebase(() => {
+    if (!firestore || !authUser) return null;
+    return doc(firestore, 'users', authUser.uid);
+  }, [firestore, authUser]);
+  const { data: currentUser, isLoading: isProfileLoading } = useDoc<User>(userDocRef);
+
+  const role = currentUser?.rol;
   const isAdmin = role === 'admin' || role === 'superadmin';
 
   const tasksQuery = useMemoFirebase(
     () => {
-        if (!firestore || !currentUser) return null;
+        if (!firestore || !authUser) return null;
         // Admins can see all tasks, common users only see tasks assigned to them
         return isAdmin 
             ? collection(firestore, 'tasks')
-            : query(collection(firestore, 'tasks'), where('asignadoA', '==', currentUser.id));
+            : query(collection(firestore, 'tasks'), where('asignadoA', '==', authUser.uid));
     },
-    [firestore, currentUser, isAdmin]
+    [firestore, authUser, isAdmin]
   );
   const { data: tasks, isLoading: isLoadingTasks } = useCollection<Task>(tasksQuery);
 
@@ -122,7 +130,7 @@ export default function TasksPage() {
     addDocumentNonBlocking(collectionRef, fullyNewTask);
   };
 
-  const isLoading = isLoadingTasks || (isAdmin && isLoadingUsers);
+  const isLoading = isLoadingTasks || (isAdmin && isLoadingUsers) || isAuthLoading || isProfileLoading;
 
   if (isLoading) {
       return (

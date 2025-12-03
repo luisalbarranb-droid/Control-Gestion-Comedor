@@ -18,29 +18,36 @@ import { PlanningTable } from '@/components/attendance/planning-table';
 import type { DayOff, User } from '@/lib/types';
 import { startOfWeek, endOfWeek, addWeeks, subWeeks, format } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
+import { useCollection, useDoc, useFirestore, useMemoFirebase, useUser } from '@/firebase';
 import { collection, writeBatch, doc } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
-import { useCurrentUser } from '@/hooks/use-current-user';
 
 export const dynamic = 'force-dynamic';
 
 export default function PlanningPage() {
   const { toast } = useToast();
   const firestore = useFirestore();
-  const { user: currentUser, isLoading: isCurrentUserLoading, role } = useCurrentUser();
+  const { user: authUser, isUserLoading: isAuthLoading } = useUser();
+
+  const userDocRef = useMemoFirebase(() => {
+    if (!firestore || !authUser) return null;
+    return doc(firestore, 'users', authUser.uid);
+  }, [firestore, authUser]);
+  const { data: currentUser, isLoading: isProfileLoading } = useDoc<User>(userDocRef);
   
+  const role = currentUser?.rol;
+
   const [currentWeek, setCurrentWeek] = useState(new Date());
 
   const usersCollectionRef = useMemoFirebase(
-    () => (firestore && currentUser ? collection(firestore, 'users') : null),
-    [firestore, currentUser]
+    () => (firestore && authUser ? collection(firestore, 'users') : null),
+    [firestore, authUser]
   );
   const { data: users, isLoading: isLoadingUsers } = useCollection<User>(usersCollectionRef);
   
   const daysOffCollectionRef = useMemoFirebase(
-    () => (firestore && currentUser ? collection(firestore, 'daysOff') : null),
-    [firestore, currentUser]
+    () => (firestore && authUser ? collection(firestore, 'daysOff') : null),
+    [firestore, authUser]
   );
   const { data: daysOff, isLoading: isLoadingDaysOff } = useCollection<DayOff>(daysOffCollectionRef);
 
@@ -98,9 +105,9 @@ export default function PlanningPage() {
     }
   };
 
-  const isLoading = isCurrentUserLoading || isLoadingUsers || isLoadingDaysOff;
+  const isLoading = isAuthLoading || isProfileLoading || isLoadingUsers || isLoadingDaysOff;
 
-  if (isCurrentUserLoading || !currentUser) {
+  if (isAuthLoading || !currentUser) {
     return (
         <div className="min-h-screen w-full flex items-center justify-center">
             <p>Cargando...</p>

@@ -35,10 +35,8 @@ import type { User, Role } from '@/lib/types';
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
 import { useToast } from '@/hooks/use-toast';
-import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
-import { collection, doc, serverTimestamp } from 'firebase/firestore';
-import { setDocumentNonBlocking } from '@/firebase/non-blocking-updates';
-import { useCurrentUser } from '@/hooks/use-current-user';
+import { useCollection, useDoc, useFirestore, useMemoFirebase, useUser } from '@/firebase';
+import { collection, doc } from 'firebase/firestore';
 import { Loader2 } from 'lucide-react';
 
 export const dynamic = 'force-dynamic';
@@ -55,9 +53,16 @@ const statusVariant: Record<boolean, string> = {
 };
 
 export default function UsersPage() {
-  const { toast } = useToast();
+  const { user: authUser, isUserLoading: isAuthLoading } = useUser();
   const firestore = useFirestore();
-  const { user: currentUser, role, isLoading: isCurrentUserLoading } = useCurrentUser();
+
+  const userDocRef = useMemoFirebase(() => {
+    if (!firestore || !authUser) return null;
+    return doc(firestore, 'users', authUser.uid);
+  }, [firestore, authUser]);
+  const { data: currentUser, isLoading: isProfileLoading } = useDoc<User>(userDocRef);
+
+  const role = currentUser?.rol;
   const isAdmin = role === 'admin' || role === 'superadmin';
 
   const usersCollectionRef = useMemoFirebase(
@@ -68,13 +73,11 @@ export default function UsersPage() {
     disabled: !isAdmin,
   });
 
-  const [selectedUser, setSelectedUser] = useState<User | null>(null);
-
   const getAreaName = (areaId: string) => areas.find((a) => a.id === areaId)?.nombre || 'N/A';
   const getUserInitials = (name: string) => name ? name.split(' ').map((n) => n[0]).join('') : '';
 
   const usersToDisplay = isAdmin ? allUsers : (currentUser ? [currentUser] : []);
-  const isLoading = isCurrentUserLoading || (isAdmin && isLoadingUsers);
+  const isLoading = isAuthLoading || isProfileLoading || (isAdmin && isLoadingUsers);
 
   if (isLoading) {
     return (

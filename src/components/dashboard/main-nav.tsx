@@ -19,11 +19,24 @@ import {
   SidebarMenuButton,
 } from '@/components/ui/sidebar';
 import Link from 'next/link';
-import { useCurrentUser } from '@/hooks/use-current-user'; 
+import { useDoc, useFirestore, useMemoFirebase, useUser } from '@/firebase';
+import type { User } from '@/lib/types';
+import { doc } from 'firebase/firestore';
+
 
 export function MainNav() {
   const pathname = usePathname();
-  const { role } = useCurrentUser(); 
+  const { user: authUser, isUserLoading: isAuthLoading } = useUser();
+  const firestore = useFirestore();
+
+  const userDocRef = useMemoFirebase(() => {
+    if (!firestore || !authUser) return null;
+    return doc(firestore, 'users', authUser.uid);
+  }, [firestore, authUser]);
+
+  const { data: currentUser, isLoading: isProfileLoading } = useDoc<User>(userDocRef);
+
+  const role = currentUser?.rol;
   const isAdmin = role === 'admin' || role === 'superadmin';
 
   return (
