@@ -23,9 +23,8 @@ import Link from 'next/link';
 import { MenuCard } from '@/components/menus/menu-card';
 import { MenuImportDialog } from '@/components/menus/menu-import-dialog';
 import { useToast } from '@/hooks/use-toast';
-import { useCollection, useFirestore, useMemoFirebase, useUser } from '@/firebase';
-import { collection, doc, serverTimestamp, writeBatch } from 'firebase/firestore';
-import { addDocumentNonBlocking } from '@/firebase/non-blocking-updates';
+import { useCollection, useFirestore, useMemoFirebase, useUser, addDocumentNonBlocking } from '@/firebase';
+import { collection, doc } from 'firebase/firestore';
 import { inventoryItems } from '@/lib/placeholder-data';
 
 
@@ -49,12 +48,12 @@ export default function MenusPage() {
   const handleCreateMenu = (newMenuData: Omit<Menu, 'id' | 'items'>) => {
      if (!firestore) return;
      const docRef = doc(collection(firestore, 'menus'));
-     const newMenu: Omit<Menu, 'id'> = {
+     const newMenu = {
         ...newMenuData,
         id: docRef.id,
         items: [], // Start with an empty menu, to be edited later
      }
-     addDocumentNonBlocking(docRef.parent, newMenu);
+     addDocumentNonBlocking(collection(firestore, 'menus'), newMenu);
   };
   
   const handleImportMenus = (data: MenuImportRow[]) => {
@@ -100,6 +99,9 @@ export default function MenusPage() {
     
     // In a real app, this would be a batch write to Firestore
     console.log("Importing menus:", newMenus);
+    newMenus.forEach(menu => {
+      addDocumentNonBlocking(collection(firestore, 'menus'), menu);
+    });
 
     toast({
       title: 'Importación Exitosa',

@@ -17,9 +17,9 @@ import { Label } from '@/components/ui/label';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2 } from 'lucide-react';
-import { useAuth, useFirestore } from '@/firebase';
+import { useAuth, useFirestore, setDocumentNonBlocking } from '@/firebase';
 import { signInWithEmailAndPassword, createUserWithEmailAndPassword } from 'firebase/auth';
-import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
+import { doc, serverTimestamp } from 'firebase/firestore';
 
 export default function LoginPage() {
   const loginBg = PlaceHolderImages.find(
@@ -48,7 +48,6 @@ export default function LoginPage() {
     }
 
     try {
-      // First, try to sign in
       await signInWithEmailAndPassword(auth, email, password);
       toast({
         title: 'Inicio de sesión exitoso',
@@ -56,16 +55,15 @@ export default function LoginPage() {
       });
       router.push('/');
     } catch (error: any) {
-      // If sign-in fails because the user does not exist, create the user.
       if (error.code === 'auth/invalid-credential' || error.code === 'auth/user-not-found') {
         try {
-            // Attempt to create the user
             const userCredential = await createUserWithEmailAndPassword(auth, email, password);
             const newUser = userCredential.user;
 
-            // Create the corresponding user document in Firestore
             const userDocRef = doc(firestore, 'users', newUser.uid);
-            await setDoc(userDocRef, {
+            
+            // Use the non-blocking fire-and-forget method
+            setDocumentNonBlocking(userDocRef, {
                 id: newUser.uid,
                 userId: newUser.uid,
                 email: email,
@@ -74,22 +72,28 @@ export default function LoginPage() {
                 area: 'administracion',
                 activo: true,
                 fechaCreacion: serverTimestamp(),
-                creadoPor: 'system',
+                creadoPor: 'system', // Indicates system-generated initial user
                 ultimoAcceso: serverTimestamp(),
-            });
+            }, { merge: false });
 
             toast({
                 title: 'Cuenta de Super Admin Creada',
-                description: 'Por favor, inicia sesión de nuevo con tus credenciales.',
+                description: 'La cuenta de administrador inicial ha sido creada. Por favor, inicia sesión de nuevo.',
             });
-            // Don't auto-login, prompt user to log in again to confirm.
+            // It's better to prompt for a second login to ensure everything is settled.
             
         } catch (creationError: any) {
             console.error('User Creation Error:', creationError);
+            let description = 'No se pudo crear la cuenta de administrador. Revisa la consola para más detalles.';
+            if (creationError.code === 'auth/weak-password') {
+                description = 'La contraseña es demasiado débil. Debe tener al menos 6 caracteres.';
+            } else if (creationError.code === 'auth/email-already-in-use') {
+                description = 'Este correo electrónico ya está en uso por otra cuenta.';
+            }
             toast({
                 variant: 'destructive',
-                title: 'Error Crítico',
-                description: 'No se pudo crear la cuenta de administrador. Revisa la consola para más detalles.',
+                title: 'Error Crítico en la Creación',
+                description: description,
             });
         }
       } else {
@@ -97,7 +101,7 @@ export default function LoginPage() {
          toast({
             variant: 'destructive',
             title: 'Error de autenticación',
-            description: 'Ocurrió un error inesperado. Por favor, intenta de nuevo.',
+            description: 'Credenciales incorrectas o ha ocurrido un error inesperado. Por favor, intenta de nuevo.',
          });
       }
     } finally {

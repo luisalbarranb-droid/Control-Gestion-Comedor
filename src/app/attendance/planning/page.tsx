@@ -18,8 +18,8 @@ import { PlanningTable } from '@/components/attendance/planning-table';
 import type { DayOff, User } from '@/lib/types';
 import { startOfWeek, endOfWeek, addWeeks, subWeeks, format } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { useCollection, useDoc, useFirestore, useMemoFirebase, useUser } from '@/firebase';
-import { collection, writeBatch, doc } from 'firebase/firestore';
+import { useCollection, useDoc, useFirestore, useMemoFirebase, useUser, setDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase';
+import { collection, doc } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 
 export const dynamic = 'force-dynamic';
@@ -62,7 +62,7 @@ export default function PlanningPage() {
     setCurrentWeek(addWeeks(currentWeek, 1));
   };
   
-  const handleSave = async (newDaysOff: DayOff[]) => {
+  const handleSave = (newDaysOff: DayOff[]) => {
     if (!firestore) {
       toast({
         variant: 'destructive',
@@ -72,37 +72,26 @@ export default function PlanningPage() {
       return;
     }
   
-    const batch = writeBatch(firestore);
     const weekStartDate = newDaysOff[0]?.weekStartDate;
   
     // Delete existing days off for the current week to handle deselections
     const existingForWeek = daysOff?.filter(d => d.weekStartDate === weekStartDate) || [];
     existingForWeek.forEach(dayOffDoc => {
       const docRef = doc(firestore, 'daysOff', dayOffDoc.id);
-      batch.delete(docRef);
+      deleteDocumentNonBlocking(docRef);
     });
   
     // Set new days off for the current week
     newDaysOff.forEach(dayOff => {
       const docId = `${dayOff.userId}_${dayOff.weekStartDate}`;
       const docRef = doc(firestore, 'daysOff', docId);
-      batch.set(docRef, { ...dayOff, id: docId });
+      setDocumentNonBlocking(docRef, { ...dayOff, id: docId }, { merge: false });
     });
   
-    try {
-      await batch.commit();
-      toast({
-          title: "Planificación Guardada",
-          description: "Los días libres para la semana han sido actualizados."
-      });
-    } catch (error) {
-      console.error("Error saving days off: ", error);
-      toast({
-        variant: 'destructive',
-        title: "Error al guardar",
-        description: "No se pudo actualizar la planificación. Inténtalo de nuevo."
-      });
-    }
+    toast({
+        title: "Planificación Guardada",
+        description: "Los días libres para la semana han sido actualizados."
+    });
   };
 
   const isLoading = isAuthLoading || isProfileLoading || isLoadingUsers || isLoadingDaysOff;

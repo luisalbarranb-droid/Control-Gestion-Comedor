@@ -40,9 +40,8 @@ import { InventoryEntryForm } from '@/components/inventory/inventory-entry-form'
 import { InventoryExitForm } from '@/components/inventory/inventory-exit-form';
 import { InventoryImportDialog } from '@/components/inventory/inventory-import-dialog';
 import { useToast } from '@/hooks/use-toast';
-import { useCollection, useFirestore, useMemoFirebase, useUser } from '@/firebase';
+import { useCollection, useFirestore, useMemoFirebase, useUser, setDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase';
 import { collection, doc, serverTimestamp, writeBatch } from 'firebase/firestore';
-import { setDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 
 
 export default function InventoryPage() {
@@ -71,7 +70,7 @@ export default function InventoryPage() {
   const handleCreate = (newItem: Omit<InventoryItem, 'id' | 'fechaCreacion' | 'ultimaActualizacion'>) => {
     if (!firestore) return;
     const docRef = doc(collection(firestore, 'inventory'));
-    const fullNewItem: Omit<InventoryItem, 'id'> = {
+    const fullNewItem = {
       ...newItem,
       id: docRef.id,
       fechaCreacion: serverTimestamp(),
@@ -93,47 +92,43 @@ export default function InventoryPage() {
     setSelectedItem(null);
   };
   
-  const handleStockEntry = async (entryData: { items: { itemId: string, quantity: number }[] }) => {
+  const handleStockEntry = (entryData: { items: { itemId: string, quantity: number }[] }) => {
     if (!firestore || !items) return;
-    const batch = writeBatch(firestore);
     entryData.items.forEach(entry => {
       const itemDocRef = doc(firestore, 'inventory', entry.itemId);
       const currentItem = items.find(i => i.id === entry.itemId);
       if (currentItem) {
         const newQuantity = currentItem.cantidad + entry.quantity;
-        batch.update(itemDocRef, { 
+        updateDocumentNonBlocking(itemDocRef, { 
           cantidad: newQuantity,
           ultimaActualizacion: serverTimestamp()
         });
       }
     });
-    await batch.commit();
     setEntryFormOpen(false);
     toast({ title: "Entrada registrada", description: "El stock ha sido actualizado." });
   };
 
-  const handleStockExit = async (exitData: { items: { itemId: string, quantity: number }[] }) => {
+  const handleStockExit = (exitData: { items: { itemId: string, quantity: number }[] }) => {
      if (!firestore || !items) return;
-     const batch = writeBatch(firestore);
      exitData.items.forEach(entry => {
         const itemDocRef = doc(firestore, 'inventory', entry.itemId);
         const currentItem = items.find(i => i.id === entry.itemId);
         if (currentItem) {
             const newQuantity = currentItem.cantidad - entry.quantity;
-            batch.update(itemDocRef, { 
+            updateDocumentNonBlocking(itemDocRef, { 
               cantidad: newQuantity,
               ultimaActualizacion: serverTimestamp()
             });
         }
     });
-    await batch.commit();
     setExitFormOpen(false);
     toast({ title: "Salida registrada", description: "El stock ha sido actualizado." });
   };
 
-  const handleImport = async (importedData: any[]) => {
+  const handleImport = (importedData: any[]) => {
     if (!firestore || !items) return;
-    const batch = writeBatch(firestore);
+    
     let newItemsCount = 0;
     let updatedItemsCount = 0;
 
@@ -153,25 +148,23 @@ export default function InventoryPage() {
       };
 
       if (existingItem) {
-        // Update existing item
         const itemDocRef = doc(firestore, 'inventory', existingItem.id);
-        batch.update(itemDocRef, {
+        updateDocumentNonBlocking(itemDocRef, {
             ...itemData,
             cantidad: existingItem.cantidad + itemData.cantidad
         });
         updatedItemsCount++;
       } else {
-        // Add new item
         const newItemDocRef = doc(collection(firestore, 'inventory'));
-        batch.set(newItemDocRef, {
+        setDocumentNonBlocking(newItemDocRef, {
           ...itemData,
           id: newItemDocRef.id,
           fechaCreacion: serverTimestamp(),
-        });
+        }, { merge: false });
         newItemsCount++;
       }
     });
-    await batch.commit();
+
     toast({
       title: "Importación Completada",
       description: `${newItemsCount} artículos nuevos creados y ${updatedItemsCount} artículos actualizados.`,

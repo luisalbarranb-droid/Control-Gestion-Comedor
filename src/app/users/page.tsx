@@ -1,5 +1,3 @@
-
-
 'use client';
 
 import { useState } from 'react';
@@ -36,11 +34,10 @@ import type { User, Role } from '@/lib/types';
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
 import { useToast } from '@/hooks/use-toast';
-import { useCollection, useDoc, useFirestore, useMemoFirebase, useUser } from '@/firebase';
-import { collection, doc, serverTimestamp, setDoc } from 'firebase/firestore';
+import { useCollection, useDoc, useFirestore, useMemoFirebase, useUser, setDocumentNonBlocking } from '@/firebase';
+import { collection, doc, serverTimestamp } from 'firebase/firestore';
 import { Loader2 } from 'lucide-react';
 import { UserForm } from '@/components/users/user-form';
-import { setDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import { createUserWithEmailAndPassword } from 'firebase/auth';
 
 export const dynamic = 'force-dynamic';
@@ -86,7 +83,7 @@ export default function UsersPage() {
     setFormOpen(true);
   }
 
-  const handleSaveUser = async (userData: Omit<User, 'id' | 'userId' | 'creadoPor' | 'ultimoAcceso'>, password?: string) => {
+  const handleSaveUser = async (userData: Omit<User, 'id' | 'userId' | 'creadoPor' | 'ultimoAcceso' | 'fechaCreacion'>, password?: string) => {
     if (!auth || !firestore || !currentUser) {
         toast({ variant: 'destructive', title: 'Error', description: 'No se ha podido autenticar la acción.' });
         return;
@@ -94,10 +91,9 @@ export default function UsersPage() {
 
     if (selectedUser) { // Editing existing user
         const userRef = doc(firestore, 'users', selectedUser.id);
-        // Note: Password changes should be handled separately via dedicated Firebase Auth functions.
-        // This form will only update Firestore data.
-        await setDoc(userRef, { ...userData, ultimaActualizacion: serverTimestamp() }, { merge: true });
-        toast({ title: 'Usuario actualizado', description: `Los datos de ${userData.nombre} han sido guardados.` });
+        const dataToUpdate = { ...userData, ultimaActualizacion: serverTimestamp() };
+        setDocumentNonBlocking(userRef, dataToUpdate, { merge: true });
+        toast({ title: 'Usuario actualizado', description: `Los datos de userData.nombre han sido guardados.` });
     } else { // Creating new user
         if (!password) {
             toast({ variant: 'destructive', title: 'Error', description: 'La contraseña es obligatoria para nuevos usuarios.' });
@@ -105,20 +101,18 @@ export default function UsersPage() {
         }
         
         try {
-            // This is a simplified flow. For production, creating users should be a privileged, secure backend operation.
             const userCredential = await createUserWithEmailAndPassword(auth, userData.email, password);
             const newAuthUser = userCredential.user;
-
             const newUserDocRef = doc(firestore, 'users', newAuthUser.uid);
-            const newUser: User = {
-                ...(userData as User),
+            
+            setDocumentNonBlocking(newUserDocRef, {
+                ...userData,
                 id: newAuthUser.uid,
                 userId: newAuthUser.uid,
                 creadoPor: currentUser.id,
+                fechaCreacion: serverTimestamp(),
                 ultimoAcceso: serverTimestamp(),
-            };
-            
-            await setDoc(newUserDocRef, newUser, { merge: false });
+            }, { merge: false });
             
             toast({ title: 'Usuario Creado', description: `${userData.nombre} ha sido añadido con éxito.` });
         } catch (error: any) {
