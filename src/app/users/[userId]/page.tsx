@@ -17,13 +17,14 @@ import { Badge } from '@/components/ui/badge';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
-import type { Role, WorkerType, ContractType, User as UserType } from '@/lib/types';
+import type { Role, ContractType, User as UserType } from '@/lib/types';
 import QRCode from 'react-qr-code';
 import { useDoc, useFirestore, useMemoFirebase, useUser } from '@/firebase';
 import { doc } from 'firebase/firestore';
 import { areas } from '@/lib/placeholder-data';
 import { useEffect } from 'react';
 import { Loader2 } from 'lucide-react';
+import { useCurrentUser } from '@/hooks/use-current-user';
 
 export const dynamic = 'force-dynamic';
 
@@ -60,23 +61,25 @@ export default function UserProfilePage() {
   const userId = params.userId as string;
   const firestore = useFirestore();
 
-  // First, check for auth state
-  const { user: authUser, isUserLoading: isAuthLoading } = useUser();
+  // First, check for auth state and role of the logged-in user
+  const { user: currentUser, isLoading: isCurrentUserLoading, role } = useCurrentUser();
 
   const userDocRef = useMemoFirebase(
     () => (firestore && userId ? doc(firestore, 'users', userId) : null),
     [firestore, userId]
   );
-  const { data: user, isLoading: isProfileLoading } = useDoc<UserType>(userDocRef);
+  const { data: user, isLoading: isProfileLoading } = useDoc<UserType>(userDocRef, {
+      disabled: isCurrentUserLoading // Don't fetch until we know who the current user is
+  });
   
   // Redirect if auth is done and there's no user
   useEffect(() => {
-    if (!isAuthLoading && !authUser) {
+    if (!isCurrentUserLoading && !currentUser) {
       router.push('/login');
     }
-  }, [isAuthLoading, authUser, router]);
+  }, [isCurrentUserLoading, currentUser, router]);
 
-  const isLoading = isAuthLoading || isProfileLoading;
+  const isLoading = isCurrentUserLoading || isProfileLoading;
 
   if (isLoading) {
     return (
@@ -103,8 +106,22 @@ export default function UserProfilePage() {
 
   if (!user) {
     return (
-      <div className="flex items-center justify-center h-screen">
-        <p>Usuario no encontrado.</p>
+       <div className="min-h-screen w-full">
+        <Sidebar>
+          <SidebarHeader className="p-4 justify-center flex items-center gap-2">
+            <SquareCheck className="size-8 text-primary" />
+            <h1 className="font-headline text-2xl font-bold">Comedor</h1>
+          </SidebarHeader>
+          <SidebarContent>
+            <MainNav />
+          </SidebarContent>
+        </Sidebar>
+        <SidebarInset>
+          <Header />
+          <main className="flex flex-1 items-center justify-center">
+             <p>Usuario no encontrado o no tienes permiso para verlo.</p>
+          </main>
+        </SidebarInset>
       </div>
     );
   }

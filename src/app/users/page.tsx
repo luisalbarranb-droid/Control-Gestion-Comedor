@@ -34,11 +34,12 @@ import { areas } from '@/lib/placeholder-data';
 import type { User, Role } from '@/lib/types';
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
-import { UserForm } from '@/components/users/user-form';
 import { useToast } from '@/hooks/use-toast';
 import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
-import { collection, doc, setDoc, serverTimestamp, writeBatch } from 'firebase/firestore';
+import { collection, doc, serverTimestamp } from 'firebase/firestore';
 import { setDocumentNonBlocking } from '@/firebase/non-blocking-updates';
+import { useCurrentUser } from '@/hooks/use-current-user';
+import { Loader2 } from 'lucide-react';
 
 export const dynamic = 'force-dynamic';
 
@@ -56,54 +57,30 @@ const statusVariant: Record<boolean, string> = {
 export default function UsersPage() {
   const { toast } = useToast();
   const firestore = useFirestore();
+  const { user: currentUser, role, isLoading: isCurrentUserLoading } = useCurrentUser();
+  const isAdmin = role === 'admin' || role === 'superadmin';
 
   const usersCollectionRef = useMemoFirebase(
-    () => (firestore ? collection(firestore, 'users') : null),
-    [firestore]
+    () => (firestore && isAdmin ? collection(firestore, 'users') : null),
+    [firestore, isAdmin]
   );
-  const { data: users, isLoading } = useCollection<User>(usersCollectionRef);
+  const { data: allUsers, isLoading: isLoadingUsers } = useCollection<User>(usersCollectionRef, {
+    disabled: !isAdmin,
+  });
 
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
-  const [isFormOpen, setFormOpen] = useState(false);
 
   const getAreaName = (areaId: string) => areas.find((a) => a.id === areaId)?.nombre || 'N/A';
   const getUserInitials = (name: string) => name ? name.split(' ').map((n) => n[0]).join('') : '';
 
-  const handleSaveUser = (userData: Omit<User, 'userId'> | User) => {
-    if (!firestore) return;
-
-    const isEditing = 'userId' in userData;
-    const userToSave = {
-      ...userData,
-      // In a real app, you'd get the current user's ID
-      creadoPor: 'userId' in userData ? userData.creadoPor : 'user-superadmin-1', 
-      ultimoAcceso: serverTimestamp(),
-      avatarUrl: 'avatarUrl' in userData ? userData.avatarUrl : `https://i.pravatar.cc/150?u=${userData.email}`
-    };
-
-    const docRef = isEditing
-      ? doc(firestore, 'users', (userData as User).userId)
-      : doc(collection(firestore, 'users'));
-    
-    const finalData = { ...userToSave, userId: docRef.id };
-
-    setDocumentNonBlocking(docRef, finalData, { merge: isEditing });
-
-    toast({
-      title: `Usuario ${isEditing ? 'actualizado' : 'creado'}`,
-      description: `El usuario ${userData.nombre} ha sido guardado.`,
-    });
-  };
-
-  const openForm = (user: User | null) => {
-    setSelectedUser(user);
-    setFormOpen(true);
-  }
+  const usersToDisplay = isAdmin ? allUsers : (currentUser ? [currentUser] : []);
+  const isLoading = isCurrentUserLoading || (isAdmin && isLoadingUsers);
 
   if (isLoading) {
     return (
         <div className="min-h-screen w-full flex items-center justify-center">
-            <p>Cargando usuarios...</p>
+            <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+            <p className="ml-2">Cargando usuarios...</p>
         </div>
     )
   }
@@ -126,9 +103,6 @@ export default function UsersPage() {
             <h1 className="font-headline text-2xl font-bold md:text-3xl">
               Gestión de Usuarios
             </h1>
-            <Button onClick={() => openForm(null)}>
-              Crear Usuario
-            </Button>
           </div>
           <Card>
             <CardHeader>
@@ -152,7 +126,7 @@ export default function UsersPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {users && users.map((user) => (
+                  {usersToDisplay && usersToDisplay.map((user) => (
                     <TableRow key={user.id}>
                       <TableCell>
                          <Link href={`/users/${user.id}`} className="flex items-center gap-3 hover:underline">
@@ -196,8 +170,8 @@ export default function UsersPage() {
                           <DropdownMenuContent align="end">
                             <DropdownMenuLabel>Acciones</DropdownMenuLabel>
                             <DropdownMenuItem asChild><Link href={`/users/${user.id}`}>Ver Perfil</Link></DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => openForm(user)}>Editar</DropdownMenuItem>
-                            <DropdownMenuItem>Desactivar</DropdownMenuItem>
+                            {isAdmin && <DropdownMenuItem>Editar</DropdownMenuItem>}
+                            {isAdmin && <DropdownMenuItem>Desactivar</DropdownMenuItem>}
                           </DropdownMenuContent>
                         </DropdownMenu>
                       </TableCell>
@@ -209,12 +183,6 @@ export default function UsersPage() {
           </Card>
         </main>
       </SidebarInset>
-      <UserForm
-        isOpen={isFormOpen}
-        onOpenChange={setFormOpen}
-        onSave={handleSaveUser}
-        user={selectedUser}
-      />
     </div>
   );
 }
