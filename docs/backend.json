@@ -1,0 +1,537 @@
+{
+  "entities": {
+    "User": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "User",
+      "type": "object",
+      "description": "Represents a user in the system.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the user."
+        },
+        "email": {
+          "type": "string",
+          "description": "Email address of the user.",
+          "format": "email"
+        },
+        "name": {
+          "type": "string",
+          "description": "Name of the user."
+        },
+        "role": {
+          "type": "string",
+          "description": "Role of the user (superadmin, admin, comun)."
+        },
+        "area": {
+          "type": "string",
+          "description": "Area the user belongs to. (Reference to Area)"
+        },
+        "isActive": {
+          "type": "boolean",
+          "description": "Indicates if the user is active."
+        },
+        "creationDate": {
+          "type": "string",
+          "description": "Date and time the user was created.",
+          "format": "date-time"
+        },
+        "createdBy": {
+          "type": "string",
+          "description": "User ID of the user who created this user. (Reference to User)"
+        },
+        "lastAccess": {
+          "type": "string",
+          "description": "Date and time of the user's last access.",
+          "format": "date-time"
+        },
+        "phone": {
+          "type": "string",
+          "description": "Phone number of the user (optional)."
+        }
+      },
+      "required": [
+        "id",
+        "email",
+        "name",
+        "role",
+        "area",
+        "isActive",
+        "creationDate",
+        "createdBy"
+      ]
+    },
+    "Area": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Area",
+      "type": "object",
+      "description": "Represents an area within the organization.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the area (service, cocina, limpieza, almacen, equipos, administracion)."
+        },
+        "name": {
+          "type": "string",
+          "description": "Name of the area."
+        },
+        "color": {
+          "type": "string",
+          "description": "Color associated with the area."
+        },
+        "responsible": {
+          "type": "string",
+          "description": "User ID of the user responsible for the area. (Reference to User)"
+        },
+        "description": {
+          "type": "string",
+          "description": "Description of the area."
+        },
+        "isActive": {
+          "type": "boolean",
+          "description": "Indicates if the area is active."
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "color",
+        "responsible",
+        "description",
+        "isActive"
+      ]
+    },
+    "Task": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Task",
+      "type": "object",
+      "description": "Represents a task in the system.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the task."
+        },
+        "title": {
+          "type": "string",
+          "description": "Title of the task."
+        },
+        "description": {
+          "type": "string",
+          "description": "Description of the task."
+        },
+        "area": {
+          "type": "string",
+          "description": "Area the task belongs to. (Reference to Area)"
+        },
+        "assignedTo": {
+          "type": "string",
+          "description": "User ID of the user assigned to the task. (Reference to User)"
+        },
+        "createdBy": {
+          "type": "string",
+          "description": "User ID of the user who created the task. (Reference to User)"
+        },
+        "status": {
+          "type": "string",
+          "description": "Status of the task (pendiente, en-progreso, completada, verificada, rechazada)."
+        },
+        "priority": {
+          "type": "string",
+          "description": "Priority of the task (baja, media, alta, urgente)."
+        },
+        "periodicity": {
+          "type": "string",
+          "description": "Periodicity of the task (diaria, semanal, quincenal, mensual, unica)."
+        },
+        "creationDate": {
+          "type": "string",
+          "description": "Date and time the task was created.",
+          "format": "date-time"
+        },
+        "dueDate": {
+          "type": "string",
+          "description": "Date and time the task is due.",
+          "format": "date-time"
+        },
+        "completionDate": {
+          "type": "string",
+          "description": "Date and time the task was completed.",
+          "format": "date-time"
+        },
+        "nextExecution": {
+          "type": "string",
+          "description": "Date and time of the next execution for recurring tasks.",
+          "format": "date-time"
+        },
+        "checklist": {
+          "type": "array",
+          "description": "Checklist items for the task.",
+          "items": {
+            "type": "string"
+          }
+        },
+        "evidenceIds": {
+          "type": "array",
+          "description": "References to Evidences. (Relationship: Task 1:N Evidence)",
+          "items": {
+            "type": "string"
+          }
+        },
+        "commentIds": {
+          "type": "array",
+          "description": "References to Comments. (Relationship: Task 1:N Comment)",
+          "items": {
+            "type": "string"
+          }
+        },
+        "estimatedTime": {
+          "type": "number",
+          "description": "Estimated time for the task in minutes."
+        },
+        "tags": {
+          "type": "array",
+          "description": "Tags associated with the task.",
+          "items": {
+            "type": "string"
+          }
+        },
+        "isRecurring": {
+          "type": "boolean",
+          "description": "Indicates if the task is recurring."
+        },
+        "parentId": {
+          "type": "string",
+          "description": "Task ID of the parent task for recurring tasks. (Reference to Task)"
+        }
+      },
+      "required": [
+        "id",
+        "title",
+        "description",
+        "area",
+        "assignedTo",
+        "createdBy",
+        "status",
+        "priority",
+        "periodicity",
+        "creationDate",
+        "dueDate"
+      ]
+    },
+    "Statistic": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Statistic",
+      "type": "object",
+      "description": "Represents statistics for a given period.",
+      "properties": {
+        "period": {
+          "type": "string",
+          "description": "Period for the statistics (YYYY-MM)."
+        },
+        "totalTasks": {
+          "type": "number",
+          "description": "Total number of tasks."
+        },
+        "completedTasks": {
+          "type": "number",
+          "description": "Number of completed tasks."
+        },
+        "pendingTasks": {
+          "type": "number",
+          "description": "Number of pending tasks."
+        },
+        "delayedTasks": {
+          "type": "number",
+          "description": "Number of delayed tasks."
+        },
+        "generalEfficiency": {
+          "type": "number",
+          "description": "General efficiency percentage."
+        },
+        "efficiencyByArea": {
+          "type": "array",
+          "description": "Efficiency by area.",
+          "items": {
+            "type": "string"
+          }
+        },
+        "efficiencyByUser": {
+          "type": "array",
+          "description": "Efficiency by user.",
+          "items": {
+            "type": "string"
+          }
+        },
+        "monthlyTrend": {
+          "type": "number",
+          "description": "Monthly trend percentage change vs previous month."
+        },
+        "criticalAreas": {
+          "type": "array",
+          "description": "Area IDs of critical areas with lower efficiency. (Reference to Area)",
+          "items": {
+            "type": "string"
+          }
+        },
+        "featuredUsers": {
+          "type": "array",
+          "description": "User IDs of featured users with higher efficiency. (Reference to User)",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "required": [
+        "period",
+        "totalTasks",
+        "completedTasks",
+        "pendingTasks",
+        "delayedTasks",
+        "generalEfficiency"
+      ]
+    },
+    "Configuration": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Configuration",
+      "type": "object",
+      "description": "Represents system configuration settings.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the configuration (e.g., 'sistema')."
+        },
+        "periodicities": {
+          "type": "array",
+          "description": "List of periodicities.",
+          "items": {
+            "type": "string"
+          }
+        },
+        "priorities": {
+          "type": "array",
+          "description": "List of priorities.",
+          "items": {
+            "type": "string"
+          }
+        },
+        "statuses": {
+          "type": "array",
+          "description": "List of statuses.",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "required": [
+        "id"
+      ]
+    },
+    "Evidence": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Evidence",
+      "type": "object",
+      "description": "Represents photo evidence for a task.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the evidence."
+        },
+        "taskId": {
+          "type": "string",
+          "description": "Reference to Task. (Relationship: Task 1:N Evidence)"
+        },
+        "url": {
+          "type": "string",
+          "description": "URL of the photo."
+        },
+        "fileName": {
+          "type": "string",
+          "description": "Name of the file."
+        },
+        "uploadDate": {
+          "type": "string",
+          "description": "Date and time the photo was uploaded.",
+          "format": "date-time"
+        },
+        "userId": {
+          "type": "string",
+          "description": "User ID who uploaded the photo. (Reference to User)"
+        },
+        "description": {
+          "type": "string",
+          "description": "Description of the photo."
+        }
+      },
+      "required": [
+        "id",
+        "url",
+        "fileName",
+        "uploadDate",
+        "userId"
+      ]
+    },
+    "Comment": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Comment",
+      "type": "object",
+      "description": "Represents a comment on a task.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the comment."
+        },
+        "taskId": {
+          "type": "string",
+          "description": "Reference to Task. (Relationship: Task 1:N Comment)"
+        },
+        "userId": {
+          "type": "string",
+          "description": "User ID who made the comment. (Reference to User)"
+        },
+        "message": {
+          "type": "string",
+          "description": "Comment message."
+        },
+        "date": {
+          "type": "string",
+          "description": "Date and time the comment was made.",
+          "format": "date-time"
+        },
+        "type": {
+          "type": "string",
+          "description": "Type of comment (comentario, advertencia, elogio)."
+        }
+      },
+      "required": [
+        "id",
+        "userId",
+        "message",
+        "date",
+        "type"
+      ]
+    }
+  },
+  "auth": {
+    "providers": [
+      "password",
+      "anonymous"
+    ]
+  },
+  "firestore": {
+    "structure": [
+      {
+        "path": "/users/{userId}",
+        "definition": {
+          "entityName": "User",
+          "schema": {
+            "$ref": "#/backend/entities/User"
+          },
+          "description": "Stores user information. Path-based ownership ensures only the user or an admin can access user data.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique identifier of the user."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/areas/{areaId}",
+        "definition": {
+          "entityName": "Area",
+          "schema": {
+            "$ref": "#/backend/entities/Area"
+          },
+          "description": "Stores area information.",
+          "params": [
+            {
+              "name": "areaId",
+              "description": "The unique identifier of the area."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/tasks/{taskId}",
+        "definition": {
+          "entityName": "Task",
+          "schema": {
+            "$ref": "#/backend/entities/Task"
+          },
+          "description": "Stores task information. Includes denormalized 'area' and 'assignedTo' fields for authorization independence.",
+          "params": [
+            {
+              "name": "taskId",
+              "description": "The unique identifier of the task."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/statistics/{period}",
+        "definition": {
+          "entityName": "Statistic",
+          "schema": {
+            "$ref": "#/backend/entities/Statistic"
+          },
+          "description": "Stores statistics for a given period.",
+          "params": [
+            {
+              "name": "period",
+              "description": "The period for the statistics (YYYY-MM)."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/configuration/{id}",
+        "definition": {
+          "entityName": "Configuration",
+          "schema": {
+            "$ref": "#/backend/entities/Configuration"
+          },
+          "description": "Stores system configuration settings.",
+          "params": [
+            {
+              "name": "id",
+              "description": "The unique identifier for the configuration."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/evidences/{evidenceId}",
+        "definition": {
+          "entityName": "Evidence",
+          "schema": {
+            "$ref": "#/backend/entities/Evidence"
+          },
+          "description": "Stores evidence for tasks. Includes denormalized 'taskId' for authorization independence.",
+          "params": [
+            {
+              "name": "evidenceId",
+              "description": "The unique identifier for the evidence."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/comments/{commentId}",
+        "definition": {
+          "entityName": "Comment",
+          "schema": {
+            "$ref": "#/backend/entities/Comment"
+          },
+          "description": "Stores comments for tasks.",
+          "params": [
+            {
+              "name": "commentId",
+              "description": "The unique identifier for the comment."
+            }
+          ]
+        }
+      }
+    ],
+    "reasoning": "The Firestore structure is designed to support a task management system with role-based access control. It prioritizes authorization independence through denormalization and structural segregation.  \n\n**Authorization Independence (Denormalization):**\n*   `tasks` collection: The `area` and `assignedTo` fields are present in each task document. This denormalization allows security rules to validate access based on the user's role, the task's assigned area, and the assigned user without needing to perform expensive `get()` operations to retrieve the area or user details from other collections.  The inclusion of `createdBy` also allows for tracing and potential access control based on task creator.\n\n**Structural Segregation:**\n*   User data (`users` collection) is separated from task data (`tasks` collection).  \n*   Area definitions (`areas` collection) are separate from both users and tasks.\n*   Configuration data (`configuration` collection) is separate. This ensures that different types of data with varying access requirements are not mixed in the same collection.\n\n**Access Modeling:**\n*   **Private Data:** The `users` collection follows a path-based ownership model (`/users/{userId}`).\n\n**QAPs (Rules are not Filters):**\n*   Secure `list` operations for tasks are supported because each task document contains the `assignedTo` field. Rules can efficiently filter tasks based on the authenticated user's ID.\n\n**Invariants:**\n*   The structure supports invariants like ownership (through `createdBy` and `assignedTo` in the `tasks` collection) and timestamps (through `creationDate`, `dueDate`, `completionDate` in the `tasks` collection).\n\n**Additional Notes:**\n*   The `statistics` collection is designed to store aggregated data, which can be updated via backend processes. Access to this collection is restricted to admins and superadmins.\n*   The `evidence` and `comments` subcollections are intentionally avoided to minimize read costs when accessing task data. Instead, `evidenceIds` and `commentIds` are used in the `Task` entity to store references to `Evidence` and `Comment` entities which are stored as top-level collections. The `Evidence` collection denormalizes the `taskId` to allow performant security rules.\n*   The `configuration` collection allows storing application-wide settings.\n"
+  }
+}
