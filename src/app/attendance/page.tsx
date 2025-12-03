@@ -20,19 +20,12 @@ import { format, startOfDay, endOfDay, startOfWeek } from 'date-fns';
 
 export default function AttendancePage() {
   const { user: currentUser, role, isLoading: isCurrentUserLoading } = useCurrentUser();
-  const isAdmin = !!(currentUser && (role === 'admin' || role === 'superadmin'));
+  const isAdmin = role === 'admin' || role === 'superadmin';
   const firestore = useFirestore();
-
-  // --- Fetch all users (only for admins) ---
-  const usersCollectionRef = useMemoFirebase(
-    () => (firestore && isAdmin ? collection(firestore, 'users') : null),
-    [firestore, isAdmin]
-  );
-  const { data: allUsers, isLoading: isLoadingUsers } = useCollection(usersCollectionRef);
 
   // --- Fetch today's attendance records ---
   const attendanceQuery = useMemoFirebase(() => {
-    if (!firestore || !currentUser) return null;
+    if (!firestore) return null;
     const todayStart = startOfDay(new Date());
     const todayEnd = endOfDay(new Date());
     return query(
@@ -40,20 +33,18 @@ export default function AttendancePage() {
         where('checkIn', '>=', todayStart), 
         where('checkIn', '<=', todayEnd)
     );
-  }, [firestore, currentUser]);
+  }, [firestore]);
   const { data: todayRecords, isLoading: isLoadingAttendance } = useCollection(attendanceQuery);
 
   // --- Fetch this week's days off ---
     const weekStartDateString = format(startOfWeek(new Date(), { weekStartsOn: 1 }), 'yyyy-MM-dd');
     const daysOffQuery = useMemoFirebase(() => {
-        if (!firestore || !currentUser) return null;
+        if (!firestore) return null;
         return query(collection(firestore, 'daysOff'), where('weekStartDate', '==', weekStartDateString));
-    }, [firestore, currentUser, weekStartDateString]);
+    }, [firestore, weekStartDateString]);
   const { data: daysOff, isLoading: isLoadingDaysOff } = useCollection(daysOffQuery);
 
-  // The main loading state depends on the current user being loaded first.
-  // After that, we wait for the other relevant data fetches to complete.
-  const isLoading = isCurrentUserLoading || isLoadingAttendance || isLoadingDaysOff || (isAdmin && isLoadingUsers);
+  const isLoading = isCurrentUserLoading || isLoadingAttendance || isLoadingDaysOff;
 
   if (isCurrentUserLoading) {
     return (
@@ -62,8 +53,6 @@ export default function AttendancePage() {
       </div>
     );
   }
-
-  const usersToDisplay = isAdmin ? allUsers : (currentUser ? [currentUser] : []);
 
   return (
     <div className="min-h-screen w-full">
@@ -103,7 +92,6 @@ export default function AttendancePage() {
            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             <div className="lg:col-span-2">
                 <AttendanceTable 
-                    allUsers={usersToDisplay || []}
                     currentUser={currentUser}
                     isAdmin={isAdmin}
                     records={todayRecords || []} 

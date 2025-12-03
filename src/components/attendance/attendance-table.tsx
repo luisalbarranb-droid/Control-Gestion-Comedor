@@ -1,6 +1,6 @@
-
 'use client';
 
+import { useEffect, useState } from 'react';
 import {
   Table,
   TableBody,
@@ -17,6 +17,8 @@ import { cn } from '@/lib/utils';
 import { format, getDay } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { UserCheck, UserX, Clock, CalendarDays, CalendarOff, ShieldAlert } from 'lucide-react';
+import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
+import { collection } from 'firebase/firestore';
 
 const statusConfig: Record<string, { label: string; className: string; icon: React.ElementType }> = {
     presente: { label: 'Presente', className: 'bg-green-100 text-green-800', icon: UserCheck },
@@ -30,7 +32,6 @@ const statusConfig: Record<string, { label: string; className: string; icon: Rea
 };
 
 interface AttendanceTableProps {
-    allUsers: User[];
     currentUser: User | null;
     isAdmin: boolean;
     records: AttendanceRecord[];
@@ -39,14 +40,22 @@ interface AttendanceTableProps {
     date: Date;
 }
 
-export function AttendanceTable({ allUsers, currentUser, isAdmin, records, daysOff, isLoading, date }: AttendanceTableProps) {
-    
+export function AttendanceTable({ currentUser, isAdmin, records, daysOff, isLoading, date }: AttendanceTableProps) {
+    const firestore = useFirestore();
+    const usersCollectionRef = useMemoFirebase(
+        () => (firestore && isAdmin ? collection(firestore, 'users') : null),
+        [firestore, isAdmin]
+    );
+    const { data: allUsers, isLoading: isLoadingUsers } = useCollection(usersCollectionRef);
+
+    const finalIsLoading = isLoading || isLoadingUsers;
+
     const getUserInitials = (name: string | undefined) => name ? name.split(' ').map((n) => n[0]).join('') : '';
     const dayOfWeek = (getDay(date) + 6) % 7; // Monday is 0, Sunday is 6
 
     const usersToDisplay = isAdmin ? allUsers : (currentUser ? [currentUser] : []);
 
-    if (isLoading) {
+    if (finalIsLoading) {
         return (
              <Card>
                 <CardHeader>
@@ -83,7 +92,7 @@ export function AttendanceTable({ allUsers, currentUser, isAdmin, records, daysO
                 </TableRow>
                 </TableHeader>
                 <TableBody>
-                {usersToDisplay.map(user => {
+                {usersToDisplay && usersToDisplay.map(user => {
                     if (!user) return null;
                     const record = records?.find(r => r.userId === user.id);
                     const userDayOff = daysOff?.find(d => d.userId === user.id);
@@ -136,7 +145,7 @@ export function AttendanceTable({ allUsers, currentUser, isAdmin, records, daysO
                         </TableRow>
                     )
                 })}
-                {usersToDisplay.length === 0 && (
+                {(!usersToDisplay || usersToDisplay.length === 0) && (
                      <TableRow>
                         <TableCell colSpan={4} className="text-center h-24">No hay usuarios para mostrar.</TableCell>
                     </TableRow>
