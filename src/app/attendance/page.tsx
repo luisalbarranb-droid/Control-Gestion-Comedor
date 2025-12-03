@@ -1,3 +1,4 @@
+
 'use client';
 
 import {
@@ -8,7 +9,7 @@ import {
 } from '@/components/ui/sidebar';
 import { Header } from '@/components/dashboard/header';
 import { MainNav } from '@/components/dashboard/main-nav';
-import { SquareCheck, FileSpreadsheet, CalendarDays } from 'lucide-react';
+import { SquareCheck, FileSpreadsheet, CalendarDays, startOfWeek } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { useCurrentUser } from '@/hooks/use-current-user';
@@ -16,7 +17,7 @@ import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
 import { collection, query, where } from 'firebase/firestore';
 import { AttendanceTable } from '@/components/attendance/attendance-table';
 import { ScannerCard } from '@/components/attendance/scanner-card';
-import { format, startOfDay, endOfDay, startOfWeek } from 'date-fns';
+import { format } from 'date-fns';
 
 export default function AttendancePage() {
   const { user: currentUser, role, isLoading: isCurrentUserLoading } = useCurrentUser();
@@ -25,23 +26,25 @@ export default function AttendancePage() {
 
   // --- Fetch today's attendance records ---
   const attendanceQuery = useMemoFirebase(() => {
-    if (!firestore) return null;
-    const todayStart = startOfDay(new Date());
-    const todayEnd = endOfDay(new Date());
+    if (!firestore || !currentUser) return null;
+    const todayStart = new Date();
+    todayStart.setHours(0, 0, 0, 0);
+    const todayEnd = new Date();
+    todayEnd.setHours(23, 59, 59, 999);
     return query(
         collection(firestore, 'attendance'), 
         where('checkIn', '>=', todayStart), 
         where('checkIn', '<=', todayEnd)
     );
-  }, [firestore]);
+  }, [firestore, currentUser]);
   const { data: todayRecords, isLoading: isLoadingAttendance } = useCollection(attendanceQuery);
 
   // --- Fetch this week's days off ---
     const weekStartDateString = format(startOfWeek(new Date(), { weekStartsOn: 1 }), 'yyyy-MM-dd');
     const daysOffQuery = useMemoFirebase(() => {
-        if (!firestore) return null;
+        if (!firestore || !currentUser) return null;
         return query(collection(firestore, 'daysOff'), where('weekStartDate', '==', weekStartDateString));
-    }, [firestore, weekStartDateString]);
+    }, [firestore, currentUser, weekStartDateString]);
   const { data: daysOff, isLoading: isLoadingDaysOff } = useCollection(daysOffQuery);
 
   const isLoading = isCurrentUserLoading || isLoadingAttendance || isLoadingDaysOff;

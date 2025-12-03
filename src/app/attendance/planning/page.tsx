@@ -31,14 +31,14 @@ export default function PlanningPage() {
   const [currentWeek, setCurrentWeek] = useState(new Date());
 
   const usersCollectionRef = useMemoFirebase(
-    () => (firestore ? collection(firestore, 'users') : null),
-    [firestore]
+    () => (firestore && currentUser ? collection(firestore, 'users') : null),
+    [firestore, currentUser]
   );
   const { data: users, isLoading: isLoadingUsers } = useCollection<User>(usersCollectionRef);
   
   const daysOffCollectionRef = useMemoFirebase(
-    () => (firestore ? collection(firestore, 'daysOff') : null),
-    [firestore]
+    () => (firestore && currentUser ? collection(firestore, 'daysOff') : null),
+    [firestore, currentUser]
   );
   const { data: daysOff, isLoading: isLoadingDaysOff } = useCollection<DayOff>(daysOffCollectionRef);
 
