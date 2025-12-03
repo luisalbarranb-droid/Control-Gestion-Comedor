@@ -17,8 +17,9 @@ import { Label } from '@/components/ui/label';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2 } from 'lucide-react';
-import { useAuth } from '@/firebase';
-import { signInWithEmailAndPassword } from 'firebase/auth';
+import { useAuth, useFirestore } from '@/firebase';
+import { signInWithEmailAndPassword, createUserWithEmailAndPassword } from 'firebase/auth';
+import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
 
 export default function LoginPage() {
   const loginBg = PlaceHolderImages.find(
@@ -27,6 +28,7 @@ export default function LoginPage() {
   const router = useRouter();
   const { toast } = useToast();
   const auth = useAuth();
+  const firestore = useFirestore();
   const [email, setEmail] = useState('arvecladu@gmail.com');
   const [password, setPassword] = useState('12345678');
   const [isLoading, setIsLoading] = useState(false);
@@ -35,17 +37,18 @@ export default function LoginPage() {
     e.preventDefault();
     setIsLoading(true);
 
-    if (!auth) {
+    if (!auth || !firestore) {
         toast({
             variant: 'destructive',
             title: 'Error de configuración',
-            description: 'El servicio de autenticación no está disponible.',
+            description: 'El servicio de autenticación o base de datos no está disponible.',
         });
         setIsLoading(false);
         return;
     }
 
     try {
+      // First, try to sign in
       await signInWithEmailAndPassword(auth, email, password);
       toast({
         title: 'Inicio de sesión exitoso',
@@ -53,17 +56,50 @@ export default function LoginPage() {
       });
       router.push('/');
     } catch (error: any) {
-      console.error('Firebase Auth Error:', error);
-       let description = 'Ocurrió un error inesperado. Por favor, intenta de nuevo.';
-        if (error.code === 'auth/invalid-credential' || error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password') {
-            description = 'Credenciales inválidas. Por favor, revisa tu correo y contraseña.';
+      // If sign-in fails because the user does not exist, create the user.
+      if (error.code === 'auth/invalid-credential' || error.code === 'auth/user-not-found') {
+        try {
+            // Attempt to create the user
+            const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+            const newUser = userCredential.user;
+
+            // Create the corresponding user document in Firestore
+            const userDocRef = doc(firestore, 'users', newUser.uid);
+            await setDoc(userDocRef, {
+                id: newUser.uid,
+                userId: newUser.uid,
+                email: email,
+                nombre: 'Super Admin',
+                rol: 'superadmin',
+                area: 'administracion',
+                activo: true,
+                fechaCreacion: serverTimestamp(),
+                creadoPor: 'system',
+                ultimoAcceso: serverTimestamp(),
+            });
+
+            toast({
+                title: 'Cuenta de Super Admin Creada',
+                description: 'Por favor, inicia sesión de nuevo con tus credenciales.',
+            });
+            // Don't auto-login, prompt user to log in again to confirm.
+            
+        } catch (creationError: any) {
+            console.error('User Creation Error:', creationError);
+            toast({
+                variant: 'destructive',
+                title: 'Error Crítico',
+                description: 'No se pudo crear la cuenta de administrador. Revisa la consola para más detalles.',
+            });
         }
-      
-      toast({
-        variant: 'destructive',
-        title: 'Error de autenticación',
-        description: description,
-      });
+      } else {
+         console.error('Firebase Auth Error:', error);
+         toast({
+            variant: 'destructive',
+            title: 'Error de autenticación',
+            description: 'Ocurrió un error inesperado. Por favor, intenta de nuevo.',
+         });
+      }
     } finally {
       setIsLoading(false);
     }
