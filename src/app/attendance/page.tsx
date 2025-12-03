@@ -28,7 +28,8 @@ export default function AttendancePage() {
 
   // --- Fetch today's attendance records ---
   const attendanceQuery = useMemoFirebase(() => {
-    if (!firestore || !currentUser) return null;
+    // Wait until we know who the user is to build the query.
+    if (isCurrentUserLoading || !currentUser || !firestore) return null;
     const todayStart = new Date();
     todayStart.setHours(0, 0, 0, 0);
     const todayEnd = new Date();
@@ -38,20 +39,22 @@ export default function AttendancePage() {
         where('checkIn', '>=', todayStart), 
         where('checkIn', '<=', todayEnd)
     );
-  }, [firestore, currentUser]);
+  }, [firestore, currentUser, isCurrentUserLoading]);
   const { data: todayRecords, isLoading: isLoadingAttendance } = useCollection(attendanceQuery);
 
   // --- Fetch this week's days off ---
     const weekStartDateString = format(startOfWeek(new Date(), { weekStartsOn: 1 }), 'yyyy-MM-dd');
     const daysOffQuery = useMemoFirebase(() => {
-        if (!firestore || !currentUser) return null;
+        // Wait until we know who the user is to build the query.
+        if (isCurrentUserLoading || !currentUser || !firestore) return null;
         return query(collection(firestore, 'daysOff'), where('weekStartDate', '==', weekStartDateString));
-    }, [firestore, currentUser, weekStartDateString]);
+    }, [firestore, currentUser, weekStartDateString, isCurrentUserLoading]);
   const { data: daysOff, isLoading: isLoadingDaysOff } = useCollection(daysOffQuery);
 
+  // The final loading state depends on the user auth and the queries.
   const isLoading = isCurrentUserLoading || isLoadingAttendance || isLoadingDaysOff;
 
-  if (isCurrentUserLoading) {
+  if (isLoading) {
     return (
       <div className="min-h-screen w-full flex items-center justify-center">
           <p>Cargando datos de asistencia...</p>
