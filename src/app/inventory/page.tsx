@@ -9,7 +9,7 @@ import {
 } from '@/components/ui/sidebar';
 import { Header } from '@/components/dashboard/header';
 import { MainNav } from '@/components/dashboard/main-nav';
-import { SquareCheck, MoreHorizontal, AlertCircle } from 'lucide-react';
+import { MoreHorizontal, SquareCheck, AlertCircle } from 'lucide-react';
 import {
   Table,
   TableBody,
@@ -29,7 +29,6 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import {
-  inventoryItems as initialItems,
   inventoryCategories,
 } from '@/lib/placeholder-data';
 import type { InventoryItem, InventoryCategoryId, UnitOfMeasure } from '@/lib/types';
@@ -41,10 +40,21 @@ import { InventoryEntryForm } from '@/components/inventory/inventory-entry-form'
 import { InventoryExitForm } from '@/components/inventory/inventory-exit-form';
 import { InventoryImportDialog } from '@/components/inventory/inventory-import-dialog';
 import { useToast } from '@/hooks/use-toast';
+import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
+import { collection, doc, serverTimestamp, writeBatch } from 'firebase/firestore';
+import { setDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase/non-blocking-updates';
+
 
 export default function InventoryPage() {
   const { toast } = useToast();
-  const [items, setItems] = useState<InventoryItem[]>(initialItems);
+  const firestore = useFirestore();
+  
+  const itemsCollectionRef = useMemoFirebase(
+    () => (firestore ? collection(firestore, 'inventory') : null),
+    [firestore]
+  );
+  const { data: items, isLoading } = useCollection<InventoryItem>(itemsCollectionRef);
+
   const [selectedItem, setSelectedItem] = useState<InventoryItem | null>(null);
   const [isFormOpen, setFormOpen] = useState(false);
   const [isEntryFormOpen, setEntryFormOpen] = useState(false);
@@ -58,98 +68,109 @@ export default function InventoryPage() {
   }
 
   const handleCreate = (newItem: Omit<InventoryItem, 'itemId' | 'fechaCreacion' | 'ultimaActualizacion'>) => {
-    const fullNewItem: InventoryItem = {
+    if (!firestore) return;
+    const docRef = doc(collection(firestore, 'inventory'));
+    const fullNewItem: Omit<InventoryItem, 'itemId'> = {
       ...newItem,
-      itemId: `inv-${Date.now()}`,
-      fechaCreacion: new Date(),
-      ultimaActualizacion: new Date(),
+      id: docRef.id,
+      fechaCreacion: serverTimestamp(),
+      ultimaActualizacion: serverTimestamp(),
     };
-    setItems(prev => [fullNewItem, ...prev]);
+    setDocumentNonBlocking(docRef, fullNewItem, { merge: false });
     setFormOpen(false);
   };
 
   const handleUpdate = (updatedItem: InventoryItem) => {
-    setItems(prev => prev.map(item => item.itemId === updatedItem.itemId ? { ...updatedItem, ultimaActualizacion: new Date() } : item));
+    if (!firestore) return;
+    const docRef = doc(firestore, 'inventory', updatedItem.id);
+    const dataToUpdate = {
+        ...updatedItem,
+        ultimaActualizacion: serverTimestamp()
+    };
+    setDocumentNonBlocking(docRef, dataToUpdate, { merge: true });
     setFormOpen(false);
     setSelectedItem(null);
   };
   
-  const handleStockEntry = (entryData: { items: { itemId: string, quantity: number }[] }) => {
-    setItems(prevItems => {
-        const updatedItems = [...prevItems];
-        entryData.items.forEach(entry => {
-            const itemIndex = updatedItems.findIndex(i => i.itemId === entry.itemId);
-            if (itemIndex > -1) {
-                updatedItems[itemIndex].cantidad += entry.quantity;
-                updatedItems[itemIndex].ultimaActualizacion = new Date();
-            }
+  const handleStockEntry = async (entryData: { items: { itemId: string, quantity: number }[] }) => {
+    if (!firestore || !items) return;
+    const batch = writeBatch(firestore);
+    entryData.items.forEach(entry => {
+      const itemDocRef = doc(firestore, 'inventory', entry.itemId);
+      const currentItem = items.find(i => i.id === entry.itemId);
+      if (currentItem) {
+        const newQuantity = currentItem.cantidad + entry.quantity;
+        batch.update(itemDocRef, { 
+          cantidad: newQuantity,
+          ultimaActualizacion: serverTimestamp()
         });
-        return updatedItems;
+      }
     });
+    await batch.commit();
     setEntryFormOpen(false);
     toast({ title: "Entrada registrada", description: "El stock ha sido actualizado." });
   };
 
-  const handleStockExit = (exitData: { items: { itemId: string, quantity: number }[] }) => {
-     setItems(prevItems => {
-        const updatedItems = [...prevItems];
-        exitData.items.forEach(entry => {
-            const itemIndex = updatedItems.findIndex(i => i.itemId === entry.itemId);
-            if (itemIndex > -1) {
-                updatedItems[itemIndex].cantidad -= entry.quantity;
-                updatedItems[itemIndex].ultimaActualizacion = new Date();
-            }
-        });
-        return updatedItems;
+  const handleStockExit = async (exitData: { items: { itemId: string, quantity: number }[] }) => {
+     if (!firestore || !items) return;
+     const batch = writeBatch(firestore);
+     exitData.items.forEach(entry => {
+        const itemDocRef = doc(firestore, 'inventory', entry.itemId);
+        const currentItem = items.find(i => i.id === entry.itemId);
+        if (currentItem) {
+            const newQuantity = currentItem.cantidad - entry.quantity;
+            batch.update(itemDocRef, { 
+              cantidad: newQuantity,
+              ultimaActualizacion: serverTimestamp()
+            });
+        }
     });
+    await batch.commit();
     setExitFormOpen(false);
     toast({ title: "Salida registrada", description: "El stock ha sido actualizado." });
   };
 
-  const handleImport = (importedData: any[]) => {
-    setItems(prevItems => {
-      const updatedItems = [...prevItems];
-      let newItemsCount = 0;
-      let updatedItemsCount = 0;
+  const handleImport = async (importedData: any[]) => {
+    if (!firestore || !items) return;
+    const batch = writeBatch(firestore);
+    let newItemsCount = 0;
+    let updatedItemsCount = 0;
 
-      importedData.forEach(importedItem => {
-        const existingItemIndex = updatedItems.findIndex(i => i.nombre.toLowerCase() === importedItem.nombre?.toLowerCase());
-        
-        const itemData = {
-            nombre: importedItem.nombre,
-            descripcion: importedItem.descripcion,
-            categoriaId: importedItem.categoriaId as InventoryCategoryId,
-            cantidad: Number(importedItem.cantidad) || 0,
-            unidad: importedItem.unidad as UnitOfMeasure,
-            stockMinimo: Number(importedItem.stockMinimo) || 0,
-            proveedor: importedItem.proveedor,
-            costoUnitario: Number(importedItem.costoUnitario) || 0,
-            ultimaActualizacion: new Date(),
-        };
+    importedData.forEach(importedItem => {
+      const existingItem = items.find(i => i.nombre.toLowerCase() === importedItem.nombre?.toLowerCase());
+      
+      const itemData = {
+          nombre: importedItem.nombre,
+          descripcion: importedItem.descripcion,
+          categoriaId: importedItem.categoriaId as InventoryCategoryId,
+          cantidad: Number(importedItem.cantidad) || 0,
+          unidad: importedItem.unidad as UnitOfMeasure,
+          stockMinimo: Number(importedItem.stockMinimo) || 0,
+          proveedor: importedItem.proveedor,
+          costoUnitario: Number(importedItem.costoUnitario) || 0,
+          ultimaActualizacion: serverTimestamp(),
+      };
 
-        if (existingItemIndex > -1) {
-          // Update existing item
-          updatedItems[existingItemIndex] = {
-            ...updatedItems[existingItemIndex],
+      if (existingItem) {
+        // Update existing item
+        const itemDocRef = doc(firestore, 'inventory', existingItem.id);
+        batch.update(itemDocRef, {
             ...itemData,
-            cantidad: updatedItems[existingItemIndex].cantidad + itemData.cantidad
-          };
-          updatedItemsCount++;
-        } else {
-          // Add new item
-          const newItem: InventoryItem = {
-            ...itemData,
-            itemId: `inv-${Date.now()}-${Math.random()}`,
-            fechaCreacion: new Date(),
-          };
-          updatedItems.push(newItem);
-          newItemsCount++;
-        }
-      });
-
-      return updatedItems;
+            cantidad: existingItem.cantidad + itemData.cantidad
+        });
+        updatedItemsCount++;
+      } else {
+        // Add new item
+        const newItemDocRef = doc(collection(firestore, 'inventory'));
+        batch.set(newItemDocRef, {
+          ...itemData,
+          id: newItemDocRef.id,
+          fechaCreacion: serverTimestamp(),
+        });
+        newItemsCount++;
+      }
     });
-
+    await batch.commit();
     toast({
       title: "Importación Completada",
       description: `${newItemsCount} artículos nuevos creados y ${updatedItemsCount} artículos actualizados.`,
@@ -164,12 +185,20 @@ export default function InventoryPage() {
   };
 
   const filteredItems = items
-    .filter(item =>
+    ?.filter(item =>
       item.nombre.toLowerCase().includes(searchQuery.toLowerCase())
     )
     .filter(item =>
       categoryFilter === 'all' || item.categoriaId === categoryFilter
-    );
+    ) || [];
+
+    if (isLoading) {
+      return (
+          <div className="min-h-screen w-full flex items-center justify-center">
+              <p>Cargando inventario...</p>
+          </div>
+      )
+    }
 
   return (
     <div className="min-h-screen w-full">
@@ -214,8 +243,9 @@ export default function InventoryPage() {
                 <TableBody>
                   {filteredItems.map(item => {
                     const isLowStock = item.cantidad <= item.stockMinimo;
+                    const lastUpdate = item.ultimaActualizacion?.toDate ? item.ultimaActualizacion.toDate() : new Date();
                     return (
-                      <TableRow key={item.itemId}>
+                      <TableRow key={item.id}>
                         <TableCell className="font-medium">
                           <div className="flex items-center gap-2">
                             {isLowStock && <AlertCircle className="h-4 w-4 text-red-500" />}
@@ -231,7 +261,7 @@ export default function InventoryPage() {
                         <TableCell className="hidden md:table-cell uppercase">{item.unidad}</TableCell>
                         <TableCell className="hidden sm:table-cell font-mono">{item.stockMinimo}</TableCell>
                         <TableCell className="hidden lg:table-cell">
-                          {format(new Date(item.ultimaActualizacion), 'dd/MM/yy')}
+                          {format(lastUpdate, 'dd/MM/yy')}
                         </TableCell>
                         <TableCell>
                           <DropdownMenu>
@@ -277,14 +307,14 @@ export default function InventoryPage() {
         isOpen={isEntryFormOpen}
         onOpenChange={setEntryFormOpen}
         onSave={handleStockEntry}
-        inventoryItems={items}
+        inventoryItems={items || []}
       />
 
       <InventoryExitForm
         isOpen={isExitFormOpen}
         onOpenChange={setExitFormOpen}
         onSave={handleStockExit}
-        inventoryItems={items}
+        inventoryItems={items || []}
       />
 
        <InventoryImportDialog

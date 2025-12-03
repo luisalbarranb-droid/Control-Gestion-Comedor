@@ -111,15 +111,15 @@ export interface InventoryCategory {
 }
 
 export interface InventoryItem {
-  itemId: string;
+  id: string;
   nombre: string;
   descripcion?: string;
   categoriaId: InventoryCategoryId;
   cantidad: number;
   unidad: UnitOfMeasure;
   stockMinimo: number;
-  fechaCreacion: Date;
-  ultimaActualizacion: Date;
+  fechaCreacion: Date | Timestamp;
+  ultimaActualizacion: Date | Timestamp;
   proveedor?: string;
   costoUnitario?: number;
 }

@@ -196,6 +196,15 @@ service cloud.firestore {
       allow update: if docExists() && isSignedIn() && (isExistingOwner('assignedTo') || isExistingOwner('createdBy') || isAdminOrHigher()) && isOwnerFieldImmutable('createdBy') && isIdConsistent(taskId);
       allow delete: if docExists() && isSignedIn() && (isExistingOwner('createdBy') || isAdminOrHigher());
     }
+    
+    // --------------------------------------------------------------------
+    // Collection Rules: /inventory
+    // --------------------------------------------------------------------
+    match /inventory/{itemId} {
+      allow get, list: if isSignedIn();
+      allow create, update, delete: if isAdminOrHigher();
+    }
+
 
     // --------------------------------------------------------------------
     // Collection Rules: /statistics

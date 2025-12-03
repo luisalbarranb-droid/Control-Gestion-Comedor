@@ -409,6 +409,70 @@
         "date",
         "type"
       ]
+    },
+     "InventoryItem": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Inventory Item",
+      "type": "object",
+      "description": "Represents an item in the inventory.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the inventory item."
+        },
+        "nombre": {
+          "type": "string",
+          "description": "Name of the item."
+        },
+        "descripcion": {
+          "type": "string",
+          "description": "Description of the item."
+        },
+        "categoriaId": {
+          "type": "string",
+          "description": "Category of the item (carnes, viveres, etc.)."
+        },
+        "cantidad": {
+          "type": "number",
+          "description": "Current quantity in stock."
+        },
+        "unidad": {
+          "type": "string",
+          "description": "Unit of measure (kg, g, lt, ml, unidad, etc.)."
+        },
+        "stockMinimo": {
+          "type": "number",
+          "description": "Minimum stock level before reorder warning."
+        },
+        "fechaCreacion": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Date the item was first added."
+        },
+        "ultimaActualizacion": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Last time the item was updated."
+        },
+        "proveedor": {
+          "type": "string",
+          "description": "Default supplier for the item."
+        },
+        "costoUnitario": {
+          "type": "number",
+          "description": "Cost per unit of the item."
+        }
+      },
+      "required": [
+        "id",
+        "nombre",
+        "categoriaId",
+        "cantidad",
+        "unidad",
+        "stockMinimo",
+        "fechaCreacion",
+        "ultimaActualizacion"
+      ]
     }
   },
   "auth": {
@@ -527,6 +591,22 @@
             {
               "name": "commentId",
               "description": "The unique identifier for the comment."
+            }
+          ]
+        }
+      },
+       {
+        "path": "/inventory/{itemId}",
+        "definition": {
+          "entityName": "InventoryItem",
+          "schema": {
+            "$ref": "#/backend/entities/InventoryItem"
+          },
+          "description": "Stores individual inventory items.",
+          "params": [
+            {
+              "name": "itemId",
+              "description": "The unique identifier for the inventory item."
             }
           ]
         }
