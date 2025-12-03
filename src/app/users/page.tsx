@@ -35,7 +35,7 @@ import { cn } from '@/lib/utils';
 import Link from 'next/link';
 import { useToast } from '@/hooks/use-toast';
 import { useCollection, useDoc, useFirestore, useMemoFirebase, useUser, setDocumentNonBlocking, addDocumentNonBlocking } from '@/firebase';
-import { collection, doc, serverTimestamp } from 'firebase/firestore';
+import { collection, doc, serverTimestamp, setDoc } from 'firebase/firestore';
 import { Loader2 } from 'lucide-react';
 import { UserForm } from '@/components/users/user-form';
 import { createUserWithEmailAndPassword } from 'firebase/auth';
@@ -94,7 +94,7 @@ export default function UsersPage() {
 
     if (selectedUser) { // Editing existing user
         const userRef = doc(firestore, 'users', selectedUser.id);
-        const dataToUpdate = { ...userData, lastAccess: serverTimestamp() };
+        const dataToUpdate = { ...userData };
         setDocumentNonBlocking(userRef, dataToUpdate, { merge: true });
         toast({ title: 'Usuario actualizado', description: `Los datos de ${userData.name} han sido guardados.` });
     } else { // Creating new user
@@ -104,13 +104,11 @@ export default function UsersPage() {
         }
         
         try {
-            // NOTE: This creates the user in Firebase Auth. The Firestore document is created via a trigger or manually.
-            // For this prototype, we'll assume a separate process handles the doc, or we handle it here.
             const userCredential = await createUserWithEmailAndPassword(auth, userData.email, password);
             const newAuthUser = userCredential.user;
             const newUserDocRef = doc(firestore, 'users', newAuthUser.uid);
             
-            const newUserDoc = {
+            const newUserDoc: User = {
                 ...userData,
                 id: newAuthUser.uid,
                 createdBy: currentUser.id,
@@ -118,7 +116,7 @@ export default function UsersPage() {
                 lastAccess: serverTimestamp(),
             }
 
-            addDocumentNonBlocking(collection(firestore, 'users'), newUserDoc);
+            await setDoc(newUserDocRef, newUserDoc);
             
             toast({ title: 'Usuario Creado', description: `${userData.name} ha sido añadido con éxito.` });
         } catch (error: any) {

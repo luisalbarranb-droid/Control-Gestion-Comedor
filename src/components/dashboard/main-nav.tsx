@@ -61,7 +61,7 @@ export function MainNav() {
 
   if (isAuthLoading || (authUser && isProfileLoading)) {
     return (
-      <div className="flex justify-center items-center h-full">
+      <div className="flex justify-center items-center h-full p-4">
         <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
       </div>
     );

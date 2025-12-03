@@ -21,7 +21,6 @@ import { signOut } from 'firebase/auth';
 import { useRouter } from 'next/navigation';
 import { doc } from 'firebase/firestore';
 import type { User } from '@/lib/types';
-import { Skeleton } from '../ui/skeleton';
 import { Loader2 } from 'lucide-react';
 
 export function UserNav() {

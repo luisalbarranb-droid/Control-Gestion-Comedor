@@ -117,7 +117,6 @@ export function UserForm({ isOpen, onOpenChange, onSave, user }: UserFormProps) 
         area: values.area as AreaId,
         workerType: values.workerType as WorkerType | undefined,
         contractType: values.contractType as ContractType | undefined,
-        lastAccess: new Date(), // Set last access on save
     };
     onSave(dataToSave, password);
     onOpenChange(false);

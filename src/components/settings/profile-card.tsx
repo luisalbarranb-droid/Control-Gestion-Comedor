@@ -90,7 +90,6 @@ export function ProfileCard() {
     
     const dataToUpdate: Partial<User> = {
         name: data.name,
-        lastAccess: serverTimestamp()
     };
     
     const userRef = doc(firestore, 'users', user.id);
