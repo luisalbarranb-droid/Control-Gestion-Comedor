@@ -33,9 +33,7 @@ export function UserNav() {
     return doc(firestore, 'users', authUser.uid);
   }, [firestore, authUser]);
 
-  const { data: currentUser, isLoading: isProfileLoading } = useDoc<User>(userDocRef, {
-      disabled: !authUser || isAuthLoading,
-  });
+  const { data: currentUser, isLoading: isProfileLoading } = useDoc<User>(userDocRef);
   
   const isLoading = isAuthLoading || (authUser && isProfileLoading);
 
@@ -48,9 +46,10 @@ export function UserNav() {
   
   if (isLoading) {
     return (
-       <Button variant="ghost" className="relative h-8 w-8 rounded-full" disabled>
+       <div className="flex items-center gap-2">
           <Skeleton className="h-9 w-9 rounded-full" />
-       </Button>
+          <Skeleton className="h-4 w-20" />
+       </div>
     )
   }
 

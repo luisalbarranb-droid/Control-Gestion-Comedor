@@ -16,9 +16,9 @@ import { Label } from '@/components/ui/label';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2 } from 'lucide-react';
-import { useAuth, useFirestore, setDocumentNonBlocking } from '@/firebase';
+import { useAuth, useFirestore, setDocumentNonBlocking, addDocumentNonBlocking } from '@/firebase';
 import { signInWithEmailAndPassword, createUserWithEmailAndPassword, User as FirebaseAuthUser } from 'firebase/auth';
-import { doc, getDoc, serverTimestamp } from 'firebase/firestore';
+import { doc, getDoc, serverTimestamp, setDoc } from 'firebase/firestore';
 import type { User } from '@/lib/types';
 
 
@@ -48,17 +48,12 @@ export default function LoginPage() {
         return;
     }
     
-    // This function creates/updates the user document in Firestore.
-    // It's designed to be called only when a user successfully signs in or is created.
     const upsertUserDocument = async (firebaseUser: FirebaseAuthUser) => {
       const userRef = doc(firestore, 'users', firebaseUser.uid);
       const userSnap = await getDoc(userRef);
 
       if (!userSnap.exists()) {
-        // User document does not exist, create it (this is the first login for this user)
-        // We'll create a superadmin by default for the first user.
-        const newUser: User = {
-          id: firebaseUser.uid,
+        const newUser: Omit<User, 'id'> = {
           email: firebaseUser.email!,
           name: 'Super Admin',
           role: 'superadmin',
@@ -68,11 +63,9 @@ export default function LoginPage() {
           creationDate: serverTimestamp(),
           lastAccess: serverTimestamp(),
         };
-        // Use a blocking set here to ensure the doc exists before navigating
         await setDoc(userRef, newUser);
       } else {
-        // User document exists, just update last access time
-        await setDoc(userRef, { lastAccess: serverTimestamp() }, { merge: true });
+        await updateDoc(userRef, { lastAccess: serverTimestamp() });
       }
     };
 
@@ -89,8 +82,6 @@ export default function LoginPage() {
     } catch (error: any) {
       if (error.code === 'auth/user-not-found' || error.code === 'auth/invalid-credential') {
         try {
-            // Attempt to create the user if they don't exist.
-            // This is specific logic for bootstrapping the first superadmin account.
             const newUserCredential = await createUserWithEmailAndPassword(auth, email, password);
             await upsertUserDocument(newUserCredential.user);
             toast({
