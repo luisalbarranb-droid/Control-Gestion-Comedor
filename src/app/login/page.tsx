@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -19,7 +20,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Loader2 } from 'lucide-react';
 import { useAuth, useFirestore, setDocumentNonBlocking } from '@/firebase';
 import { signInWithEmailAndPassword, createUserWithEmailAndPassword } from 'firebase/auth';
-import { doc, serverTimestamp } from 'firebase/firestore';
+import { doc } from 'firebase/firestore';
 
 export default function LoginPage() {
   const loginBg = PlaceHolderImages.find(
@@ -62,7 +63,6 @@ export default function LoginPage() {
 
             const userDocRef = doc(firestore, 'users', newUser.uid);
             
-            // DEFINITIVE FIX: Use the exact Spanish field names and correct Date types
             setDocumentNonBlocking(userDocRef, {
                 id: newUser.uid,
                 userId: newUser.uid,

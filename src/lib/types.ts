@@ -1,3 +1,4 @@
+
 import { Timestamp } from 'firebase/firestore';
 
 export type Role = 'superadmin' | 'admin' | 'comun';
@@ -13,17 +14,17 @@ export interface User {
   id: string; // Document ID from Firestore
   userId: string;
   email: string;
-  name: string;
+  nombre: string;
   cedula?: string;
-  phone?: string;
+  telefono?: string;
   direccion?: string;
-  role: Role;
+  rol: Role;
   area: AreaId;
-  isActive: boolean;
-  creationDate: Date | Timestamp; // Fecha de Ingreso
+  activo: boolean;
+  fechaCreacion: Date | Timestamp; // Fecha de Ingreso
   fechaCulminacionContrato?: Date | Timestamp;
-  createdBy: string; // userId or 'system'
-  lastAccess: Date | Timestamp;
+  creadoPor: string; // userId or 'system'
+  ultimoAcceso: Date | Timestamp;
   avatarUrl?: string;
   tipoTrabajador?: WorkerType;
   tipoContrato?: ContractType;

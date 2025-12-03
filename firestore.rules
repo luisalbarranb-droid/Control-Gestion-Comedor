@@ -1,3 +1,4 @@
+
 /**
  * @fileoverview Firebase Security Rules for a Task Management Application
  * @version 2
@@ -92,7 +93,7 @@ service cloud.firestore {
      * duration of the rule evaluation, so multiple calls are not inefficient.
      */
     function currentUserRole() {
-      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role;
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.rol;
     }
 
     /**
@@ -157,8 +158,8 @@ service cloud.firestore {
     match /users/{userId} {
       allow get: if isSignedIn() && (isOwner(userId) || isAdminOrHigher());
       allow list: if isAdminOrHigher();
-      allow create: if isOwner(userId) && isCreator('createdBy') && isIdConsistent(userId);
-      allow update: if docExists() && (isOwner(userId) || isAdminOrHigher()) && isOwnerFieldImmutable('createdBy') && isIdConsistent(userId);
+      allow create: if isOwner(userId) && isCreator('creadoPor') && isIdConsistent(userId);
+      allow update: if docExists() && (isOwner(userId) || isAdminOrHigher()) && isOwnerFieldImmutable('creadoPor') && isIdConsistent(userId);
       allow delete: if docExists() && (isOwner(userId) || isAdminOrHigher());
     }
 
@@ -190,11 +191,11 @@ service cloud.firestore {
      * @principle Enforces document access based on multiple ownership fields ('createdBy', 'assignedTo') and admin roles.
      */
     match /tasks/{taskId} {
-      allow get: if docExists() && isSignedIn() && (isExistingOwner('assignedTo') || isExistingOwner('createdBy') || isAdminOrHigher());
+      allow get: if docExists() && isSignedIn() && (isExistingOwner('asignadoA') || isExistingOwner('creadoPor') || isAdminOrHigher());
       allow list: if isSignedIn();
-      allow create: if isSignedIn() && isCreator('createdBy') && isIdConsistent(taskId);
-      allow update: if docExists() && isSignedIn() && (isExistingOwner('assignedTo') || isExistingOwner('createdBy') || isAdminOrHigher()) && isOwnerFieldImmutable('createdBy') && isIdConsistent(taskId);
-      allow delete: if docExists() && isSignedIn() && (isExistingOwner('createdBy') || isAdminOrHigher());
+      allow create: if isSignedIn() && isCreator('creadoPor') && isIdConsistent(taskId);
+      allow update: if docExists() && isSignedIn() && (isExistingOwner('asignadoA') || isExistingOwner('creadoPor') || isAdminOrHigher()) && isOwnerFieldImmutable('creadoPor') && isIdConsistent(taskId);
+      allow delete: if docExists() && isSignedIn() && (isExistingOwner('creadoPor') || isAdminOrHigher());
     }
     
     // --------------------------------------------------------------------
@@ -304,5 +305,3 @@ service cloud.firestore {
 
   }
 }
-
-    
