@@ -31,7 +31,7 @@ import type { User } from '@/lib/types';
 
 const profileSchema = z.object({
   name: z.string().min(2, 'El nombre es requerido.'),
-  email: z.string().email(),
+  email: z.string().email('Debe ser un email válido.'),
   currentPassword: z.string().optional(),
   newPassword: z.string().optional(),
 }).refine(data => {
@@ -61,9 +61,11 @@ export function ProfileCard() {
 
   const form = useForm<ProfileFormValues>({
     resolver: zodResolver(profileSchema),
-    defaultValues: {
-      name: '',
-      email: '',
+    // The form values are now derived directly from the `user` object
+    // or set to empty strings if the user is not yet loaded.
+    values: {
+      name: user?.name || '',
+      email: user?.email || '',
       currentPassword: '',
       newPassword: '',
     },
@@ -71,14 +73,12 @@ export function ProfileCard() {
   
   const { formState: { isSubmitting } } = form;
 
-  // Set form values once user data is loaded
+  // This effect will re-sync the form whenever the user data from Firestore changes.
   React.useEffect(() => {
     if (user) {
       form.reset({
         name: user.name,
         email: user.email,
-        currentPassword: '',
-        newPassword: '',
       });
     }
   }, [user, form]);
@@ -88,6 +88,7 @@ export function ProfileCard() {
     
     const dataToUpdate = {
         name: data.name,
+        lastAccess: serverTimestamp()
     };
     
     const userRef = doc(firestore, 'users', user.id);

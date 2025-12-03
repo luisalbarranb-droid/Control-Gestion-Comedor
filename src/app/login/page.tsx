@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState } from 'react';
@@ -19,7 +18,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Loader2 } from 'lucide-react';
 import { useAuth, useFirestore, setDocumentNonBlocking } from '@/firebase';
 import { signInWithEmailAndPassword, createUserWithEmailAndPassword, User as FirebaseAuthUser } from 'firebase/auth';
-import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
+import { doc, serverTimestamp } from 'firebase/firestore';
 import type { User } from '@/lib/types';
 
 
@@ -35,11 +34,11 @@ export default function LoginPage() {
   const [password, setPassword] = useState('12345678');
   const [isLoading, setIsLoading] = useState(false);
 
-  const upsertUserData = async (firebaseUser: FirebaseAuthUser) => {
+  const upsertUserData = (firebaseUser: FirebaseAuthUser) => {
     if (!firestore) return;
     const userRef = doc(firestore, 'users', firebaseUser.uid);
     
-    const newUser: Omit<User, 'lastAccess' | 'creationDate'> = {
+    const newUser: Omit<User, 'creationDate' | 'lastAccess'> = {
       id: firebaseUser.uid,
       userId: firebaseUser.uid,
       email: firebaseUser.email!,
@@ -50,7 +49,7 @@ export default function LoginPage() {
       createdBy: 'system',
     };
 
-    await setDoc(userRef, {
+    setDocumentNonBlocking(userRef, {
       ...newUser,
       creationDate: serverTimestamp(),
       lastAccess: serverTimestamp(),
@@ -75,7 +74,7 @@ export default function LoginPage() {
 
     try {
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
-      await upsertUserData(userCredential.user);
+      upsertUserData(userCredential.user);
       
       toast({
         title: 'Inicio de sesión exitoso',
@@ -87,7 +86,7 @@ export default function LoginPage() {
       if (error.code === 'auth/user-not-found') {
         try {
             const newUserCredential = await createUserWithEmailAndPassword(auth, email, password);
-            await upsertUserData(newUserCredential.user);
+            upsertUserData(newUserCredential.user);
             toast({
                 title: 'Cuenta de Super Admin Creada',
                 description: 'La cuenta de administrador inicial ha sido creada. ¡Bienvenido!',
