@@ -66,7 +66,8 @@ const statusConfig: Record<AttendanceStatus, { label: string, className: string,
 export default function AttendanceReportsPage() {
     const { toast } = useToast();
     const firestore = useFirestore();
-    const { user: authUser, isLoading: isAuthLoading } = useUser();
+    const { user: currentUser, role, isLoading: isCurrentUserLoading } = useCurrentUser();
+    const isAdmin = role === 'admin' || role === 'superadmin';
     const [activeTab, setActiveTab] = useState('general');
     const [date, setDate] = useState<DateRange | undefined>({
         from: startOfMonth(new Date()),
@@ -75,25 +76,35 @@ export default function AttendanceReportsPage() {
 
     // --- Fetch Users ---
     const usersCollectionRef = useMemoFirebase(
-        () => (firestore ? collection(firestore, 'users') : null),
-        [firestore]
+        () => (firestore && isAdmin ? collection(firestore, 'users') : null),
+        [firestore, isAdmin]
     );
-    const { data: users, isLoading: isLoadingUsers } = useCollection<User>(usersCollectionRef);
+    const { data: usersData, isLoading: isLoadingUsers } = useCollection<User>(usersCollectionRef);
+    
+    // For non-admins, the user list is just the current user
+    const users = isAdmin ? usersData : (currentUser ? [currentUser] : []);
 
     // --- Fetch Attendance Records for date range ---
     const recordsQuery = useMemoFirebase(() => {
-        if (!firestore || !date?.from || !authUser) return null;
+        if (!firestore || !currentUser || !date?.from) return null;
         const from = new Date(date.from);
         from.setHours(0,0,0,0);
         const to = date.to ? new Date(date.to) : from;
         to.setHours(23,59,59,999);
         
-        return query(
+        const baseQuery = query(
             collection(firestore, 'attendance'),
             where('checkIn', '>=', from),
             where('checkIn', '<=', to)
         );
-    }, [firestore, date, authUser]);
+
+        // If user is not admin, filter records by their own ID
+        if (!isAdmin) {
+             return query(baseQuery, where('userId', '==', currentUser.id));
+        }
+
+        return baseQuery;
+    }, [firestore, date, currentUser, isAdmin]);
     const { data: filteredRecords, isLoading: isLoadingRecords } = useCollection<AttendanceRecord>(recordsQuery);
 
     const getUser = (userId: string) => users?.find((u) => u.id === userId);
@@ -241,7 +252,7 @@ export default function AttendanceReportsPage() {
                     <TableHead>Hora Entrada</TableHead>
                     <TableHead>Hora Salida</TableHead>
                     <TableHead>Estado</TableHead>
-                    {isAbsenceReport && <TableHead className="text-right">Acciones</TableHead>}
+                    {isAbsenceReport && isAdmin && <TableHead className="text-right">Acciones</TableHead>}
                 </TableRow>
             </TableHeader>
             <TableBody>
@@ -277,7 +288,7 @@ export default function AttendanceReportsPage() {
                             {statusInfo.label}
                         </Badge>
                     </TableCell>
-                    {isAbsenceReport && (
+                    {isAbsenceReport && isAdmin && (
                         <TableCell className="text-right">
                             {record.status === 'ausente' && (
                                  <DropdownMenu>
@@ -308,7 +319,9 @@ export default function AttendanceReportsPage() {
         </Table>
     )
 
-    if (isLoadingUsers || isLoadingRecords || isAuthLoading) {
+    const isLoading = isCurrentUserLoading || isLoadingRecords || (isAdmin && isLoadingUsers);
+
+    if (isLoading) {
         return <div className="flex items-center justify-center h-screen">Cargando reportes...</div>;
     }
 
@@ -342,10 +355,10 @@ export default function AttendanceReportsPage() {
                                     <Calendar initialFocus mode="range" defaultMonth={date?.from} selected={date} onSelect={setDate} numberOfMonths={2} locale={es} />
                                 </PopoverContent>
                             </Popover>
-                            <Button onClick={handleExport}>
+                            {isAdmin && (<Button onClick={handleExport}>
                                 <Download className="mr-2 h-4 w-4" />
                                 Exportar a Excel
-                            </Button>
+                            </Button>)}
                              <Button asChild variant="outline">
                                 <Link href="/attendance">Volver</Link>
                             </Button>
@@ -367,11 +380,11 @@ export default function AttendanceReportsPage() {
                     </div>
 
                     <Tabs value={activeTab} onValueChange={setActiveTab}>
-                        <TabsList className="grid w-full grid-cols-4">
+                        <TabsList className={cn("grid w-full", isAdmin ? "grid-cols-4" : "grid-cols-1")}>
                             <TabsTrigger value="general">Historial General</TabsTrigger>
-                            <TabsTrigger value="absences">Reporte de Ausencias</TabsTrigger>
-                            <TabsTrigger value="tardies">Reporte de Retardos</TabsTrigger>
-                            <TabsTrigger value="consolidated">Consolidado Quincenal</TabsTrigger>
+                            {isAdmin && <TabsTrigger value="absences">Reporte de Ausencias</TabsTrigger>}
+                            {isAdmin && <TabsTrigger value="tardies">Reporte de Retardos</TabsTrigger>}
+                            {isAdmin && <TabsTrigger value="consolidated">Consolidado Quincenal</TabsTrigger>}
                         </TabsList>
                         <TabsContent value="general">
                             <Card>
