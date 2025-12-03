@@ -25,10 +25,10 @@ export default function AttendancePage() {
   const isAdmin = role === 'admin' || role === 'superadmin';
   const firestore = useFirestore();
 
-  // --- Fetch users ---
+  // --- Fetch users (Only for admins) ---
   const usersCollectionRef = useMemoFirebase(
-    () => (firestore && isAdmin ? collection(firestore, 'users') : null),
-    [firestore, isAdmin]
+    () => (firestore && isAdmin && currentUser ? collection(firestore, 'users') : null),
+    [firestore, isAdmin, currentUser]
   );
   const { data: users, isLoading: isLoadingUsers } = useCollection(usersCollectionRef);
 
@@ -46,18 +46,18 @@ export default function AttendancePage() {
   const { data: todayRecords, isLoading: isLoadingAttendance } = useCollection(attendanceQuery);
 
   // --- Fetch this week's days off ---
-    const weekStartDateString = format(startOfWeek(new Date(), { weekStartsOn: 1 }), 'yyyy-MM-dd');
-    const daysOffQuery = useMemoFirebase(() => {
-        if (!firestore || !currentUser) return null;
-        return query(collection(firestore, 'daysOff'), where('weekStartDate', '==', weekStartDateString));
-    }, [firestore, weekStartDateString, currentUser]);
+  const weekStartDateString = format(startOfWeek(new Date(), { weekStartsOn: 1 }), 'yyyy-MM-dd');
+  const daysOffQuery = useMemoFirebase(() => {
+      if (!firestore || !currentUser) return null;
+      return query(collection(firestore, 'daysOff'), where('weekStartDate', '==', weekStartDateString));
+  }, [firestore, weekStartDateString, currentUser]);
   const { data: daysOff, isLoading: isLoadingDaysOff } = useCollection(daysOffQuery);
 
-  // Determine final loading state
-  const isLoading = isCurrentUserLoading || isLoadingAttendance || isLoadingDaysOff || (isAdmin && isLoadingUsers);
+  // Correctly determine the loading state
+  const isLoading = isCurrentUserLoading || (!currentUser) || isLoadingAttendance || isLoadingDaysOff || (isAdmin && isLoadingUsers);
 
-  // Determine which users to display
-  const displayedUsers = isAdmin ? users : (currentUser ? [currentUser] : []);
+  // Determine which users to display. Wait until loading is complete.
+  const displayedUsers = isLoading ? [] : (isAdmin ? users : (currentUser ? [currentUser] : []));
 
   return (
     <div className="min-h-screen w-full">
