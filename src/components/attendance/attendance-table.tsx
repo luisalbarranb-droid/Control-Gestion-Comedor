@@ -36,7 +36,6 @@ interface AttendanceTableProps {
     records: AttendanceRecord[];
     daysOff: DayOff[];
     isLoading: boolean;
-agregue los cambios en el modelo de inventario, para agregar el costo unitario, asi como también en los detalles del pedido, para que se guarden con el costo real del momento en el que se hizo el pedido
     date: Date;
 }
 
