@@ -54,13 +54,9 @@ export default function LoginPage() {
       router.push('/');
     } catch (error: any) {
       console.error('Firebase Auth Error:', error);
-       let description = 'El correo electrónico o la contraseña son incorrectos.';
-        if (error.code === 'auth/invalid-credential') {
+       let description = 'Ocurrió un error inesperado. Por favor, intenta de nuevo.';
+        if (error.code === 'auth/invalid-credential' || error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password') {
             description = 'Credenciales inválidas. Por favor, revisa tu correo y contraseña.';
-        } else if (error.code === 'auth/user-not-found') {
-            description = 'No se encontró un usuario con ese correo electrónico.';
-        } else if (error.code === 'auth/wrong-password') {
-            description = 'La contraseña es incorrecta.';
         }
       
       toast({
