@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import './globals.css';
 import { SidebarProvider } from '@/components/ui/sidebar';
 import { Toaster } from '@/components/ui/toaster';
-import { FirebaseClientProvider } from '@/firebase';
+import { FirebaseClientProvider } from '@/firebase/client-provider';
 
 export const metadata: Metadata = {
   title: 'Comedor Control',
@@ -26,10 +26,8 @@ export default function RootLayout({
       </head>
       <body className="font-body antialiased">
         <FirebaseClientProvider>
-          <SidebarProvider>
-            {children}
-            <Toaster />
-          </SidebarProvider>
+          <SidebarProvider>{children}</SidebarProvider>
+          <Toaster />
         </FirebaseClientProvider>
       </body>
     </html>

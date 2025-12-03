@@ -10,20 +10,20 @@ export type ContractType = 'determinado' | 'indeterminado' | 'prueba';
 
 
 export interface User {
-  id: string; // Document ID from Firestore
-  userId: string;
+  id: string; // Document ID from Firestore, should be same as uid
   email: string;
   name: string;
-  cedula?: string;
-  phone?: string;
-  address?: string;
   role: Role;
   area: AreaId;
   isActive: boolean;
   creationDate: Date | Timestamp;
-  contractEndDate?: Date | Timestamp;
   createdBy: string;
   lastAccess: Date | Timestamp;
+  userId?: string; // DEPRECATED, use id
+  cedula?: string;
+  phone?: string;
+  address?: string;
+  contractEndDate?: Date | Timestamp;
   avatarUrl?: string;
   workerType?: WorkerType;
   contractType?: ContractType;

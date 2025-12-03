@@ -41,26 +41,19 @@ export default function LoginPage() {
     };
     const userRef = doc(firestore, 'users', firebaseUser.uid);
     
-    // Use the standardized User type from /lib/types.ts
-    const userData: Omit<User, 'creationDate' | 'lastAccess'> = {
+    const userData: Partial<User> = {
       id: firebaseUser.uid,
-      userId: firebaseUser.uid,
       email: firebaseUser.email!,
       name: 'Super Admin',
       role: 'superadmin',
       area: 'administracion',
       isActive: true,
-      createdBy: 'system', // Indicates this user was created programmatically
+      createdBy: 'system',
+      creationDate: serverTimestamp(),
+      lastAccess: serverTimestamp(),
     };
 
-    // Use a single object for the data to be written
-    const dataToWrite = {
-        ...userData,
-        creationDate: serverTimestamp(),
-        lastAccess: serverTimestamp(),
-    };
-
-    setDocumentNonBlocking(userRef, dataToWrite, { merge: true });
+    setDocumentNonBlocking(userRef, userData, { merge: true });
     console.log('Super Admin user document created or updated:', firebaseUser.uid);
   };
 
@@ -80,7 +73,6 @@ export default function LoginPage() {
 
     try {
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
-      // Always ensure the superadmin document is correct on login
       upsertSuperAdmin(userCredential.user);
       
       toast({
@@ -91,7 +83,6 @@ export default function LoginPage() {
 
     } catch (error: any) {
       if (error.code === 'auth/user-not-found') {
-        // If the user does not exist, create it as a superadmin.
         try {
             const newUserCredential = await createUserWithEmailAndPassword(auth, email, password);
             upsertSuperAdmin(newUserCredential.user);

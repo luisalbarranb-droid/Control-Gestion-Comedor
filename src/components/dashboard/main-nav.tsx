@@ -62,9 +62,8 @@ export function MainNav() {
 
   const navItems = allNavItems.filter(item => {
     if (!item.visibleForRoles) {
-        return true; // Always visible if no roles are specified
+        return true; 
     }
-    // Visible if the user's role is in the list of visible roles
     if (currentUser?.role && item.visibleForRoles.includes(currentUser.role)) {
         return true;
     }
