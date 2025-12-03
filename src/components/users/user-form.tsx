@@ -38,6 +38,7 @@ import { Textarea } from '../ui/textarea';
 const formSchema = z.object({
   nombre: z.string().min(2, "El nombre es obligatorio."),
   email: z.string().email("Debe ser un email válido."),
+  password: z.string().optional(),
   cedula: z.string().optional(),
   telefono: z.string().optional(),
   direccion: z.string().optional(),
@@ -55,7 +56,7 @@ type FormValues = z.infer<typeof formSchema>;
 interface UserFormProps {
   isOpen: boolean;
   onOpenChange: (isOpen: boolean) => void;
-  onSave: (data: any) => void;
+  onSave: (data: any, password?: string) => void;
   user: User | null;
 }
 
@@ -70,6 +71,7 @@ export function UserForm({ isOpen, onOpenChange, onSave, user }: UserFormProps) 
     defaultValues: {
       nombre: '',
       email: '',
+      password: '',
       cedula: '',
       telefono: '',
       direccion: '',
@@ -83,13 +85,15 @@ export function UserForm({ isOpen, onOpenChange, onSave, user }: UserFormProps) 
       if (user) {
         form.reset({
             ...user,
-            fechaCreacion: new Date(user.fechaCreacion),
-            fechaCulminacionContrato: user.fechaCulminacionContrato ? new Date(user.fechaCulminacionContrato) : undefined,
+            password: '', // Password should not be shown when editing
+            fechaCreacion: user.fechaCreacion?.toDate ? user.fechaCreacion.toDate() : new Date(user.fechaCreacion as any),
+            fechaCulminacionContrato: user.fechaCulminacionContrato?.toDate ? user.fechaCulminacionContrato.toDate() : user.fechaCulminacionContrato ? new Date(user.fechaCulminacionContrato as any) : undefined,
         });
       } else {
         form.reset({
           nombre: '',
           email: '',
+          password: '',
           cedula: '',
           telefono: '',
           direccion: '',
@@ -106,19 +110,15 @@ export function UserForm({ isOpen, onOpenChange, onSave, user }: UserFormProps) 
   }, [user, isOpen, form]);
 
   const onSubmit = (values: FormValues) => {
+    const { password, ...userData } = values;
     const dataToSave = {
-        ...values,
+        ...userData,
         rol: values.rol as Role,
         area: values.area as AreaId,
         tipoTrabajador: values.tipoTrabajador as WorkerType | undefined,
         tipoContrato: values.tipoContrato as ContractType | undefined,
     };
-
-    if (user) {
-        onSave({ ...user, ...dataToSave });
-    } else {
-        onSave(dataToSave);
-    }
+    onSave(dataToSave, password);
     onOpenChange(false);
   };
 
@@ -154,12 +154,27 @@ export function UserForm({ isOpen, onOpenChange, onSave, user }: UserFormProps) 
                     <FormItem>
                     <FormLabel>Email</FormLabel>
                     <FormControl>
-                        <Input type="email" placeholder="ej: john.doe@example.com" {...field} />
+                        <Input type="email" placeholder="ej: john.doe@example.com" {...field} disabled={!!user} />
                     </FormControl>
                     <FormMessage />
                     </FormItem>
                 )}
                 />
+                {!user && (
+                     <FormField
+                        control={form.control}
+                        name="password"
+                        render={({ field }) => (
+                            <FormItem>
+                            <FormLabel>Contraseña</FormLabel>
+                            <FormControl>
+                                <Input type="password" placeholder="Mínimo 6 caracteres" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                            </FormItem>
+                        )}
+                    />
+                )}
                 <FormField
                 control={form.control}
                 name="cedula"

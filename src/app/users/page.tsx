@@ -37,7 +37,7 @@ import { cn } from '@/lib/utils';
 import Link from 'next/link';
 import { useToast } from '@/hooks/use-toast';
 import { useCollection, useDoc, useFirestore, useMemoFirebase, useUser } from '@/firebase';
-import { collection, doc, serverTimestamp } from 'firebase/firestore';
+import { collection, doc, serverTimestamp, setDoc } from 'firebase/firestore';
 import { Loader2 } from 'lucide-react';
 import { UserForm } from '@/components/users/user-form';
 import { setDocumentNonBlocking } from '@/firebase/non-blocking-updates';
@@ -86,39 +86,48 @@ export default function UsersPage() {
     setFormOpen(true);
   }
 
-  const handleSaveUser = async (userData: Omit<User, 'id'>) => {
-    if (!auth || !firestore || !currentUser) return;
+  const handleSaveUser = async (userData: Omit<User, 'id' | 'userId' | 'creadoPor' | 'ultimoAcceso'>, password?: string) => {
+    if (!auth || !firestore || !currentUser) {
+        toast({ variant: 'destructive', title: 'Error', description: 'No se ha podido autenticar la acción.' });
+        return;
+    }
 
     if (selectedUser) { // Editing existing user
-      const userRef = doc(firestore, 'users', selectedUser.id);
-      setDocumentNonBlocking(userRef, { ...userData, ultimaActualizacion: serverTimestamp() }, { merge: true });
-      toast({ title: 'Usuario actualizado', description: `Los datos de ${userData.nombre} han sido guardados.` });
+        const userRef = doc(firestore, 'users', selectedUser.id);
+        // Note: Password changes should be handled separately via dedicated Firebase Auth functions.
+        // This form will only update Firestore data.
+        await setDoc(userRef, { ...userData, ultimaActualizacion: serverTimestamp() }, { merge: true });
+        toast({ title: 'Usuario actualizado', description: `Los datos de ${userData.nombre} han sido guardados.` });
     } else { // Creating new user
-        // TODO: This should be a cloud function for security
+        if (!password) {
+            toast({ variant: 'destructive', title: 'Error', description: 'La contraseña es obligatoria para nuevos usuarios.' });
+            return;
+        }
+        
         try {
-            // Step 1: Create user in Firebase Auth
-            const userCredential = await createUserWithEmailAndPassword(auth, userData.email, '12345678'); // Default password, user should change it
+            // This is a simplified flow. For production, creating users should be a privileged, secure backend operation.
+            const userCredential = await createUserWithEmailAndPassword(auth, userData.email, password);
             const newAuthUser = userCredential.user;
 
-            // Step 2: Create user document in Firestore
             const newUserDocRef = doc(firestore, 'users', newAuthUser.uid);
             const newUser: User = {
-                ...userData,
+                ...(userData as User),
                 id: newAuthUser.uid,
                 userId: newAuthUser.uid,
                 creadoPor: currentUser.id,
                 ultimoAcceso: serverTimestamp(),
             };
-            await setDocumentNonBlocking(newUserDocRef, newUser, {merge: false});
             
-            toast({ title: 'Usuario Creado', description: `${userData.nombre} ha sido añadido. La contraseña inicial es "12345678".` });
+            await setDoc(newUserDocRef, newUser, { merge: false });
+            
+            toast({ title: 'Usuario Creado', description: `${userData.nombre} ha sido añadido con éxito.` });
         } catch (error: any) {
              console.error("Error creating user:", error);
             let description = 'Ocurrió un error inesperado.';
             if (error.code === 'auth/email-already-in-use') {
                 description = 'Este correo electrónico ya está registrado.';
             } else if (error.code === 'auth/weak-password') {
-                description = 'La contraseña es demasiado débil.';
+                description = 'La contraseña es demasiado débil (mínimo 6 caracteres).';
             }
             toast({ variant: 'destructive', title: 'Error al crear usuario', description });
         }
