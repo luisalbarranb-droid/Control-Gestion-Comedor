@@ -66,14 +66,15 @@ export default function UsersPage() {
   const { data: currentUser, isLoading: isProfileLoading } = useDoc<User>(userDocRef);
 
   const role = currentUser?.role;
-  const isAdmin = role === 'admin' || role === 'superadmin';
+  const isSuperAdmin = role === 'superadmin';
+  const isAdminOrHigher = role === 'admin' || role === 'superadmin';
 
   const usersCollectionRef = useMemoFirebase(
-    () => (firestore && isAdmin ? collection(firestore, 'users') : null),
-    [firestore, isAdmin]
+    () => (firestore && isAdminOrHigher ? collection(firestore, 'users') : null),
+    [firestore, isAdminOrHigher]
   );
   const { data: allUsers, isLoading: isLoadingUsers } = useCollection<User>(usersCollectionRef, {
-    disabled: !isAdmin,
+    disabled: !isAdminOrHigher,
   });
   
   const [isFormOpen, setFormOpen] = useState(false);
@@ -132,8 +133,8 @@ export default function UsersPage() {
   const getAreaName = (areaId: string) => areas.find((a) => a.id === areaId)?.nombre || 'N/A';
   const getUserInitials = (name: string) => name ? name.split(' ').map((n) => n[0]).join('') : '';
 
-  const usersToDisplay = isAdmin ? allUsers : (currentUser ? [currentUser] : []);
-  const isLoading = isAuthLoading || isProfileLoading || (isAdmin && isLoadingUsers);
+  const usersToDisplay = isAdminOrHigher ? allUsers : (currentUser ? [currentUser] : []);
+  const isLoading = isAuthLoading || isProfileLoading || (isAdminOrHigher && isLoadingUsers);
 
   if (isLoading) {
     return (
@@ -162,7 +163,7 @@ export default function UsersPage() {
             <h1 className="font-headline text-2xl font-bold md:text-3xl">
               Gestión de Usuarios
             </h1>
-            {isAdmin && (
+            {isSuperAdmin && (
               <Button onClick={() => handleOpenForm()}>
                 <PlusCircle className="mr-2 h-4 w-4" />
                 Añadir Usuario
@@ -235,8 +236,8 @@ export default function UsersPage() {
                           <DropdownMenuContent align="end">
                             <DropdownMenuLabel>Acciones</DropdownMenuLabel>
                             <DropdownMenuItem asChild><Link href={`/users/${user.id}`}>Ver Perfil</Link></DropdownMenuItem>
-                            {isAdmin && <DropdownMenuItem onClick={() => handleOpenForm(user)}>Editar</DropdownMenuItem>}
-                            {isAdmin && <DropdownMenuItem>Desactivar</DropdownMenuItem>}
+                            {isSuperAdmin && <DropdownMenuItem onClick={() => handleOpenForm(user)}>Editar</DropdownMenuItem>}
+                            {isSuperAdmin && <DropdownMenuItem>Desactivar</DropdownMenuItem>}
                           </DropdownMenuContent>
                         </DropdownMenu>
                       </TableCell>

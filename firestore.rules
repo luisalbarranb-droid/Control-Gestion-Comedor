@@ -1,7 +1,7 @@
 
 /**
  * @fileoverview Firebase Security Rules for a Task Management Application
- * @version 5
+ * @version 6
  *
  * @description
  * This ruleset enforces a role-based access control (RBAC) model combined with
@@ -13,9 +13,9 @@
  * The security model is built on three pillars:
  * 1. Verified Identity: All authenticated users have access, but what they can
  *    do is strictly controlled.
- * 2. Role-Based Access: 'admin' and 'superadmin' roles grant elevated privileges
- *    for managing users, tasks, and system configuration. A user's role is
- *    retrieved from their own user document.
+ * 2. Role-Based Access: 'admin' and 'superadmin' roles grant elevated privileges.
+ *    The 'superadmin' has full write access, while 'admin' has primarily read
+ *    access in sensitive areas like user management.
  * 3. User Ownership: Users have explicit control over the data they create, such
  *    as their own user profile, comments, and evidence uploads.
  *
@@ -31,28 +31,19 @@
  * - /configuration/{id}: Global application settings.
  *
  * Key Security Decisions:
- * - Admin Supremacy: Admins and Superadmins have wide-ranging read and write
- *   access across most collections to manage the system effectively.
- * - User Data Privacy: A user's document in `/users` can only be read or modified
- *   by the user themselves or an admin. Listing all users is restricted to admins
- *   to prevent user data enumeration.
+ * - Admin Supremacy: Admins and Superadmins have wide-ranging read access.
+ * - Superadmin Write Control: The 'superadmin' role has exclusive write
+ *   privileges for creating and modifying users and critical configurations.
+ * - User Data Privacy: A user's document in `/users` can only be read by
+ *   the user themselves or an admin/superadmin. Listing all users is restricted
+ *   to admins/superadmins.
  * - Task Accessibility: Access to a task (and its related comments/evidence) is
  *   granted to the user it is assigned to, the user who created it, and admins.
- * - Public Read for Configuration: Collections like `/areas` and `/configuration`
- *   are readable by any signed-in user but are only writable by admins.
  *
  * Denormalization for Authorization:
  * To ensure fast and secure rule evaluation, key authorization fields are
  * denormalized. For example, `tasks` documents contain `createdBy` and `assignedTo`
- * user IDs, and `evidences` documents contain the `userId` of the uploader. This
- * avoids costly and slow cross-collection `get()` calls in most rules.
- *
- * Structural Segregation:
- * Each data entity (User, Task, Area, etc.) resides in its own top-level
- * collection. This clear separation simplifies rule logic and improves query
- * performance, especially for list operations. For instance, task `evidences` are
- * not a subcollection but a top-level collection linked by a `taskId`, which
- * prevents loading all evidences when fetching a single task.
+ * user IDs. This avoids costly and slow cross-collection `get()` calls in most rules.
  */
 rules_version = '2';
 service cloud.firestore {
@@ -92,6 +83,13 @@ service cloud.firestore {
      */
     function currentUserRole() {
       return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role;
+    }
+
+    /**
+     * Returns true if the current user is a superadmin.
+     */
+    function isSuperAdmin() {
+      return isSignedIn() && currentUserRole() == 'superadmin';
     }
 
     /**
@@ -151,14 +149,12 @@ service cloud.firestore {
      * @path /users/{userId}
      * @allow (get) A user to read their own profile document, or an admin to read any.
      * @allow (list) An admin or superadmin to list all user profiles.
-     * @principle Restricts access to a user's own data tree and grants admins override access.
+     * @allow (create, update, delete) Only a superadmin can create, update, or delete users.
      */
     match /users/{userId} {
       allow get: if isSignedIn() && (isOwner(userId) || isAdminOrHigher());
       allow list: if isAdminOrHigher();
-      allow create: if isOwner(userId) && isCreator('createdBy') && isIdConsistent(userId);
-      allow update: if docExists() && (isOwner(userId) || isAdminOrHigher()) && isOwnerFieldImmutable('createdBy') && isIdConsistent(userId);
-      allow delete: if docExists() && (isOwner(userId) || isAdminOrHigher());
+      allow create, update, delete: if isSuperAdmin();
     }
 
     // --------------------------------------------------------------------
@@ -173,9 +169,9 @@ service cloud.firestore {
      */
     match /areas/{areaId} {
       allow get, list: if isSignedIn();
-      allow create: if isAdminOrHigher();
-      allow update: if docExists() && isAdminOrHigher();
-      allow delete: if docExists() && isAdminOrHigher();
+      allow create: if isSuperAdmin();
+      allow update: if docExists() && isSuperAdmin();
+      allow delete: if docExists() && isSuperAdmin();
     }
 
     // --------------------------------------------------------------------
@@ -242,9 +238,9 @@ service cloud.firestore {
      */
     match /configuration/{id} {
       allow get, list: if isSignedIn();
-      allow create: if isAdminOrHigher();
-      allow update: if docExists() && isAdminOrHigher();
-      allow delete: if docExists() && isAdminOrHigher();
+      allow create: if isSuperAdmin();
+      allow update: if docExists() && isSuperAdmin();
+      allow delete: if docExists() && isSuperAdmin();
     }
 
     // --------------------------------------------------------------------
