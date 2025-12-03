@@ -52,7 +52,7 @@ export default function AttendancePage() {
   const { data: daysOff, isLoading: isLoadingDaysOff } = useCollection(daysOffQuery);
 
   // The main loading state depends on the current user being loaded first.
-  // Then, we wait for the other relevant data fetches to complete.
+  // After that, we wait for the other relevant data fetches to complete.
   const isLoading = isCurrentUserLoading || isLoadingAttendance || isLoadingDaysOff || (isAdmin && isLoadingUsers);
 
   if (isCurrentUserLoading) {
@@ -62,6 +62,8 @@ export default function AttendancePage() {
       </div>
     );
   }
+
+  const usersToDisplay = isAdmin ? allUsers : (currentUser ? [currentUser] : []);
 
   return (
     <div className="min-h-screen w-full">
@@ -101,7 +103,7 @@ export default function AttendancePage() {
            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             <div className="lg:col-span-2">
                 <AttendanceTable 
-                    allUsers={allUsers || []}
+                    allUsers={usersToDisplay || []}
                     currentUser={currentUser}
                     isAdmin={isAdmin}
                     records={todayRecords || []} 
