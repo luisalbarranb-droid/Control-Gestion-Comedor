@@ -76,8 +76,8 @@ export function MainNav() {
           </SidebarMenuButton>
         </Link>
       </SidebarMenuItem>
+      
       {isAdmin && (
-        <>
           <SidebarMenuItem>
             <Link href="/users">
               <SidebarMenuButton isActive={pathname.startsWith('/users')}>
@@ -86,24 +86,28 @@ export function MainNav() {
               </SidebarMenuButton>
             </Link>
           </SidebarMenuItem>
-           <SidebarMenuItem>
-            <Link href="/reports">
-              <SidebarMenuButton isActive={pathname.startsWith('/reports')}>
-                <FileSpreadsheet />
-                <span>Reportes</span>
-              </SidebarMenuButton>
-            </Link>
-          </SidebarMenuItem>
-          <SidebarMenuItem>
-            <Link href="/stats">
-              <SidebarMenuButton isActive={pathname.startsWith('/stats')}>
-                <AreaChart />
-                <span>Estadísticas</span>
-              </SidebarMenuButton>
-            </Link>
-          </SidebarMenuItem>
-        </>
       )}
+      
+       <SidebarMenuItem>
+        <Link href="/reports">
+          <SidebarMenuButton isActive={pathname.startsWith('/reports')}>
+            <FileSpreadsheet />
+            <span>Reportes</span>
+          </SidebarMenuButton>
+        </Link>
+      </SidebarMenuItem>
+
+      {isAdmin && (
+        <SidebarMenuItem>
+          <Link href="/stats">
+            <SidebarMenuButton isActive={pathname.startsWith('/stats')}>
+              <AreaChart />
+              <span>Estadísticas</span>
+            </SidebarMenuButton>
+          </Link>
+        </SidebarMenuItem>
+      )}
+
       <SidebarMenuItem>
         <Link href="/settings">
           <SidebarMenuButton isActive={pathname.startsWith('/settings')}>

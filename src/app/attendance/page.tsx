@@ -26,10 +26,21 @@ export default function AttendancePage() {
   const isAdmin = role === 'admin' || role === 'superadmin';
   const firestore = useFirestore();
 
+  // --- Fetch users: all if admin, otherwise just the current user ---
+  const usersCollectionRef = useMemoFirebase(() => {
+    if (!firestore) return null;
+    return collection(firestore, 'users');
+  }, [firestore]);
+  
+  const { data: allUsers, isLoading: isLoadingUsers } = useCollection(usersCollectionRef, {
+    disabled: !isAdmin,
+  });
+
+  const usersToDisplay = isAdmin ? allUsers : (currentUser ? [currentUser] : []);
+
   // --- Fetch today's attendance records ---
   const attendanceQuery = useMemoFirebase(() => {
-    // Wait until we have a user to build the query.
-    if (!currentUser || !firestore) return null;
+    if (!firestore || !currentUser) return null;
     const todayStart = new Date();
     todayStart.setHours(0, 0, 0, 0);
     const todayEnd = new Date();
@@ -45,21 +56,19 @@ export default function AttendancePage() {
   // --- Fetch this week's days off ---
     const weekStartDateString = format(startOfWeek(new Date(), { weekStartsOn: 1 }), 'yyyy-MM-dd');
     const daysOffQuery = useMemoFirebase(() => {
-        // Wait until we have a user to build the query.
-        if (!currentUser || !firestore) return null;
+        if (!firestore || !currentUser) return null;
         return query(collection(firestore, 'daysOff'), where('weekStartDate', '==', weekStartDateString));
     }, [firestore, currentUser, weekStartDateString]);
   const { data: daysOff, isLoading: isLoadingDaysOff } = useCollection(daysOffQuery);
 
-  // The final loading state depends on the user auth and the queries that depend on the user.
-  const isLoading = isCurrentUserLoading || isLoadingAttendance || isLoadingDaysOff;
+  const isLoading = isCurrentUserLoading || (isAdmin && isLoadingUsers) || isLoadingAttendance || isLoadingDaysOff;
 
-  if (isCurrentUserLoading) {
+  if (!currentUser && !isCurrentUserLoading) {
     return (
-      <div className="min-h-screen w-full flex items-center justify-center">
-          <p>Cargando datos de asistencia...</p>
-      </div>
-    );
+        <div className="min-h-screen w-full flex items-center justify-center">
+            <p>Por favor, inicie sesión para ver la asistencia.</p>
+        </div>
+    )
   }
 
   return (
@@ -100,8 +109,7 @@ export default function AttendancePage() {
            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             <div className="lg:col-span-2">
                 <AttendanceTable 
-                    currentUser={currentUser}
-                    isAdmin={isAdmin}
+                    users={usersToDisplay || []}
                     records={todayRecords || []} 
                     daysOff={daysOff || []}
                     isLoading={isLoading} 

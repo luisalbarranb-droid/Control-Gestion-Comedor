@@ -37,6 +37,10 @@ export interface InternalQuery extends Query<DocumentData> {
   }
 }
 
+interface UseCollectionOptions {
+  disabled?: boolean;
+}
+
 /**
  * React hook to subscribe to a Firestore collection or query in real-time.
  * Handles nullable references/queries.
@@ -53,16 +57,17 @@ export interface InternalQuery extends Query<DocumentData> {
  */
 export function useCollection<T = any>(
     memoizedTargetRefOrQuery: ((CollectionReference<DocumentData> | Query<DocumentData>) & {__memo?: boolean})  | null | undefined,
+    options: UseCollectionOptions = { disabled: false },
 ): UseCollectionResult<T> {
   type ResultItemType = WithId<T>;
   type StateDataType = ResultItemType[] | null;
 
   const [data, setData] = useState<StateDataType>(null);
-  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [isLoading, setIsLoading] = useState<boolean>(!options.disabled);
   const [error, setError] = useState<FirestoreError | Error | null>(null);
 
   useEffect(() => {
-    if (!memoizedTargetRefOrQuery) {
+    if (!memoizedTargetRefOrQuery || options.disabled) {
       setData(null);
       setIsLoading(false);
       setError(null);
@@ -106,9 +111,11 @@ export function useCollection<T = any>(
     );
 
     return () => unsubscribe();
-  }, [memoizedTargetRefOrQuery]); // Re-run if the target query/reference changes.
-  if(memoizedTargetRefOrQuery && !memoizedTargetRefOrQuery.__memo) {
+  }, [memoizedTargetRefOrQuery, options.disabled]); // Re-run if the target query/reference or disabled state changes.
+  
+  if(memoizedTargetRefOrQuery && !memoizedTargetRefOrQuery.__memo && !options.disabled) {
     throw new Error(memoizedTargetRefOrQuery + ' was not properly memoized using useMemoFirebase');
   }
+
   return { data, isLoading, error };
 }

@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useParams } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import {
   Sidebar,
   SidebarContent,
@@ -19,9 +19,11 @@ import { es } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 import type { Role, WorkerType, ContractType, User as UserType } from '@/lib/types';
 import QRCode from 'react-qr-code';
-import { useDoc, useFirestore, useMemoFirebase } from '@/firebase';
+import { useDoc, useFirestore, useMemoFirebase, useUser } from '@/firebase';
 import { doc } from 'firebase/firestore';
 import { areas } from '@/lib/placeholder-data';
+import { useEffect } from 'react';
+import { Loader2 } from 'lucide-react';
 
 export const dynamic = 'force-dynamic';
 
@@ -54,17 +56,49 @@ const formatDate = (date: any) => {
 
 export default function UserProfilePage() {
   const params = useParams();
+  const router = useRouter();
   const userId = params.userId as string;
   const firestore = useFirestore();
+
+  // First, check for auth state
+  const { user: authUser, isUserLoading: isAuthLoading } = useUser();
 
   const userDocRef = useMemoFirebase(
     () => (firestore && userId ? doc(firestore, 'users', userId) : null),
     [firestore, userId]
   );
-  const { data: user, isLoading } = useDoc<UserType>(userDocRef);
+  const { data: user, isLoading: isProfileLoading } = useDoc<UserType>(userDocRef);
+  
+  // Redirect if auth is done and there's no user
+  useEffect(() => {
+    if (!isAuthLoading && !authUser) {
+      router.push('/login');
+    }
+  }, [isAuthLoading, authUser, router]);
+
+  const isLoading = isAuthLoading || isProfileLoading;
 
   if (isLoading) {
-    return <div className="flex items-center justify-center h-screen">Cargando perfil...</div>;
+    return (
+      <div className="min-h-screen w-full">
+        <Sidebar>
+          <SidebarHeader className="p-4 justify-center flex items-center gap-2">
+            <SquareCheck className="size-8 text-primary" />
+            <h1 className="font-headline text-2xl font-bold">Comedor</h1>
+          </SidebarHeader>
+          <SidebarContent>
+            <MainNav />
+          </SidebarContent>
+        </Sidebar>
+        <SidebarInset>
+          <Header />
+          <main className="flex flex-1 items-center justify-center">
+            <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+            <p className="ml-2">Cargando perfil...</p>
+          </main>
+        </SidebarInset>
+      </div>
+    );
   }
 
   if (!user) {
@@ -157,7 +191,7 @@ export default function UserProfilePage() {
                                             {detail.isBadge ? (
                                                 <dd>
                                                     <Badge variant="secondary" className={cn(detail.badgeClass, 'capitalize text-sm')}>
-                                                        {detail.value}
+                                                        {String(detail.value)}
                                                     </Badge>
                                                 </dd>
                                             ) : (
