@@ -141,5 +141,3 @@ export function MainNav() {
     </SidebarMenu>
   );
 }
-
-    

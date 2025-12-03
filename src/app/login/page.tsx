@@ -19,7 +19,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Loader2 } from 'lucide-react';
 import { useAuth, useFirestore, setDocumentNonBlocking } from '@/firebase';
 import { signInWithEmailAndPassword, createUserWithEmailAndPassword, User as FirebaseAuthUser } from 'firebase/auth';
-import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
+import { doc, getDoc, setDoc } from 'firebase/firestore';
 import type { User } from '@/lib/types';
 
 
@@ -38,30 +38,28 @@ export default function LoginPage() {
   const upsertUserData = async (firebaseUser: FirebaseAuthUser) => {
     if (!firestore) return;
     const userRef = doc(firestore, 'users', firebaseUser.uid);
-    const userSnap = await getDoc(userRef);
+    
+    // Create new user document with standardized English fields
+    const newUser: Omit<User, 'lastAccess' | 'creationDate'> = {
+      id: firebaseUser.uid,
+      userId: firebaseUser.uid,
+      email: firebaseUser.email!,
+      name: 'Super Admin',
+      role: 'superadmin',
+      area: 'administracion',
+      isActive: true,
+      createdBy: 'system',
+    };
 
-    if (!userSnap.exists()) {
-      // Create new user document with standardized English fields
-      const newUser: Omit<User, 'lastAccess' | 'creationDate' | 'id'> = {
-        userId: firebaseUser.uid,
-        email: firebaseUser.email!,
-        name: 'Super Admin',
-        role: 'superadmin',
-        area: 'administracion',
-        isActive: true,
-        createdBy: 'system',
-      };
-      await setDoc(userRef, {
-        ...newUser,
-        id: firebaseUser.uid,
-        creationDate: serverTimestamp(),
-        lastAccess: serverTimestamp(),
-      });
-      console.log('Super Admin user document created:', firebaseUser.uid);
-    } else {
-       // On subsequent logins, just update the last access time.
-       await setDoc(userRef, { lastAccess: serverTimestamp() }, { merge: true });
-    }
+    // We use setDoc with merge:true to create or overwrite.
+    // This forcefully corrects any old/incorrect data structure.
+    await setDoc(userRef, {
+      ...newUser,
+      creationDate: new Date(),
+      lastAccess: new Date(),
+    }, { merge: true });
+
+    console.log('Super Admin user document created or updated:', firebaseUser.uid);
   };
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -80,6 +78,7 @@ export default function LoginPage() {
 
     try {
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
+      // After successful sign-in, always ensure the user data is correct.
       await upsertUserData(userCredential.user);
       
       toast({
@@ -184,5 +183,3 @@ export default function LoginPage() {
     </div>
   );
 }
-
-    

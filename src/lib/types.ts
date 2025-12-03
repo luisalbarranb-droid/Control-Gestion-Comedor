@@ -181,15 +181,15 @@ export interface Ingredient {
 }
 
 export interface MenuItem {
-  menuItemId: string;
+  id: string;
   name: string;
   category: MenuItemCategory;
   ingredients: Ingredient[];
 }
 
 export interface Menu {
-  menuId: string;
-  date: Date;
+  id: string;
+  date: Date | Timestamp;
   pax: number; // number of people
   items: MenuItem[];
 }
@@ -238,10 +238,10 @@ export type AttendanceStatus = 'presente' | 'ausente' | 'retardo' | 'fuera-de-ho
 export type LeaveType = 'justificado' | 'no-justificado' | 'vacaciones';
 
 export interface AttendanceRecord {
-    recordId: string;
+    id: string;
     userId: string;
-    checkIn: Date;
-    checkOut?: Date;
+    checkIn: Date | Timestamp;
+    checkOut?: Date | Timestamp;
     status: AttendanceStatus;
     leaveType?: LeaveType;
 }
