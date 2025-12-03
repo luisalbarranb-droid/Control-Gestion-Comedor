@@ -40,7 +40,7 @@ import { InventoryEntryForm } from '@/components/inventory/inventory-entry-form'
 import { InventoryExitForm } from '@/components/inventory/inventory-exit-form';
 import { InventoryImportDialog } from '@/components/inventory/inventory-import-dialog';
 import { useToast } from '@/hooks/use-toast';
-import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
+import { useCollection, useFirestore, useMemoFirebase, useUser } from '@/firebase';
 import { collection, doc, serverTimestamp, writeBatch } from 'firebase/firestore';
 import { setDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 
@@ -48,10 +48,11 @@ import { setDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase/no
 export default function InventoryPage() {
   const { toast } = useToast();
   const firestore = useFirestore();
+  const { user: authUser } = useUser();
   
   const itemsCollectionRef = useMemoFirebase(
-    () => (firestore ? collection(firestore, 'inventory') : null),
-    [firestore]
+    () => (firestore && authUser ? collection(firestore, 'inventory') : null),
+    [firestore, authUser]
   );
   const { data: items, isLoading } = useCollection<InventoryItem>(itemsCollectionRef);
 
@@ -67,10 +68,10 @@ export default function InventoryPage() {
     return inventoryCategories.find(cat => cat.id === categoryId)?.nombre || 'N/A';
   }
 
-  const handleCreate = (newItem: Omit<InventoryItem, 'itemId' | 'fechaCreacion' | 'ultimaActualizacion'>) => {
+  const handleCreate = (newItem: Omit<InventoryItem, 'id' | 'fechaCreacion' | 'ultimaActualizacion'>) => {
     if (!firestore) return;
     const docRef = doc(collection(firestore, 'inventory'));
-    const fullNewItem: Omit<InventoryItem, 'itemId'> = {
+    const fullNewItem: Omit<InventoryItem, 'id'> = {
       ...newItem,
       id: docRef.id,
       fechaCreacion: serverTimestamp(),
@@ -192,7 +193,7 @@ export default function InventoryPage() {
       categoryFilter === 'all' || item.categoriaId === categoryFilter
     ) || [];
 
-    if (isLoading) {
+    if (isLoading && !items) {
       return (
           <div className="min-h-screen w-full flex items-center justify-center">
               <p>Cargando inventario...</p>

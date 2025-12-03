@@ -18,7 +18,7 @@ import {
 import { Badge } from '@/components/ui/badge';
 import type { MenuItem, InventoryItem as TInventoryItem } from '@/lib/types';
 import { cn } from '@/lib/utils';
-import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
+import { useCollection, useFirestore, useMemoFirebase, useUser } from '@/firebase';
 import { collection } from 'firebase/firestore';
 
 interface MenuItemCardProps {
@@ -38,9 +38,10 @@ const categoryDisplay: Record<string, { label: string; className: string }> = {
 
 export function MenuItemCard({ menuItem, pax }: MenuItemCardProps) {
   const firestore = useFirestore();
+  const { user: authUser } = useUser();
   const inventoryCollectionRef = useMemoFirebase(
-    () => (firestore ? collection(firestore, 'inventory') : null),
-    [firestore]
+    () => (firestore && authUser ? collection(firestore, 'inventory') : null),
+    [firestore, authUser]
   );
   const { data: inventoryItems, isLoading } = useCollection<TInventoryItem>(inventoryCollectionRef);
 
@@ -106,5 +107,3 @@ export function MenuItemCard({ menuItem, pax }: MenuItemCardProps) {
     </Card>
   );
 }
-
-    

@@ -27,7 +27,7 @@ import { Badge } from '@/components/ui/badge';
 import type { Menu, MenuReportData, InventoryItem as TInventoryItem } from '@/lib/types';
 import { cn } from '@/lib/utils';
 import { categoryDisplay } from '@/components/daily-closing/category-display';
-import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
+import { useCollection, useFirestore, useMemoFirebase, useUser } from '@/firebase';
 import { collection } from 'firebase/firestore';
 
 interface MenusReportProps {
@@ -45,9 +45,10 @@ const categoryIcons: Record<string, React.ElementType> = {
 export function MenusReport({ menus }: MenusReportProps) {
   const { toast } = useToast();
   const firestore = useFirestore();
+  const { user: authUser } = useUser();
   const inventoryCollectionRef = useMemoFirebase(
-    () => (firestore ? collection(firestore, 'inventory') : null),
-    [firestore]
+    () => (firestore && authUser ? collection(firestore, 'inventory') : null),
+    [firestore, authUser]
   );
   const { data: inventoryItems, isLoading: isLoadingInventory } = useCollection<TInventoryItem>(inventoryCollectionRef);
 
@@ -167,7 +168,7 @@ export function MenusReport({ menus }: MenusReportProps) {
               {menus.map((menu) => {
                 const menuDate = menu.date.toDate ? menu.date.toDate() : new Date(menu.date);
                 return menu.items.map((item) => (
-                  <React.Fragment key={`${menu.id}-${item.menuItemId}`}>
+                  <React.Fragment key={`${menu.id}-${item.id}`}>
                     <TableRow className="bg-muted/50">
                       <TableCell className="font-bold">
                         {format(menuDate, 'dd/MM/yyyy')}
@@ -250,5 +251,3 @@ export function MenusReport({ menus }: MenusReportProps) {
     </Card>
   );
 }
-
-    
