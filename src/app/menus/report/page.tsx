@@ -24,16 +24,17 @@ import { MenusReport } from '@/components/menus/menus-report';
 import { DateRange } from 'react-day-picker';
 import { startOfMonth, endOfMonth, format } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
+import { useCollection, useFirestore, useMemoFirebase, useUser } from '@/firebase';
 import { collection } from 'firebase/firestore';
 
 
 export default function MenuReportPage() {
   const firestore = useFirestore();
+  const { user: authUser } = useUser();
 
   const menusCollectionRef = useMemoFirebase(
-    () => (firestore ? collection(firestore, 'menus') : null),
-    [firestore]
+    () => (firestore && authUser ? collection(firestore, 'menus') : null),
+    [firestore, authUser]
   );
   const { data: menus, isLoading } = useCollection<Menu>(menusCollectionRef);
 
@@ -136,5 +137,3 @@ export default function MenuReportPage() {
     </div>
   );
 }
-
-    

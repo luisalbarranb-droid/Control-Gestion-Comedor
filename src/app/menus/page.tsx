@@ -13,7 +13,6 @@ import { Header } from '@/components/dashboard/header';
 import { MainNav } from '@/components/dashboard/main-nav';
 import { SquareCheck, Calendar as CalendarIcon, FileSpreadsheet, View, Upload } from 'lucide-react';
 import { CreateMenuForm } from '@/components/menus/create-menu-form';
-import { inventoryItems } from '@/lib/placeholder-data';
 import type { Menu, MenuItem, MenuImportRow, MenuItemCategory } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -24,18 +23,20 @@ import Link from 'next/link';
 import { MenuCard } from '@/components/menus/menu-card';
 import { MenuImportDialog } from '@/components/menus/menu-import-dialog';
 import { useToast } from '@/hooks/use-toast';
-import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
+import { useCollection, useFirestore, useMemoFirebase, useUser } from '@/firebase';
 import { collection, doc, serverTimestamp, writeBatch } from 'firebase/firestore';
 import { addDocumentNonBlocking } from '@/firebase/non-blocking-updates';
+import { inventoryItems } from '@/lib/placeholder-data';
 
 
 export default function MenusPage() {
   const { toast } = useToast();
   const firestore = useFirestore();
+  const { user: authUser } = useUser();
 
   const menusCollectionRef = useMemoFirebase(
-    () => (firestore ? collection(firestore, 'menus') : null),
-    [firestore]
+    () => (firestore && authUser ? collection(firestore, 'menus') : null),
+    [firestore, authUser]
   );
   const { data: menus, isLoading } = useCollection<Menu>(menusCollectionRef);
 
@@ -78,7 +79,7 @@ export default function MenusPage() {
         
         if (!menuItem) {
             menuItem = {
-                menuItemId: `item-${dateKey}-${row.itemName}-${Math.random()}`,
+                id: `item-${dateKey}-${row.itemName}-${Math.random()}`,
                 name: row.itemName,
                 category: row.itemCategory as MenuItemCategory,
                 ingredients: [],
@@ -228,5 +229,3 @@ export default function MenusPage() {
     </div>
   );
 }
-
-    

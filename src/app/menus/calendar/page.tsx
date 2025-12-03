@@ -14,14 +14,15 @@ import type { Menu } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { MonthlyPlanner } from '@/components/menus/monthly-planner';
-import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
+import { useCollection, useFirestore, useMemoFirebase, useUser } from '@/firebase';
 import { collection } from 'firebase/firestore';
 
 export default function MenuCalendarPage() {
   const firestore = useFirestore();
+  const { user: authUser } = useUser();
   const menusCollectionRef = useMemoFirebase(
-    () => (firestore ? collection(firestore, 'menus') : null),
-    [firestore]
+    () => (firestore && authUser ? collection(firestore, 'menus') : null),
+    [firestore, authUser]
   );
   const { data: menus, isLoading } = useCollection<Menu>(menusCollectionRef);
 
@@ -59,5 +60,3 @@ export default function MenuCalendarPage() {
     </div>
   );
 }
-
-    
