@@ -21,7 +21,7 @@ import {
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import type { AttendanceRecord, AttendanceStatus, DayOff, User } from '@/lib/types';
+import type { AttendanceRecord, DayOff, User } from '@/lib/types';
 import { cn } from '@/lib/utils';
 import { format, getDay, startOfWeek, startOfDay, endOfDay } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -32,7 +32,7 @@ import { useCurrentUser } from '@/hooks/use-current-user';
 import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
 import { collection, query, where } from 'firebase/firestore';
 
-const statusConfig: Record<AttendanceStatus, { label: string, className: string, icon: React.ElementType }> = {
+const statusConfig: Record<string, { label: string, className: string, icon: React.ElementType }> = {
     presente: { label: 'Presente', className: 'bg-green-100 text-green-800', icon: UserCheck },
     ausente: { label: 'Ausente', className: 'bg-red-100 text-red-800', icon: UserX },
     retardo: { label: 'Retardo', className: 'bg-yellow-100 text-yellow-800', icon: Clock },
@@ -76,7 +76,7 @@ export default function AttendancePage() {
   }, [firestore, weekStartDateString, currentUser]);
   const { data: daysOff, isLoading: isLoadingDaysOff } = useCollection<DayOff>(daysOffQuery);
 
-  const getUserInitials = (name: string) => name ? name.split(' ').map((n) => n[0]).join('') : '';
+  const getUserInitials = (name: string | undefined) => name ? name.split(' ').map((n) => n[0]).join('') : '';
 
   const today = new Date();
   const todayDayOfWeek = (getDay(today) + 6) % 7; // Monday is 0, Sunday is 6
@@ -84,7 +84,7 @@ export default function AttendancePage() {
   // If not admin, the displayed user is only the current user
   const displayedUsers = isAdmin ? users : (currentUser ? [currentUser] : []);
 
-  const isLoading = isCurrentUserLoading || isLoadingUsers || isLoadingAttendance || isLoadingDaysOff;
+  const isLoading = isCurrentUserLoading || (isAdmin && isLoadingUsers) || isLoadingAttendance || isLoadingDaysOff;
   
   if (isLoading) {
       return (
@@ -150,21 +150,22 @@ export default function AttendancePage() {
                         </TableHeader>
                         <TableBody>
                         {displayedUsers?.map(user => {
+                            if (!user) return null;
                             const record = todayRecords?.find(r => r.userId === user.id);
                             const userDayOff = daysOff?.find(d => d.userId === user.id);
                             const isSunday = todayDayOfWeek === 6;
                             
-                            let status: AttendanceStatus;
+                            let status: keyof typeof statusConfig = 'ausente';
 
                             if (isSunday || (userDayOff && userDayOff.dayOff === todayDayOfWeek)) {
                                 status = 'dia-libre';
-                            } else {
-                                status = record?.status || 'ausente';
+                            } else if (record) {
+                                status = record.status;
                             }
 
                             const config = statusConfig[status];
-                            const checkInDate = record?.checkIn.toDate ? record.checkIn.toDate() : new Date(record?.checkIn || 0);
-                            const checkOutDate = record?.checkOut?.toDate ? record.checkOut.toDate() : new Date(record?.checkOut || 0);
+                            const checkInDate = record?.checkIn instanceof Date ? record.checkIn : record?.checkIn?.toDate();
+                            const checkOutDate = record?.checkOut instanceof Date ? record.checkOut : record?.checkOut?.toDate();
 
                             return (
                                 <TableRow key={user.id}>
@@ -180,16 +181,22 @@ export default function AttendancePage() {
                                         </div>
                                     </TableCell>
                                     <TableCell className="font-mono">
-                                        {record?.checkIn && status !== 'dia-libre' ? format(checkInDate, 'HH:mm:ss') : '--:--'}
+                                        {checkInDate ? format(checkInDate, 'HH:mm:ss') : '--:--'}
                                     </TableCell>
                                      <TableCell className="font-mono">
-                                        {record?.checkOut && status !== 'dia-libre' ? format(checkOutDate, 'HH:mm:ss') : '--:--'}
+                                        {checkOutDate ? format(checkOutDate, 'HH:mm:ss') : '--:--'}
                                     </TableCell>
                                     <TableCell>
-                                        <Badge variant="secondary" className={cn(config.className, 'capitalize')}>
-                                            <config.icon className="w-3 h-3 mr-1.5" />
-                                            {config.label}
-                                        </Badge>
+                                        {config ? (
+                                            <Badge variant="secondary" className={cn(config.className, 'capitalize')}>
+                                                <config.icon className="w-3 h-3 mr-1.5" />
+                                                {config.label}
+                                            </Badge>
+                                        ) : (
+                                            <Badge>
+                                                {status}
+                                            </Badge>
+                                        )}
                                     </TableCell>
                                 </TableRow>
                             )
