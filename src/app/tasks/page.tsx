@@ -76,8 +76,8 @@ export default function TasksPage() {
   }, [firestore, authUser]);
   const { data: currentUser, isLoading: isProfileLoading } = useDoc<User>(userDocRef);
 
-  const rol = currentUser?.rol;
-  const isAdmin = rol === 'admin' || rol === 'superadmin';
+  const role = currentUser?.role;
+  const isAdmin = role === 'admin' || role === 'superadmin';
 
   const tasksQuery = useMemoFirebase(
     () => {
@@ -233,13 +233,13 @@ export default function TasksPage() {
                               <Avatar className="h-8 w-8">
                                 <AvatarImage src={user?.avatarUrl} />
                                 <AvatarFallback>
-                                  {user?.nombre
+                                  {user?.name
                                     .split(' ')
                                     .map((n) => n[0])
                                     .join('')}
                                 </AvatarFallback>
                               </Avatar>
-                              <span>{user?.nombre}</span>
+                              <span>{user?.name}</span>
                             </div>
                           </TableCell>
                           <TableCell>

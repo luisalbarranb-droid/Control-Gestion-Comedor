@@ -1,7 +1,7 @@
 
 /**
  * @fileoverview Firebase Security Rules for a Task Management Application
- * @version 2
+ * @version 3
  *
  * @description
  * This ruleset enforces a role-based access control (RBAC) model combined with

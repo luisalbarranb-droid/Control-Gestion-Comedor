@@ -80,10 +80,10 @@ export function RecentTasks() {
                         </TableCell>
                         <TableCell className="text-right">
                            <div className="flex items-center justify-end gap-2">
-                             <span className="hidden lg:inline">{user?.nombre}</span>
+                             <span className="hidden lg:inline">{user?.name}</span>
                              <Avatar className="h-8 w-8">
                                 <AvatarImage src={user?.avatarUrl} />
-                                <AvatarFallback>{user?.nombre.split(' ').map(n => n[0]).join('')}</AvatarFallback>
+                                <AvatarFallback>{user?.name.split(' ').map(n => n[0]).join('')}</AvatarFallback>
                              </Avatar>
                            </div>
                         </TableCell>

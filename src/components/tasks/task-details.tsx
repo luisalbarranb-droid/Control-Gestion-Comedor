@@ -140,9 +140,9 @@ export function TaskDetails({
                         <div className="flex items-center gap-2 mt-1">
                             <Avatar className="h-6 w-6">
                                 <AvatarImage src={assignedUser?.avatarUrl} />
-                                <AvatarFallback>{assignedUser?.nombre.charAt(0)}</AvatarFallback>
+                                <AvatarFallback>{assignedUser?.name.charAt(0)}</AvatarFallback>
                             </Avatar>
-                            <p>{assignedUser?.nombre}</p>
+                            <p>{assignedUser?.name}</p>
                         </div>
                     </div>
                 </div>
@@ -185,7 +185,7 @@ export function TaskDetails({
                     <User className="w-4 h-4 mt-0.5 text-muted-foreground" />
                     <div>
                         <p className="font-semibold">Creado por</p>
-                         <p>{creatorUser?.nombre}</p>
+                         <p>{creatorUser?.name}</p>
                     </div>
                 </div>
             </div>

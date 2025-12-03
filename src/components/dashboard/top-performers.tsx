@@ -16,11 +16,11 @@ import { cn } from '@/lib/utils';
 export function TopPerformers() {
   const topUsers = stats.chartData
     .map(stat => {
-      const user = users.find(u => u.nombre.startsWith(stat.name.split(' ')[0]));
+      const user = users.find(u => u.name.startsWith(stat.name.split(' ')[0]));
       return {
         ...stat,
         avatarUrl: user?.avatarUrl,
-        nombreCompleto: user?.nombre || stat.name,
+        nombreCompleto: user?.name || stat.name,
       };
     })
     .sort((a, b) => b.eficiencia - a.eficiencia)
