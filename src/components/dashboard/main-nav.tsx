@@ -66,14 +66,14 @@ export function MainNav() {
     );
   }
   
-  if (!authUser) {
-    return null; 
-  }
-  
   const navItems = allNavItems.filter(item => {
-    if (!item.visibleForRoles) {
-      return true;
+    if (!authUser) {
+        return false; // Don't show any items if not authenticated
     }
+    if (!item.visibleForRoles) {
+      return true; // Item is visible to all authenticated users
+    }
+    // Item has role restrictions
     return currentUser?.role && item.visibleForRoles.includes(currentUser.role);
   });
 

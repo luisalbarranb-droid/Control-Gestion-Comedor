@@ -116,10 +116,14 @@ export const useUser = (): UserAuthState & { auth: Auth } => {
 
 type MemoFirebase<T> = T & { __memo?: boolean };
 
-export function useMemoFirebase<T>(factory: () => T, deps: DependencyList): T | (MemoFirebase<T>) {
+export function useMemoFirebase<T>(factory: () => T, deps: DependencyList): T {
   const memoized = useMemo(factory, deps);
-  if (typeof memoized === 'object' && memoized !== null) {
-    (memoized as MemoFirebase<T>).__memo = true;
+  if (typeof memoized === 'object' && memoized !== null && !Object.isFrozen(memoized)) {
+    try {
+        (memoized as MemoFirebase<T>).__memo = true;
+    } catch (e) {
+        // This can happen if the object is not extensible
+    }
   }
   return memoized;
 }
