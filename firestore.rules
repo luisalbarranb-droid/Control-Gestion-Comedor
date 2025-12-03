@@ -1,7 +1,7 @@
 
 /**
  * @fileoverview Firebase Security Rules for a Task Management Application
- * @version 3
+ * @version 4
  *
  * @description
  * This ruleset enforces a role-based access control (RBAC) model combined with
@@ -151,7 +151,7 @@ service cloud.firestore {
     /**
      * @description Controls access to user profile documents.
      * @path /users/{userId}
-     * @allow (get) A user to read their own profile document.
+     * @allow (get) A user to read their own profile document, or an admin to read any.
      * @deny (list) A non-admin user trying to list all user profiles.
      * @principle Restricts access to a user's own data tree and grants admins override access.
      */

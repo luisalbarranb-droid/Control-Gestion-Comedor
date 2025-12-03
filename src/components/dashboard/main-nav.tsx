@@ -12,7 +12,8 @@ import {
   BookOpen,
   ClipboardCheck,
   QrCode,
-  FileSpreadsheet
+  FileSpreadsheet,
+  Loader2
 } from 'lucide-react';
 import {
   SidebarMenu,
@@ -24,6 +25,12 @@ import { useDoc, useFirestore, useMemoFirebase, useUser } from '@/firebase';
 import type { User } from '@/lib/types';
 import { doc } from 'firebase/firestore';
 
+interface NavItem {
+  href: string;
+  label: string;
+  icon: React.ReactNode;
+  adminOnly?: boolean;
+}
 
 export function MainNav() {
   const pathname = usePathname();
@@ -37,105 +44,54 @@ export function MainNav() {
 
   const { data: currentUser, isLoading: isProfileLoading } = useDoc<User>(userDocRef);
 
-  // NO LONGER CHECKING FOR ROLE, THE LINK WILL ALWAYS APPEAR
-  // const role = currentUser?.role;
-  // const isAdmin = role === 'admin' || role === 'superadmin';
+  const isLoading = isAuthLoading || isProfileLoading;
+  const isAdmin = currentUser?.role === 'admin' || currentUser?.role === 'superadmin';
 
-  if (isAuthLoading || isProfileLoading) {
+  const allNavItems: NavItem[] = [
+    { href: '/', label: 'Dashboard', icon: <Home /> },
+    { href: '/tasks', label: 'Tareas', icon: <ClipboardList /> },
+    { href: '/attendance', label: 'Asistencia', icon: <QrCode /> },
+    { href: '/menus', label: 'Menus', icon: <BookOpen /> },
+    { href: '/daily-closing', label: 'Cierres Diarios', icon: <ClipboardCheck /> },
+    { href: '/inventory', label: 'Inventario', icon: <Archive /> },
+    { href: '/users', label: 'Gestión de Usuarios', icon: <Users />, adminOnly: true },
+    { href: '/reports', label: 'Reportes', icon: <FileSpreadsheet /> },
+    { href: '/stats', label: 'Estadísticas', icon: <AreaChart /> },
+    { href: '/settings', label: 'Configuración', icon: <Settings /> },
+  ];
+
+  const navItems = allNavItems.filter(item => {
+    if (item.adminOnly && !isAdmin) return false;
+    return true;
+  });
+
+  if (isLoading) {
     return (
       <SidebarMenu>
-         {/* You can show skeletons or a loader here while loading */}
+        {Array.from({ length: 8 }).map((_, i) => (
+          <SidebarMenuItem key={i}>
+             <div className="flex items-center gap-2 p-2">
+              <div className="h-6 w-6 bg-muted rounded-md animate-pulse" />
+              <div className="h-4 w-24 bg-muted rounded-md animate-pulse" />
+            </div>
+          </SidebarMenuItem>
+        ))}
       </SidebarMenu>
-    )
+    );
   }
 
   return (
     <SidebarMenu>
-      <SidebarMenuItem>
-        <Link href="/">
-          <SidebarMenuButton isActive={pathname === '/'}>
-            <Home />
-            <span>Dashboard</span>
-          </SidebarMenuButton>
-        </Link>
-      </SidebarMenuItem>
-      <SidebarMenuItem>
-        <Link href="/tasks">
-          <SidebarMenuButton isActive={pathname.startsWith('/tasks')}>
-            <ClipboardList />
-            <span>Tareas</span>
-          </SidebarMenuButton>
-        </Link>
-      </SidebarMenuItem>
-       <SidebarMenuItem>
-          <Link href="/attendance">
-            <SidebarMenuButton isActive={pathname.startsWith('/attendance')}>
-              <QrCode />
-              <span>Asistencia</span>
+      {navItems.map((item) => (
+        <SidebarMenuItem key={item.href}>
+          <Link href={item.href}>
+            <SidebarMenuButton isActive={pathname === item.href || (item.href !== '/' && pathname.startsWith(item.href))}>
+              {item.icon}
+              <span>{item.label}</span>
             </SidebarMenuButton>
           </Link>
         </SidebarMenuItem>
-      <SidebarMenuItem>
-        <Link href="/menus">
-          <SidebarMenuButton isActive={pathname.startsWith('/menus')}>
-            <BookOpen />
-            <span>Menus</span>
-          </SidebarMenuButton>
-        </Link>
-      </SidebarMenuItem>
-      <SidebarMenuItem>
-        <Link href="/daily-closing">
-          <SidebarMenuButton isActive={pathname.startsWith('/daily-closing')}>
-            <ClipboardCheck />
-            <span>Cierres Diarios</span>
-          </SidebarMenuButton>
-        </Link>
-      </SidebarMenuItem>
-       <SidebarMenuItem>
-        <Link href="/inventory">
-          <SidebarMenuButton isActive={pathname.startsWith('/inventory')}>
-            <Archive />
-            <span>Inventario</span>
-          </SidebarMenuButton>
-        </Link>
-      </SidebarMenuItem>
-      
-      {/* THIS IS THE CHANGE: The isAdmin check has been removed. */}
-      <SidebarMenuItem>
-        <Link href="/users">
-          <SidebarMenuButton isActive={pathname.startsWith('/users')}>
-            <Users />
-            <span>Gestión de Usuarios</span>
-          </SidebarMenuButton>
-        </Link>
-      </SidebarMenuItem>
-      
-       <SidebarMenuItem>
-        <Link href="/reports">
-          <SidebarMenuButton isActive={pathname.startsWith('/reports')}>
-            <FileSpreadsheet />
-            <span>Reportes</span>
-          </SidebarMenuButton>
-        </Link>
-      </SidebarMenuItem>
-
-      <SidebarMenuItem>
-        <Link href="/stats">
-          <SidebarMenuButton isActive={pathname.startsWith('/stats')}>
-            <AreaChart />
-            <span>Estadísticas</span>
-          </SidebarMenuButton>
-        </Link>
-      </SidebarMenuItem>
-
-      <SidebarMenuItem>
-        <Link href="/settings">
-          <SidebarMenuButton isActive={pathname.startsWith('/settings')}>
-            <Settings />
-            <span>Configuración</span>
-          </SidebarMenuButton>
-        </Link>
-      </SidebarMenuItem>
+      ))}
     </SidebarMenu>
   );
 }
