@@ -47,8 +47,9 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { DateRange } from 'react-day-picker';
 import { Calendar } from '@/components/ui/calendar';
 import Link from 'next/link';
-import { useCollection, useFirestore, useMemoFirebase, updateDocumentNonBlocking } from '@/firebase';
+import { useCollection, useFirestore, useMemoFirebase, updateDocumentNonBlocking, useUser } from '@/firebase';
 import { collection, query, where, doc } from 'firebase/firestore';
+import { useCurrentUser } from '@/hooks/use-current-user';
 
 const statusConfig: Record<AttendanceStatus, { label: string, className: string, icon: React.ElementType }> = {
     presente: { label: 'Presente', className: 'bg-green-100 text-green-800', icon: UserCheck },
@@ -65,6 +66,7 @@ const statusConfig: Record<AttendanceStatus, { label: string, className: string,
 export default function AttendanceReportsPage() {
     const { toast } = useToast();
     const firestore = useFirestore();
+    const { user: authUser, isLoading: isAuthLoading } = useUser();
     const [activeTab, setActiveTab] = useState('general');
     const [date, setDate] = useState<DateRange | undefined>({
         from: startOfMonth(new Date()),
@@ -80,7 +82,7 @@ export default function AttendanceReportsPage() {
 
     // --- Fetch Attendance Records for date range ---
     const recordsQuery = useMemoFirebase(() => {
-        if (!firestore || !date?.from) return null;
+        if (!firestore || !date?.from || !authUser) return null;
         const from = new Date(date.from);
         from.setHours(0,0,0,0);
         const to = date.to ? new Date(date.to) : from;
@@ -91,7 +93,7 @@ export default function AttendanceReportsPage() {
             where('checkIn', '>=', from),
             where('checkIn', '<=', to)
         );
-    }, [firestore, date]);
+    }, [firestore, date, authUser]);
     const { data: filteredRecords, isLoading: isLoadingRecords } = useCollection<AttendanceRecord>(recordsQuery);
 
     const getUser = (userId: string) => users?.find((u) => u.id === userId);
@@ -306,7 +308,7 @@ export default function AttendanceReportsPage() {
         </Table>
     )
 
-    if (isLoadingUsers || isLoadingRecords) {
+    if (isLoadingUsers || isLoadingRecords || isAuthLoading) {
         return <div className="flex items-center justify-center h-screen">Cargando reportes...</div>;
     }
 
@@ -452,5 +454,3 @@ export default function AttendanceReportsPage() {
         </div>
     );
 }
-
-    

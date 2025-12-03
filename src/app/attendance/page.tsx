@@ -44,7 +44,7 @@ const statusConfig: Record<AttendanceStatus, { label: string, className: string,
 };
 
 export default function AttendancePage() {
-  const { user: currentUser, role } = useCurrentUser();
+  const { user: currentUser, role, isLoading: isCurrentUserLoading } = useCurrentUser();
   const isAdmin = role === 'admin' || role === 'superadmin';
   const firestore = useFirestore();
 
@@ -57,7 +57,7 @@ export default function AttendancePage() {
 
   // --- Fetch today's attendance records ---
   const attendanceQuery = useMemoFirebase(() => {
-    if (!firestore) return null;
+    if (!firestore || !currentUser) return null;
     const todayStart = startOfDay(new Date());
     const todayEnd = endOfDay(new Date());
     return query(
@@ -65,15 +65,15 @@ export default function AttendancePage() {
         where('checkIn', '>=', todayStart), 
         where('checkIn', '<=', todayEnd)
     );
-  }, [firestore]);
+  }, [firestore, currentUser]);
   const { data: todayRecords, isLoading: isLoadingAttendance } = useCollection<AttendanceRecord>(attendanceQuery);
 
   // --- Fetch this week's days off ---
   const weekStartDateString = format(startOfWeek(new Date(), { weekStartsOn: 1 }), 'yyyy-MM-dd');
   const daysOffQuery = useMemoFirebase(() => {
-    if (!firestore) return null;
+    if (!firestore || !currentUser) return null;
     return query(collection(firestore, 'daysOff'), where('weekStartDate', '==', weekStartDateString));
-  }, [firestore, weekStartDateString]);
+  }, [firestore, weekStartDateString, currentUser]);
   const { data: daysOff, isLoading: isLoadingDaysOff } = useCollection<DayOff>(daysOffQuery);
 
   const getUserInitials = (name: string) => name ? name.split(' ').map((n) => n[0]).join('') : '';
@@ -84,7 +84,7 @@ export default function AttendancePage() {
   // If not admin, the displayed user is only the current user
   const displayedUsers = isAdmin ? users : (currentUser ? [currentUser] : []);
 
-  const isLoading = isLoadingUsers || isLoadingAttendance || isLoadingDaysOff;
+  const isLoading = isCurrentUserLoading || isLoadingUsers || isLoadingAttendance || isLoadingDaysOff;
   
   if (isLoading) {
       return (
@@ -210,5 +210,3 @@ export default function AttendancePage() {
     </div>
   );
 }
-
-    
