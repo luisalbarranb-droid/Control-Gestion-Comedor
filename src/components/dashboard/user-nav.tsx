@@ -39,7 +39,8 @@ export function UserNav() {
       disabled: !authUser
   });
   
-  const isLoading = isAuthLoading || (authUser && isProfileLoading);
+  // Combine loading states: true if auth is loading OR if auth is done but profile is still loading
+  const isLoading = isAuthLoading || (!!authUser && isProfileLoading);
 
   const handleSignOut = async () => {
     if (auth) {
@@ -66,14 +67,14 @@ export function UserNav() {
 
   const userInitials = currentUser.name
     ? currentUser.name.split(' ').map((n) => n[0]).join('')
-    : '';
+    : 'U';
 
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button variant="ghost" className="relative h-8 w-8 rounded-full">
           <Avatar className="h-9 w-9">
-            <AvatarImage src={currentUser.avatarUrl} alt={`@${currentUser.name}`} />
+            <AvatarImage src={currentUser.avatarUrl} alt={currentUser.name} />
             <AvatarFallback>{userInitials}</AvatarFallback>
           </Avatar>
         </Button>

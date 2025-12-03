@@ -18,6 +18,7 @@ import {
   SidebarMenu,
   SidebarMenuItem,
   SidebarMenuButton,
+  SidebarSkeleton,
 } from '@/components/ui/sidebar';
 import Link from 'next/link';
 import { useDoc, useFirestore, useMemoFirebase, useUser } from '@/firebase';
@@ -61,28 +62,30 @@ export function MainNav() {
   ];
 
   const navItems = allNavItems.filter(item => {
+    // If item has no specific roles, it's visible to everyone
     if (!item.visibleForRoles) {
         return true; 
     }
+    // If item has roles, check if the current user's role is included
     if (currentUser?.role && item.visibleForRoles.includes(currentUser.role)) {
         return true;
     }
+    // Otherwise, hide it
     return false;
   });
 
   if (isLoading) {
     return (
       <SidebarMenu>
-        {Array.from({ length: 10 }).map((_, i) => (
-          <SidebarMenuItem key={i}>
-             <div className="flex items-center gap-2 p-2">
-              <div className="h-6 w-6 bg-muted rounded-md animate-pulse" />
-              <div className="h-4 w-24 bg-muted rounded-md animate-pulse" />
-            </div>
-          </SidebarMenuItem>
+        {allNavItems.map((item, i) => (
+          <SidebarSkeleton key={i} showIcon={true} />
         ))}
       </SidebarMenu>
     );
+  }
+  
+  if (!authUser) {
+    return null; // Don't show nav items if user is not logged in
   }
 
   return (

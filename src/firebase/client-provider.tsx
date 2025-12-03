@@ -1,25 +1,21 @@
-
 'use client';
 
-import React, { useMemo, type ReactNode } from 'react';
+import React, { type ReactNode } from 'react';
 import { FirebaseProvider } from '@/firebase/provider';
-import { initializeFirebase } from '@/firebase';
+import { firebaseApp, auth, firestore } from '@/firebase'; // Import the initialized instances
 
 interface FirebaseClientProviderProps {
   children: ReactNode;
 }
 
+/**
+ * Provides the initialized Firebase services to the FirebaseProvider.
+ * This component ensures that Firebase is initialized once and passed down.
+ */
 export function FirebaseClientProvider({ children }: FirebaseClientProviderProps) {
-  // useMemo ensures Firebase is initialized only once per component lifecycle.
-  const firebaseServices = useMemo(() => {
-    return initializeFirebase();
-  }, []);
-
-  const { firebaseApp, auth, firestore } = firebaseServices;
 
   if (!firebaseApp || !auth || !firestore) {
-    // This can happen if initialization fails.
-    // You might want to render a loading state or an error message here.
+    // This can happen if initialization somehow fails.
     return <div>Loading Firebase...</div>;
   }
 
@@ -33,5 +29,3 @@ export function FirebaseClientProvider({ children }: FirebaseClientProviderProps
     </FirebaseProvider>
   );
 }
-
-    

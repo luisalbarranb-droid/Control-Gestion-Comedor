@@ -16,9 +16,9 @@ import { Label } from '@/components/ui/label';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2 } from 'lucide-react';
-import { useAuth, useFirestore, setDocumentNonBlocking } from '@/firebase';
+import { useAuth, useFirestore } from '@/firebase';
 import { signInWithEmailAndPassword, createUserWithEmailAndPassword, User as FirebaseAuthUser } from 'firebase/auth';
-import { doc, serverTimestamp } from 'firebase/firestore';
+import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
 import type { User } from '@/lib/types';
 
 
@@ -34,29 +34,6 @@ export default function LoginPage() {
   const [password, setPassword] = useState('12345678');
   const [isLoading, setIsLoading] = useState(false);
 
-  const upsertSuperAdmin = (firebaseUser: FirebaseAuthUser) => {
-    if (!firestore) {
-        console.error("Firestore is not available to upsert user data.");
-        return;
-    };
-    const userRef = doc(firestore, 'users', firebaseUser.uid);
-    
-    const userData: Partial<User> = {
-      id: firebaseUser.uid,
-      email: firebaseUser.email!,
-      name: 'Super Admin',
-      role: 'superadmin',
-      area: 'administracion',
-      isActive: true,
-      createdBy: 'system',
-      creationDate: serverTimestamp(),
-      lastAccess: serverTimestamp(),
-    };
-
-    setDocumentNonBlocking(userRef, userData, { merge: true });
-    console.log('Super Admin user document created or updated:', firebaseUser.uid);
-  };
-
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
@@ -70,10 +47,30 @@ export default function LoginPage() {
         setIsLoading(false);
         return;
     }
+    
+    const upsertSuperAdmin = async (firebaseUser: FirebaseAuthUser) => {
+      const userRef = doc(firestore, 'users', firebaseUser.uid);
+      
+      const userData: Partial<User> = {
+        id: firebaseUser.uid,
+        email: firebaseUser.email!,
+        name: 'Super Admin',
+        role: 'superadmin',
+        area: 'administracion',
+        isActive: true,
+        createdBy: 'system',
+        creationDate: serverTimestamp(),
+        lastAccess: serverTimestamp(),
+      };
+  
+      // Use setDoc with merge:true to create or update.
+      await setDoc(userRef, userData, { merge: true });
+      console.log('Super Admin user document ensured:', firebaseUser.uid);
+    };
 
     try {
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
-      upsertSuperAdmin(userCredential.user);
+      await upsertSuperAdmin(userCredential.user);
       
       toast({
         title: 'Inicio de sesión exitoso',
@@ -82,29 +79,31 @@ export default function LoginPage() {
       router.push('/');
 
     } catch (error: any) {
-      if (error.code === 'auth/user-not-found') {
+      if (error.code === 'auth/user-not-found' || error.code === 'auth/invalid-credential') {
         try {
+            // If user does not exist, or creds are wrong for an existing user but we want to bootstrap a superadmin...
+            // We attempt to create it. If it already exists and pw is wrong, this will fail as 'auth/email-already-in-use'.
             const newUserCredential = await createUserWithEmailAndPassword(auth, email, password);
-            upsertSuperAdmin(newUserCredential.user);
+            await upsertSuperAdmin(newUserCredential.user);
             toast({
                 title: 'Cuenta de Super Admin Creada',
                 description: 'La cuenta de administrador inicial ha sido creada. ¡Bienvenido!',
             });
             router.push('/');
         } catch (creationError: any) {
-            console.error('Super Admin Creation Error:', creationError);
+            console.error('Super Admin Creation/Login Error:', creationError);
+            let description = 'Ocurrió un error inesperado.';
+            if (creationError.code === 'auth/email-already-in-use') {
+                description = 'Credenciales incorrectas. Por favor, verifica tu correo y contraseña.';
+            } else if (creationError.code === 'auth/weak-password') {
+                description = 'La contraseña es demasiado débil. Debe tener al menos 6 caracteres.'
+            }
             toast({
                 variant: 'destructive',
-                title: 'Error Crítico en la Creación',
-                description: 'No se pudo crear la cuenta de administrador. Revisa la consola.',
+                title: 'Error de Autenticación',
+                description: description,
             });
         }
-      } else if (error.code === 'auth/invalid-credential' || error.code === 'auth/wrong-password') {
-         toast({
-            variant: 'destructive',
-            title: 'Credenciales Incorrectas',
-            description: 'El correo o la contraseña no son válidos. Por favor, intenta de nuevo.',
-         });
       } else {
         console.error('Firebase Auth Error:', error);
         toast({
