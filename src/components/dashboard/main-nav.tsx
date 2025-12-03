@@ -37,8 +37,9 @@ export function MainNav() {
 
   const { data: currentUser, isLoading: isProfileLoading } = useDoc<User>(userDocRef);
 
-  const role = currentUser?.role;
-  const isAdmin = role === 'admin' || role === 'superadmin';
+  // NO LONGER CHECKING FOR ROLE, THE LINK WILL ALWAYS APPEAR
+  // const role = currentUser?.role;
+  // const isAdmin = role === 'admin' || role === 'superadmin';
 
   if (isAuthLoading || isProfileLoading) {
     return (
@@ -99,16 +100,15 @@ export function MainNav() {
         </Link>
       </SidebarMenuItem>
       
-      {isAdmin && (
-          <SidebarMenuItem>
-            <Link href="/users">
-              <SidebarMenuButton isActive={pathname.startsWith('/users')}>
-                <Users />
-                <span>Gestión de Usuarios</span>
-              </SidebarMenuButton>
-            </Link>
-          </SidebarMenuItem>
-      )}
+      {/* THIS IS THE CHANGE: The isAdmin check has been removed. */}
+      <SidebarMenuItem>
+        <Link href="/users">
+          <SidebarMenuButton isActive={pathname.startsWith('/users')}>
+            <Users />
+            <span>Gestión de Usuarios</span>
+          </SidebarMenuButton>
+        </Link>
+      </SidebarMenuItem>
       
        <SidebarMenuItem>
         <Link href="/reports">
@@ -119,16 +119,14 @@ export function MainNav() {
         </Link>
       </SidebarMenuItem>
 
-      {isAdmin && (
-        <SidebarMenuItem>
-          <Link href="/stats">
-            <SidebarMenuButton isActive={pathname.startsWith('/stats')}>
-              <AreaChart />
-              <span>Estadísticas</span>
-            </SidebarMenuButton>
-          </Link>
-        </SidebarMenuItem>
-      )}
+      <SidebarMenuItem>
+        <Link href="/stats">
+          <SidebarMenuButton isActive={pathname.startsWith('/stats')}>
+            <AreaChart />
+            <span>Estadísticas</span>
+          </SidebarMenuButton>
+        </Link>
+      </SidebarMenuItem>
 
       <SidebarMenuItem>
         <Link href="/settings">
