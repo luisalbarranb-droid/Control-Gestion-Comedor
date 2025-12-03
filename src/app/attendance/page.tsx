@@ -17,7 +17,7 @@ import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
 import { collection, query, where } from 'firebase/firestore';
 import { AttendanceTable } from '@/components/attendance/attendance-table';
 import { ScannerCard } from '@/components/attendance/scanner-card';
-import { format, startOfDay, endOfDay } from 'date-fns';
+import { format, startOfDay, endOfDay, startOfWeek } from 'date-fns';
 import { es } from 'date-fns/locale';
 
 export default function AttendancePage() {
