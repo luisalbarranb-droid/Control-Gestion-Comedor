@@ -18,9 +18,9 @@ import { Label } from '@/components/ui/label';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2 } from 'lucide-react';
-import { useAuth, useFirestore, setDocumentNonBlocking } from '@/firebase';
+import { useAuth, useFirestore, setDocumentNonBlocking, getDocument } from '@/firebase';
 import { signInWithEmailAndPassword, createUserWithEmailAndPassword } from 'firebase/auth';
-import { doc } from 'firebase/firestore';
+import { doc, getDoc } from 'firebase/firestore';
 
 export default function LoginPage() {
   const loginBg = PlaceHolderImages.find(
@@ -33,6 +33,44 @@ export default function LoginPage() {
   const [email, setEmail] = useState('arvecladu@gmail.com');
   const [password, setPassword] = useState('12345678');
   const [isLoading, setIsLoading] = useState(false);
+
+  // This function ensures the user document in Firestore is correct
+  const upsertUserData = async (userId: string, email: string) => {
+    if (!firestore) return;
+    
+    const userDocRef = doc(firestore, 'users', userId);
+    
+    try {
+        const docSnap = await getDoc(userDocRef);
+
+        // Standardized English data structure
+        const correctUserData = {
+            id: userId,
+            userId: userId,
+            email: email,
+            name: 'Super Admin',
+            role: 'superadmin',
+            area: 'administracion',
+            isActive: true,
+            creationDate: docSnap.exists() ? (docSnap.data().creationDate || new Date()) : new Date(),
+            createdBy: docSnap.exists() ? (docSnap.data().createdBy || 'system') : 'system',
+            lastAccess: new Date(),
+        };
+
+        // If the document doesn't exist, or if the 'role' field is missing (indicating an old/incorrect structure)
+        // forcefully overwrite it with the correct data.
+        if (!docSnap.exists() || !docSnap.data().role) {
+            setDocumentNonBlocking(userDocRef, correctUserData, { merge: false }); // Use merge:false to ensure a clean overwrite
+            console.log('User document corrected/created for user:', userId);
+        } else {
+             // If document exists and is correct, just update the last access time.
+            setDocumentNonBlocking(userDocRef, { lastAccess: new Date() }, { merge: true });
+        }
+
+    } catch (error) {
+        console.error("Error upserting user data:", error);
+    }
+  };
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -49,7 +87,9 @@ export default function LoginPage() {
     }
 
     try {
-      await signInWithEmailAndPassword(auth, email, password);
+      const userCredential = await signInWithEmailAndPassword(auth, email, password);
+      // After successful sign-in, ensure the user data is correct
+      await upsertUserData(userCredential.user.uid, email);
       toast({
         title: 'Inicio de sesión exitoso',
         description: '¡Bienvenido de nuevo!',
@@ -60,26 +100,15 @@ export default function LoginPage() {
         try {
             const userCredential = await createUserWithEmailAndPassword(auth, email, password);
             const newUser = userCredential.user;
-
-            const userDocRef = doc(firestore, 'users', newUser.uid);
             
-            setDocumentNonBlocking(userDocRef, {
-                id: newUser.uid,
-                userId: newUser.uid,
-                email: email,
-                name: 'Super Admin',
-                role: 'superadmin',
-                area: 'administracion',
-                isActive: true,
-                creationDate: new Date(),
-                createdBy: 'system',
-                lastAccess: new Date(),
-            }, { merge: false });
+            // On first creation, create the correct user document
+            await upsertUserData(newUser.uid, email);
 
             toast({
                 title: 'Cuenta de Super Admin Creada',
-                description: 'La cuenta de administrador inicial ha sido creada. Por favor, inicia sesión de nuevo.',
+                description: 'La cuenta de administrador inicial ha sido creada. ¡Bienvenido!',
             });
+            router.push('/');
             
         } catch (creationError: any) {
             console.error('User Creation Error:', creationError);
