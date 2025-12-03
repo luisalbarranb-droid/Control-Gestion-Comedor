@@ -19,7 +19,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Loader2 } from 'lucide-react';
 import { useAuth, useFirestore, setDocumentNonBlocking } from '@/firebase';
 import { signInWithEmailAndPassword, createUserWithEmailAndPassword, User as FirebaseAuthUser } from 'firebase/auth';
-import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
 import type { User } from '@/lib/types';
 
 
@@ -41,9 +41,7 @@ export default function LoginPage() {
     const userSnap = await getDoc(userRef);
 
     if (!userSnap.exists()) {
-      // User document doesn't exist, create it as superadmin
-      const newUser: Omit<User, 'lastAccess' | 'creationDate'> = {
-        id: firebaseUser.uid,
+      const newUser: Omit<User, 'lastAccess' | 'creationDate' | 'id'> = {
         userId: firebaseUser.uid,
         email: firebaseUser.email!,
         name: 'Super Admin',
@@ -54,14 +52,13 @@ export default function LoginPage() {
       };
       await setDoc(userRef, {
         ...newUser,
-        creationDate: new Date(),
-        lastAccess: new Date(),
+        id: firebaseUser.uid,
+        creationDate: serverTimestamp(),
+        lastAccess: serverTimestamp(),
       });
       console.log('Super Admin user document created:', firebaseUser.uid);
     } else {
-       // User exists, ensure lastAccess is updated.
-       // This could be expanded to migrate old data structures if needed.
-       await setDoc(userRef, { lastAccess: new Date() }, { merge: true });
+       await setDoc(userRef, { lastAccess: serverTimestamp() }, { merge: true });
     }
   };
 
@@ -80,7 +77,6 @@ export default function LoginPage() {
     }
 
     try {
-      // 1. Attempt to sign in
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
       await upsertUserData(userCredential.user);
       
@@ -92,7 +88,6 @@ export default function LoginPage() {
 
     } catch (error: any) {
       if (error.code === 'auth/user-not-found') {
-        // 2. If user does not exist, create the account as superadmin
         try {
             const newUserCredential = await createUserWithEmailAndPassword(auth, email, password);
             await upsertUserData(newUserCredential.user);
@@ -110,14 +105,12 @@ export default function LoginPage() {
             });
         }
       } else if (error.code === 'auth/invalid-credential' || error.code === 'auth/wrong-password') {
-         // 3. Handle incorrect password
          toast({
             variant: 'destructive',
             title: 'Credenciales Incorrectas',
             description: 'El correo o la contraseña no son válidos. Por favor, intenta de nuevo.',
          });
       } else {
-        // 4. Handle other potential Firebase errors
         console.error('Firebase Auth Error:', error);
         toast({
             variant: 'destructive',
@@ -137,7 +130,7 @@ export default function LoginPage() {
           <div className="grid gap-2 text-center">
             <h1 className="text-3xl font-bold font-headline">Comedor Control</h1>
             <p className="text-balance text-muted-foreground">
-              Ingrese su correo electrónico a continuación para iniciar sesión en su cuenta
+              Ingrese su correo electrónico para iniciar sesión
             </p>
           </div>
           <form onSubmit={handleLogin}>
@@ -188,3 +181,4 @@ export default function LoginPage() {
     </div>
   );
 }
+
