@@ -105,9 +105,9 @@ export default function LoginPage() {
                 description = 'La contraseña es demasiado débil. Debe tener al menos 6 caracteres.'
             } else if (creationError.code === 'auth/email-already-in-use') {
                  description = 'El correo electrónico ya está en uso. Intentando iniciar sesión de nuevo...';
+                 // This case should ideally not happen if signIn is tried first, but as a fallback:
                  try {
                     await signInWithEmailAndPassword(auth, email, password);
-                    await upsertUserDocument((await auth.currentUser) as FirebaseAuthUser);
                     router.push('/');
                  } catch (e) {
                     // ignore
