@@ -40,8 +40,8 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
   auth,
 }) => {
   const [userAuthState, setUserAuthState] = useState<UserAuthState>({
-    user: null, // Start with no user
-    isUserLoading: true, // Start loading
+    user: auth.currentUser, // Initialize with current user, might be null
+    isUserLoading: true,      // Start loading until first check is complete
     userError: null,
   });
 
@@ -49,8 +49,8 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
     // onAuthStateChanged returns an unsubscribe function
     const unsubscribe = onAuthStateChanged(
       auth,
-      (firebaseUser) => {
-        setUserAuthState({ user: firebaseUser, isUserLoading: false, userError: null });
+      (user) => {
+        setUserAuthState({ user, isUserLoading: false, userError: null });
       },
       (error) => {
         console.error("FirebaseProvider: Auth state error:", error);

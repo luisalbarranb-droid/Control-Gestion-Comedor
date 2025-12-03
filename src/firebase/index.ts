@@ -5,22 +5,10 @@ import { initializeApp, getApps, getApp, FirebaseApp } from 'firebase/app';
 import { getAuth, Auth } from 'firebase/auth';
 import { getFirestore, Firestore } from 'firebase/firestore';
 
-// --- Re-organized for clarity ---
-
 let firebaseApp: FirebaseApp;
 if (!getApps().length) {
-    try {
-        // First, try initializing with environment variables (App Hosting)
-        firebaseApp = initializeApp();
-    } catch (e) {
-        // Fallback to local config object for development
-        if (process.env.NODE_ENV === "production") {
-            console.warn('Automatic Firebase initialization failed, falling back to config object.', e);
-        }
-        firebaseApp = initializeApp(firebaseConfig);
-    }
+    firebaseApp = initializeApp(firebaseConfig);
 } else {
-    // If already initialized, get the existing app
     firebaseApp = getApp();
 }
 

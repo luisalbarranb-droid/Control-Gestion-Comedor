@@ -22,6 +22,7 @@ import { useRouter } from 'next/navigation';
 import { doc } from 'firebase/firestore';
 import type { User } from '@/lib/types';
 import { Skeleton } from '../ui/skeleton';
+import { Loader2 } from 'lucide-react';
 
 export function UserNav() {
   const { user: authUser, isUserLoading: isAuthLoading, auth } = useUser();
@@ -33,7 +34,9 @@ export function UserNav() {
     return doc(firestore, 'users', authUser.uid);
   }, [firestore, authUser]);
 
-  const { data: currentUser, isLoading: isProfileLoading } = useDoc<User>(userDocRef);
+  const { data: currentUser, isLoading: isProfileLoading } = useDoc<User>(userDocRef, {
+    disabled: !authUser
+  });
   
   const isLoading = isAuthLoading || (authUser && isProfileLoading);
 
@@ -47,8 +50,7 @@ export function UserNav() {
   if (isLoading) {
     return (
        <div className="flex items-center gap-2">
-          <Skeleton className="h-9 w-9 rounded-full" />
-          <Skeleton className="h-4 w-20" />
+          <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
        </div>
     )
   }

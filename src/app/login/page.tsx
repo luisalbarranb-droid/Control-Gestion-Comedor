@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
@@ -16,9 +16,9 @@ import { Label } from '@/components/ui/label';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2 } from 'lucide-react';
-import { useAuth, useFirestore, setDocumentNonBlocking, addDocumentNonBlocking } from '@/firebase';
-import { signInWithEmailAndPassword, createUserWithEmailAndPassword, User as FirebaseAuthUser } from 'firebase/auth';
-import { doc, getDoc, serverTimestamp, setDoc } from 'firebase/firestore';
+import { useAuth, useUser, useFirestore, setDocumentNonBlocking } from '@/firebase';
+import { signInWithEmailAndPassword, createUserWithEmailAndPassword, User as FirebaseAuthUser, updateProfile } from 'firebase/auth';
+import { doc, getDoc, serverTimestamp, setDoc, updateDoc } from 'firebase/firestore';
 import type { User } from '@/lib/types';
 
 
@@ -28,12 +28,19 @@ export default function LoginPage() {
   );
   const router = useRouter();
   const { toast } = useToast();
+  const { user, isUserLoading } = useUser();
   const auth = useAuth();
   const firestore = useFirestore();
   const [email, setEmail] = useState('arvecladu@gmail.com');
   const [password, setPassword] = useState('12345678');
   const [isLoading, setIsLoading] = useState(false);
 
+  useEffect(() => {
+    if (!isUserLoading && user) {
+        router.push('/');
+    }
+  }, [user, isUserLoading, router]);
+  
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
@@ -53,7 +60,8 @@ export default function LoginPage() {
       const userSnap = await getDoc(userRef);
 
       if (!userSnap.exists()) {
-        const newUser: Omit<User, 'id'> = {
+        const newUser: User = {
+          id: firebaseUser.uid,
           email: firebaseUser.email!,
           name: 'Super Admin',
           role: 'superadmin',
@@ -64,6 +72,8 @@ export default function LoginPage() {
           lastAccess: serverTimestamp(),
         };
         await setDoc(userRef, newUser);
+        await updateProfile(firebaseUser, { displayName: newUser.name });
+
       } else {
         await updateDoc(userRef, { lastAccess: serverTimestamp() });
       }
@@ -93,7 +103,16 @@ export default function LoginPage() {
             let description = 'Credenciales incorrectas. Por favor, verifica tu correo y contraseña.';
             if (creationError.code === 'auth/weak-password') {
                 description = 'La contraseña es demasiado débil. Debe tener al menos 6 caracteres.'
-            } else if (creationError.code !== 'auth/email-already-in-use') {
+            } else if (creationError.code === 'auth/email-already-in-use') {
+                 description = 'El correo electrónico ya está en uso. Intentando iniciar sesión de nuevo...';
+                 // This case should ideally not happen if signIn is tried first, but as a fallback:
+                 try {
+                    await signInWithEmailAndPassword(auth, email, password);
+                    router.push('/');
+                 } catch (e) {
+                    // ignore
+                 }
+            } else {
                 description = 'Ocurrió un error inesperado al intentar crear la cuenta.'
             }
              toast({
@@ -114,6 +133,14 @@ export default function LoginPage() {
       setIsLoading(false);
     }
   };
+
+  if (isUserLoading || (!isUserLoading && user)) {
+     return (
+      <div className="min-h-screen w-full flex items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin" />
+      </div>
+    );
+  }
 
   return (
     <div className="w-full h-screen lg:grid lg:grid-cols-2">

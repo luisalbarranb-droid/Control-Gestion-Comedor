@@ -23,6 +23,7 @@ import Link from 'next/link';
 import { useUser, useDoc, useFirestore, useMemoFirebase } from '@/firebase';
 import type { User } from '@/lib/types';
 import { doc } from 'firebase/firestore';
+import { Loader2 } from 'lucide-react';
 
 interface NavItem {
   href: string;
@@ -36,15 +37,13 @@ export function MainNav() {
   const { user: authUser, isUserLoading: isAuthLoading } = useUser();
   const firestore = useFirestore();
 
-  // Memoize the document reference
   const userDocRef = useMemoFirebase(() => {
     if (!firestore || !authUser) return null;
     return doc(firestore, 'users', authUser.uid);
   }, [firestore, authUser]);
 
-  // Fetch the user profile from Firestore
   const { data: currentUser, isLoading: isProfileLoading } = useDoc<User>(userDocRef, {
-    disabled: !authUser || isAuthLoading
+    disabled: !authUser
   });
   
   const allNavItems: NavItem[] = [
@@ -60,28 +59,22 @@ export function MainNav() {
     { href: '/settings', label: 'Configuración', icon: <Settings /> },
   ];
 
-  // While auth state is resolving, or if auth is resolved but profile is still loading, show skeleton
   if (isAuthLoading || (authUser && isProfileLoading)) {
     return (
-      <SidebarMenu>
-        {Array(10).fill(0).map((_, i) => (
-          <SidebarSkeleton key={i} showIcon={true} />
-        ))}
-      </SidebarMenu>
+      <div className="flex justify-center items-center h-full">
+        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+      </div>
     );
   }
-
-  // If auth is done and there's no user, render nothing
+  
   if (!authUser) {
     return null; 
   }
   
-  // Filter nav items based on the user's role
   const navItems = allNavItems.filter(item => {
     if (!item.visibleForRoles) {
-      return true; // Visible to all authenticated users
+      return true;
     }
-    // Check if the current user's role is in the visibleForRoles array
     return currentUser?.role && item.visibleForRoles.includes(currentUser.role);
   });
 
