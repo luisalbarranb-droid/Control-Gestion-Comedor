@@ -39,6 +39,14 @@ export function MainNav() {
   const role = currentUser?.rol;
   const isAdmin = role === 'admin' || role === 'superadmin';
 
+  if (isAuthLoading || isProfileLoading) {
+    return (
+      <SidebarMenu>
+         {/* Puedes mostrar skeletons o un loader aquí mientras carga */}
+      </SidebarMenu>
+    )
+  }
+
   return (
     <SidebarMenu>
       <SidebarMenuItem>

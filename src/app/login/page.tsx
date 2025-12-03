@@ -62,7 +62,6 @@ export default function LoginPage() {
 
             const userDocRef = doc(firestore, 'users', newUser.uid);
             
-            // Use the non-blocking fire-and-forget method
             setDocumentNonBlocking(userDocRef, {
                 id: newUser.uid,
                 userId: newUser.uid,
@@ -72,7 +71,7 @@ export default function LoginPage() {
                 area: 'administracion',
                 activo: true,
                 fechaCreacion: serverTimestamp(),
-                creadoPor: 'system', // Indicates system-generated initial user
+                creadoPor: 'system',
                 ultimoAcceso: serverTimestamp(),
             }, { merge: false });
 
@@ -80,7 +79,6 @@ export default function LoginPage() {
                 title: 'Cuenta de Super Admin Creada',
                 description: 'La cuenta de administrador inicial ha sido creada. Por favor, inicia sesión de nuevo.',
             });
-            // It's better to prompt for a second login to ensure everything is settled.
             
         } catch (creationError: any) {
             console.error('User Creation Error:', creationError);
@@ -100,8 +98,8 @@ export default function LoginPage() {
          console.error('Firebase Auth Error:', error);
          toast({
             variant: 'destructive',
-            title: 'Error de autenticación',
-            description: 'Credenciales incorrectas o ha ocurrido un error inesperado. Por favor, intenta de nuevo.',
+            title: 'Credenciales Incorrectas',
+            description: 'El correo o la contraseña no son válidos. Por favor, intenta de nuevo.',
          });
       }
     } finally {
