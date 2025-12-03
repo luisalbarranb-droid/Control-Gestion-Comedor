@@ -38,10 +38,12 @@ export function UserNav() {
   const isLoading = isAuthLoading || isProfileLoading;
   const role = currentUser?.rol;
 
-  const handleSignOut = () => {
-    signOut(auth).then(() => {
-      router.push('/login');
-    });
+  const handleSignOut = async () => {
+    if (auth) {
+      await signOut(auth);
+      // Use window.location.href for a full page reload to ensure all state is cleared.
+      window.location.href = '/login';
+    }
   };
   
   if (isLoading) {
