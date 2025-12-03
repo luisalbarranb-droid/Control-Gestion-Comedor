@@ -30,17 +30,22 @@ const statusConfig: Record<string, { label: string; className: string; icon: Rea
 };
 
 interface AttendanceTableProps {
-    users: User[];
+    allUsers: User[];
+    currentUser: User | null;
+    isAdmin: boolean;
     records: AttendanceRecord[];
     daysOff: DayOff[];
     isLoading: boolean;
+agregue los cambios en el modelo de inventario, para agregar el costo unitario, asi como también en los detalles del pedido, para que se guarden con el costo real del momento en el que se hizo el pedido
     date: Date;
 }
 
-export function AttendanceTable({ users, records, daysOff, isLoading, date }: AttendanceTableProps) {
+export function AttendanceTable({ allUsers, currentUser, isAdmin, records, daysOff, isLoading, date }: AttendanceTableProps) {
     
     const getUserInitials = (name: string | undefined) => name ? name.split(' ').map((n) => n[0]).join('') : '';
     const dayOfWeek = (getDay(date) + 6) % 7; // Monday is 0, Sunday is 6
+
+    const usersToDisplay = isAdmin ? allUsers : (currentUser ? [currentUser] : []);
 
     if (isLoading) {
         return (
@@ -79,7 +84,7 @@ export function AttendanceTable({ users, records, daysOff, isLoading, date }: At
                 </TableRow>
                 </TableHeader>
                 <TableBody>
-                {users?.map(user => {
+                {usersToDisplay.map(user => {
                     if (!user) return null;
                     const record = records?.find(r => r.userId === user.id);
                     const userDayOff = daysOff?.find(d => d.userId === user.id);
@@ -132,7 +137,7 @@ export function AttendanceTable({ users, records, daysOff, isLoading, date }: At
                         </TableRow>
                     )
                 })}
-                {users.length === 0 && (
+                {usersToDisplay.length === 0 && (
                      <TableRow>
                         <TableCell colSpan={4} className="text-center h-24">No hay usuarios para mostrar.</TableCell>
                     </TableRow>
