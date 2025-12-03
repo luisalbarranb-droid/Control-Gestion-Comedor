@@ -36,7 +36,7 @@ export function MainNav() {
 
   const { data: currentUser, isLoading: isProfileLoading } = useDoc<User>(userDocRef);
 
-  const role = currentUser?.rol;
+  const role = currentUser?.role;
   const isAdmin = role === 'admin' || role === 'superadmin';
 
   if (isAuthLoading || isProfileLoading) {

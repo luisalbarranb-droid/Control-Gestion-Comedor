@@ -36,18 +36,18 @@ import type { User, Role, AreaId, WorkerType, ContractType } from '@/lib/types';
 import { Textarea } from '../ui/textarea';
 
 const formSchema = z.object({
-  nombre: z.string().min(2, "El nombre es obligatorio."),
+  name: z.string().min(2, "El nombre es obligatorio."),
   email: z.string().email("Debe ser un email válido."),
   password: z.string().optional(),
   cedula: z.string().optional(),
-  telefono: z.string().optional(),
+  phone: z.string().optional(),
   direccion: z.string().optional(),
-  rol: z.string({ required_error: 'El rol es obligatorio.'}),
+  role: z.string({ required_error: 'El rol es obligatorio.'}),
   area: z.string({ required_error: 'El área es obligatoria.' }),
   tipoTrabajador: z.string().optional(),
   tipoContrato: z.string().optional(),
-  activo: z.boolean(),
-  fechaCreacion: z.date({ required_error: 'La fecha de ingreso es obligatoria.' }),
+  isActive: z.boolean(),
+  creationDate: z.date({ required_error: 'La fecha de ingreso es obligatoria.' }),
   fechaCulminacionContrato: z.date().optional(),
 });
 
@@ -69,14 +69,14 @@ export function UserForm({ isOpen, onOpenChange, onSave, user }: UserFormProps) 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      nombre: '',
+      name: '',
       email: '',
       password: '',
       cedula: '',
-      telefono: '',
+      phone: '',
       direccion: '',
-      activo: true,
-      fechaCreacion: new Date(),
+      isActive: true,
+      creationDate: new Date(),
     },
   });
 
@@ -86,23 +86,23 @@ export function UserForm({ isOpen, onOpenChange, onSave, user }: UserFormProps) 
         form.reset({
             ...user,
             password: '', // Password should not be shown when editing
-            fechaCreacion: user.fechaCreacion?.toDate ? user.fechaCreacion.toDate() : new Date(user.fechaCreacion as any),
+            creationDate: user.creationDate?.toDate ? user.creationDate.toDate() : new Date(user.creationDate as any),
             fechaCulminacionContrato: user.fechaCulminacionContrato?.toDate ? user.fechaCulminacionContrato.toDate() : user.fechaCulminacionContrato ? new Date(user.fechaCulminacionContrato as any) : undefined,
         });
       } else {
         form.reset({
-          nombre: '',
+          name: '',
           email: '',
           password: '',
           cedula: '',
-          telefono: '',
+          phone: '',
           direccion: '',
-          rol: undefined,
+          role: undefined,
           area: undefined,
           tipoTrabajador: undefined,
           tipoContrato: undefined,
-          activo: true,
-          fechaCreacion: new Date(),
+          isActive: true,
+          creationDate: new Date(),
           fechaCulminacionContrato: undefined
         });
       }
@@ -113,7 +113,7 @@ export function UserForm({ isOpen, onOpenChange, onSave, user }: UserFormProps) 
     const { password, ...userData } = values;
     const dataToSave = {
         ...userData,
-        rol: values.rol as Role,
+        role: values.role as Role,
         area: values.area as AreaId,
         tipoTrabajador: values.tipoTrabajador as WorkerType | undefined,
         tipoContrato: values.tipoContrato as ContractType | undefined,
@@ -136,7 +136,7 @@ export function UserForm({ isOpen, onOpenChange, onSave, user }: UserFormProps) 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <FormField
                 control={form.control}
-                name="nombre"
+                name="name"
                 render={({ field }) => (
                     <FormItem>
                     <FormLabel>Nombre Completo</FormLabel>
@@ -190,7 +190,7 @@ export function UserForm({ isOpen, onOpenChange, onSave, user }: UserFormProps) 
                 />
                 <FormField
                 control={form.control}
-                name="telefono"
+                name="phone"
                 render={({ field }) => (
                     <FormItem>
                     <FormLabel>Teléfono</FormLabel>
@@ -220,7 +220,7 @@ export function UserForm({ isOpen, onOpenChange, onSave, user }: UserFormProps) 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                  <FormField
                     control={form.control}
-                    name="rol"
+                    name="role"
                     render={({ field }) => (
                     <FormItem>
                         <FormLabel>Rol</FormLabel>
@@ -292,7 +292,7 @@ export function UserForm({ isOpen, onOpenChange, onSave, user }: UserFormProps) 
                 />
                  <FormField
                     control={form.control}
-                    name="fechaCreacion"
+                    name="creationDate"
                     render={({ field }) => (
                     <FormItem className="flex flex-col">
                         <FormLabel>Fecha de Ingreso</FormLabel>
@@ -316,7 +316,7 @@ export function UserForm({ isOpen, onOpenChange, onSave, user }: UserFormProps) 
             </div>
              <FormField
                 control={form.control}
-                name="activo"
+                name="isActive"
                 render={({ field }) => (
                     <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm">
                     <div className="space-y-0.5">

@@ -13,17 +13,17 @@ export interface User {
   id: string; // Document ID from Firestore
   userId: string;
   email: string;
-  nombre: string;
+  name: string;
   cedula?: string;
-  telefono?: string;
+  phone?: string;
   direccion?: string;
-  rol: Role;
+  role: Role;
   area: AreaId;
-  activo: boolean;
-  fechaCreacion: Date | Timestamp; // Fecha de Ingreso
+  isActive: boolean;
+  creationDate: Date | Timestamp; // Fecha de Ingreso
   fechaCulminacionContrato?: Date | Timestamp;
-  creadoPor: string; // userId or 'system'
-  ultimoAcceso: Date | Timestamp;
+  createdBy: string; // userId or 'system'
+  lastAccess: Date | Timestamp;
   avatarUrl?: string;
   tipoTrabajador?: WorkerType;
   tipoContrato?: ContractType;

@@ -66,13 +66,13 @@ export default function LoginPage() {
                 id: newUser.uid,
                 userId: newUser.uid,
                 email: email,
-                nombre: 'Super Admin',
-                rol: 'superadmin',
+                name: 'Super Admin',
+                role: 'superadmin',
                 area: 'administracion',
-                activo: true,
-                fechaCreacion: serverTimestamp(),
-                creadoPor: 'system',
-                ultimoAcceso: serverTimestamp(),
+                isActive: true,
+                creationDate: serverTimestamp(),
+                createdBy: 'system',
+                lastAccess: serverTimestamp(),
             }, { merge: false });
 
             toast({
