@@ -35,6 +35,16 @@ export default function LoginPage() {
     e.preventDefault();
     setIsLoading(true);
 
+    if (!auth) {
+        toast({
+            variant: 'destructive',
+            title: 'Error de configuración',
+            description: 'El servicio de autenticación no está disponible.',
+        });
+        setIsLoading(false);
+        return;
+    }
+
     try {
       await signInWithEmailAndPassword(auth, email, password);
       toast({
