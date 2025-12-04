@@ -1,4 +1,3 @@
-
 'use client';
 
 // OVERRIDE COMPLETO - Deshabilitar Firebase Studio Auth
