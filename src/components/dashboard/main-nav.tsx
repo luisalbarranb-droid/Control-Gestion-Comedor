@@ -11,8 +11,7 @@ import {
   BookOpen,
   ClipboardCheck,
   QrCode,
-  FileSpreadsheet,
-  Settings
+  FileSpreadsheet
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -29,7 +28,6 @@ export function MainNav() {
     { href: '/users', label: 'Gestión de Usuarios', icon: <Users className="h-5 w-5" /> },
     { href: '/reports', label: 'Reportes', icon: <FileSpreadsheet className="h-5 w-5" /> },
     { href: '/stats', label: 'Estadísticas', icon: <AreaChart className="h-5 w-5" /> },
-    { href: '/settings', label: 'Configuración', icon: <Settings className="h-5 w-5" /> },
   ];
 
   return (
