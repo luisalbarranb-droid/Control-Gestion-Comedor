@@ -1,7 +1,9 @@
 
 'use client';
 
-import { useEffect } from 'react';
+// Importar el override para asegurar que se ejecute al inicio
+import '@/lib/firebase-override';
+
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
@@ -21,9 +23,6 @@ import {
   SidebarMenuItem,
   SidebarMenuButton,
 } from '@/components/ui/sidebar';
-
-// Importar el override para asegurar que se ejecute
-import '@/lib/firebase-override';
 
 export function MainNav() {
   const pathname = usePathname();
