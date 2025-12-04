@@ -1,6 +1,7 @@
 
 'use client';
 
+import { useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
@@ -21,9 +22,13 @@ import {
   SidebarMenuButton,
 } from '@/components/ui/sidebar';
 
+// Importar el override para asegurar que se ejecute
+import '@/lib/firebase-override';
+
 export function MainNav() {
   const pathname = usePathname();
 
+  // NAVEGACIÓN COMPLETA - TODO VISIBLE
   const navItems = [
     { href: '/', label: 'Dashboard', icon: <Home /> },
     { href: '/tasks', label: 'Tareas', icon: <ClipboardList /> },
@@ -31,7 +36,11 @@ export function MainNav() {
     { href: '/menus', label: 'Menus', icon: <BookOpen /> },
     { href: '/daily-closing', label: 'Cierres Diarios', icon: <ClipboardCheck /> },
     { href: '/inventory', label: 'Inventario', icon: <Archive /> },
-    { href: '/users', label: 'Gestión de Usuarios', icon: <Users /> },
+    { 
+      href: '/users', 
+      label: '🔥 GESTIÓN DE USUARIOS 🔥', 
+      icon: <Users />
+    },
     { href: '/reports', label: 'Reportes', icon: <FileSpreadsheet /> },
     { href: '/stats', label: 'Estadísticas', icon: <AreaChart /> },
     { href: '/settings', label: 'Configuración', icon: <Settings /> },
