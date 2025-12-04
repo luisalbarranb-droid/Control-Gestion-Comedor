@@ -38,11 +38,13 @@ import { areas } from '@/lib/placeholder-data';
 import type { Task, TaskPriority, AreaId, TaskPeriodicity, User } from '@/lib/types';
 
 type CreateTaskFormProps = {
+  isOpen: boolean;
+  onOpenChange: (isOpen: boolean) => void;
   onTaskCreate: (task: Omit<Task, 'id' | 'creadoPor' | 'fechaCreacion' | 'estado' | 'checklist' | 'comentarios' | 'tags' | 'recurrente' | 'evidencias'>) => void;
   users: User[];
 };
 
-export function CreateTaskForm({ onTaskCreate, users }: CreateTaskFormProps) {
+export function CreateTaskForm({ onTaskCreate, users, isOpen, onOpenChange }: CreateTaskFormProps) {
   const priorities: TaskPriority[] = ['baja', 'media', 'alta', 'urgente'];
   const periodicities: TaskPeriodicity[] = ['unica', 'diaria', 'semanal', 'quincenal', 'mensual'];
 
@@ -59,7 +61,6 @@ export function CreateTaskForm({ onTaskCreate, users }: CreateTaskFormProps) {
 
   type FormValues = z.infer<typeof formSchema>;
   
-  const [isOpen, setIsOpen] = useState(false);
   const { toast } = useToast();
 
   const form = useForm<FormValues>({
@@ -77,7 +78,7 @@ export function CreateTaskForm({ onTaskCreate, users }: CreateTaskFormProps) {
   });
 
   const handleOpenChange = (open: boolean) => {
-    setIsOpen(open);
+    onOpenChange(open);
     if (!open) {
       form.reset();
     }

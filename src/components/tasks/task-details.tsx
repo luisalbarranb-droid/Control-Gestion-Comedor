@@ -21,12 +21,15 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
-import { users, areas } from '@/lib/placeholder-data';
-import type { Task, TaskPriority, TaskStatus, TaskPeriodicity } from '@/lib/types';
+import { areas } from '@/lib/placeholder-data';
+import type { Task, TaskPriority, TaskStatus, TaskPeriodicity, User } from '@/lib/types';
 import { cn } from '@/lib/utils';
 import Image from 'next/image';
 import { Input } from '../ui/input';
 import { Label } from '@/components/ui/label';
+import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
+import { collection } from 'firebase/firestore';
+
 
 const priorityConfig: Record<TaskPriority, { label: string, className: string }> = {
   baja: { label: 'Baja', className: 'bg-green-100 text-green-800' },
@@ -55,12 +58,19 @@ const periodicityConfig: Record<TaskPeriodicity, { label: string }> = {
 export function TaskDetails({
   task,
   onClose,
+  onUpdate
 }: {
   task: Task | null;
   onClose: () => void;
+  onUpdate: (updatedTask: Partial<Task>) => void;
 }) {
   const [evidenceFile, setEvidenceFile] = useState<File | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
+  const firestore = useFirestore();
+
+  const usersCollectionRef = useMemoFirebase(() => (firestore ? collection(firestore, 'users') : null), [firestore]);
+  const { data: users, isLoading } = useCollection<User>(usersCollectionRef);
+
 
   if (!task) return null;
 
@@ -85,22 +95,23 @@ export function TaskDetails({
       // and update the task state. Here we just log it.
       console.log('Uploading evidence:', evidenceFile.name);
       
-      // Add evidence to task (this is a mock update)
-      task.evidencias.push({
+      const newEvidence = {
         url: URL.createObjectURL(evidenceFile),
         nombreArchivo: evidenceFile.name,
         fechaSubida: new Date(),
         usuario: 'user-comun-1', // Placeholder for current user
         descripcion: 'Evidencia de tarea completada'
-      });
+      };
+
+      onUpdate({ evidencias: [...task.evidencias, newEvidence] });
 
       setEvidenceFile(null);
       setPreview(null);
     }
   };
 
-  const assignedUser = users.find((u) => u.id === task.asignadoA);
-  const creatorUser = users.find((u) => u.id === task.creadoPor);
+  const assignedUser = users?.find((u) => u.id === task.asignadoA);
+  const creatorUser = users?.find((u) => u.id === task.creadoPor);
   const area = areas.find((a) => a.id === task.area);
   const fechaCreacion = task.fechaCreacion.toDate ? task.fechaCreacion.toDate() : new Date(task.fechaCreacion as any);
   const fechaVencimiento = task.fechaVencimiento.toDate ? task.fechaVencimiento.toDate() : new Date(task.fechaVencimiento as any);

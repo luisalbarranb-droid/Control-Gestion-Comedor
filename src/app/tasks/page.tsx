@@ -43,7 +43,7 @@ import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import { CreateTaskForm } from '@/components/tasks/create-task-form';
 import { TaskDetails } from '@/components/tasks/task-details';
-import { useCollection, useFirestore, useMemoFirebase, useUser, addDocumentNonBlocking } from '@/firebase';
+import { useCollection, useFirestore, useMemoFirebase, useUser, addDocumentNonBlocking, updateDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase';
 import { collection, doc, serverTimestamp, query, where } from 'firebase/firestore';
 
 
@@ -91,6 +91,7 @@ export default function TasksPage() {
   const { data: users, isLoading: isLoadingUsers } = useCollection<User>(usersCollectionRef);
 
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
+  const [isFormOpen, setFormOpen] = useState(false);
   
   const getArea = (areaId: string) => areas.find((a) => a.id === areaId);
   const getUser = (userId: string) => users?.find((u) => u.id === userId);
@@ -116,6 +117,22 @@ export default function TasksPage() {
     };
     
     addDocumentNonBlocking(docRef, fullyNewTask);
+    setFormOpen(false);
+  };
+  
+  const handleTaskUpdate = (updatedTask: Partial<Task>) => {
+    if (!firestore || !selectedTask) return;
+    const taskRef = doc(firestore, 'tasks', selectedTask.id);
+    updateDocumentNonBlocking(taskRef, updatedTask);
+  };
+  
+   const handleTaskDelete = (taskId: string) => {
+    if (!firestore) return;
+    const taskRef = doc(firestore, 'tasks', taskId);
+    deleteDocumentNonBlocking(taskRef);
+    if(selectedTask?.id === taskId) {
+        setSelectedTask(null);
+    }
   };
 
   const isLoading = isLoadingTasks || isLoadingUsers || isAuthLoading;
@@ -147,7 +164,7 @@ export default function TasksPage() {
               <h1 className="font-headline text-2xl font-bold md:text-3xl">
                 Gestión de Tareas
               </h1>
-              <CreateTaskForm onTaskCreate={handleTaskCreate} users={users || []}/>
+              <CreateTaskForm onTaskCreate={handleTaskCreate} users={users || []} isOpen={isFormOpen} onOpenChange={setFormOpen} />
             </div>
 
             <Card>
@@ -245,12 +262,13 @@ export default function TasksPage() {
                               </DropdownMenuTrigger>
                               <DropdownMenuContent align="end">
                                 <DropdownMenuLabel>Acciones</DropdownMenuLabel>
+                                <DropdownMenuItem onClick={() => setSelectedTask(task)}>Ver Detalles</DropdownMenuItem>
                                 <DropdownMenuItem>Editar</DropdownMenuItem>
                                 <DropdownMenuItem>
                                   Marcar como completada
                                 </DropdownMenuItem>
                                 <DropdownMenuSeparator />
-                                <DropdownMenuItem className="text-red-600">
+                                <DropdownMenuItem className="text-red-600" onClick={() => handleTaskDelete(task.id)}>
                                   Eliminar
                                 </DropdownMenuItem>
                               </DropdownMenuContent>
@@ -264,11 +282,9 @@ export default function TasksPage() {
               </CardContent>
             </Card>
           </div>
-          <TaskDetails task={selectedTask} onClose={() => setSelectedTask(null)} />
+          <TaskDetails task={selectedTask} onClose={() => setSelectedTask(null)} onUpdate={handleTaskUpdate} />
         </main>
       </SidebarInset>
     </div>
   );
 }
-
-    

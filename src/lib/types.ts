@@ -10,6 +10,7 @@ export type ContractType = 'determinado' | 'indeterminado' | 'prueba';
 
 export interface User {
   id: string;
+  userId: string;
   email: string;
   name: string;
   role: Role;
@@ -28,7 +29,6 @@ export interface User {
   department?: string;
   position?: string;
   permissions?: string[];
-  userId?: string;
 }
 
 export interface Area {
