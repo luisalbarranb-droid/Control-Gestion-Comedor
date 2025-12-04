@@ -12,7 +12,8 @@ import {
   SidebarProvider,
 } from '@/components/ui/sidebar';
 import { SquareCheck } from 'lucide-react';
-import { FirebaseProvider } from '@/firebase';
+import { FirebaseProvider } from '@/firebase/provider';
+
 
 export const metadata: Metadata = {
   title: 'Sistema Comedor - Gestión Inteligente',
@@ -24,15 +25,12 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  
   return (
     <html lang="es" suppressHydrationWarning>
-      <head>
+       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link
-          rel="preconnect"
-          href="https://fonts.gstatic.com"
-          crossOrigin="anonymous"
-        />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link
           href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
           rel="stylesheet"
@@ -42,22 +40,21 @@ export default function RootLayout({
         <FirebaseProvider>
           <SidebarProvider>
             <div className="min-h-screen w-full">
-              <Sidebar>
-                <SidebarHeader className="p-4 justify-center flex items-center gap-2">
-                  <SquareCheck className="size-8 text-primary" />
-                  <h1 className="font-headline text-2xl font-bold">Comedor</h1>
-                </SidebarHeader>
-                <SidebarContent>
-                  <MainNav />
-                </SidebarContent>
-              </Sidebar>
-              <SidebarInset>
-                <Header />
-                <main className="flex-1 p-4 sm:p-6 md:p-8">{children}</main>
-              </SidebarInset>
+                <Sidebar>
+                    <SidebarHeader className="p-4 justify-center flex items-center gap-2">
+                    <SquareCheck className="size-8 text-primary" />
+                    <h1 className="font-headline text-2xl font-bold">Comedor</h1>
+                    </SidebarHeader>
+                    <SidebarContent>
+                    <MainNav />
+                    </SidebarContent>
+                </Sidebar>
+                <SidebarInset>
+                    <Header />
+                    {children}
+                </SidebarInset>
             </div>
             <Toaster />
-            <FirebaseErrorListener />
           </SidebarProvider>
         </FirebaseProvider>
       </body>
