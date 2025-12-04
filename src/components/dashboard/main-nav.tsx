@@ -21,13 +21,6 @@ import {
 import Link from 'next/link';
 import { useUser } from '@/firebase';
 
-interface NavItem {
-  href: string;
-  label: string;
-  icon: React.ReactNode;
-  show?: boolean;
-}
-
 export function MainNav() {
   const pathname = usePathname();
   const { profile } = useUser();
@@ -36,7 +29,7 @@ export function MainNav() {
   const role = profile?.role || 'superadmin';
   const isAdminOrHigher = role === 'admin' || role === 'superadmin';
 
-  const navItems: NavItem[] = [
+  const navItems = [
     { href: '/', label: 'Dashboard', icon: <Home /> },
     { href: '/tasks', label: 'Tareas', icon: <ClipboardList /> },
     { href: '/attendance', label: 'Asistencia', icon: <QrCode /> },

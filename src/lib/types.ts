@@ -28,6 +28,7 @@ export interface User {
   department?: string;
   position?: string;
   permissions?: string[];
+  userId?: string;
 }
 
 export interface Area {
