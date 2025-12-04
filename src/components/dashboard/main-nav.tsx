@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
   Home,
@@ -18,9 +19,9 @@ import {
   SidebarMenuItem,
   SidebarMenuButton,
 } from '@/components/ui/sidebar';
-import Link from 'next/link';
 
-// ✅ VERSIÓN SIMPLE - TODOS LOS MÓDULOS VISIBLES
+
+// VERSIÓN SIMPLE - TODOS LOS MÓDULOS VISIBLES
 export function MainNav() {
   const pathname = usePathname();
 

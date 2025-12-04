@@ -1,4 +1,3 @@
-// src/app/users/page.tsx - Página principal de Gestión de Usuarios
 'use client';
 
 import { useState } from 'react';
