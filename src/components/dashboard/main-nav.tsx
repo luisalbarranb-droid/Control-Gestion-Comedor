@@ -20,7 +20,6 @@ import {
   SidebarMenuButton,
 } from '@/components/ui/sidebar';
 
-
 // VERSIÓN SIMPLE - TODOS LOS MÓDULOS VISIBLES
 export function MainNav() {
   const pathname = usePathname();
@@ -32,7 +31,7 @@ export function MainNav() {
     { href: '/menus', label: 'Menus', icon: <BookOpen /> },
     { href: '/daily-closing', label: 'Cierres Diarios', icon: <ClipboardCheck /> },
     { href: '/inventory', label: 'Inventario', icon: <Archive /> },
-    { href: '/users', label: 'Gestión de Usuarios', icon: <Users /> }, // ✅ AÑADIDO
+    { href: '/users', label: 'Gestión de Usuarios', icon: <Users /> },
     { href: '/reports', label: 'Reportes', icon: <FileSpreadsheet /> },
     { href: '/stats', label: 'Estadísticas', icon: <AreaChart /> },
     { href: '/settings', label: 'Configuración', icon: <Settings /> },
