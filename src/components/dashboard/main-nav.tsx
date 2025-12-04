@@ -1,4 +1,3 @@
-
 'use client';
 
 import { usePathname } from 'next/navigation';
@@ -27,11 +26,7 @@ export function MainNav() {
     { href: '/menus', label: 'Menus', icon: <BookOpen className="h-5 w-5" /> },
     { href: '/daily-closing', label: 'Cierres Diarios', icon: <ClipboardCheck className="h-5 w-5" /> },
     { href: '/inventory', label: 'Inventario', icon: <Archive className="h-5 w-5" /> },
-    { 
-      href: '/users', 
-      label: 'Gestión de Usuarios', 
-      icon: <Users className="h-5 w-5" /> 
-    },
+    { href: '/users', label: 'Gestión de Usuarios', icon: <Users className="h-5 w-5" /> },
     { href: '/reports', label: 'Reportes', icon: <FileSpreadsheet className="h-5 w-5" /> },
     { href: '/stats', label: 'Estadísticas', icon: <AreaChart className="h-5 w-5" /> },
     { href: '/settings', label: 'Configuración', icon: <Settings className="h-5 w-5" /> },
