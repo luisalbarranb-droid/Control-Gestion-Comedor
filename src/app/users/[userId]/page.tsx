@@ -141,87 +141,75 @@ export default function UserProfilePage() {
 
   return (
     <div className="min-h-screen w-full">
-      <Sidebar>
-        <SidebarHeader className="p-4 justify-center flex items-center gap-2">
-          <SquareCheck className="size-8 text-primary" />
-          <h1 className="font-headline text-2xl font-bold">Comedor</h1>
-        </SidebarHeader>
-        <SidebarContent>
-          <MainNav />
-        </SidebarContent>
-      </Sidebar>
-      <SidebarInset>
-        <Header />
-        <main className="flex-1 p-4 md:p-8">
-            <h1 className="font-headline text-2xl font-bold md:text-3xl mb-8">
-              Perfil de Usuario
-            </h1>
+      <main className="flex-1 p-4 md:p-8">
+          <h1 className="font-headline text-2xl font-bold md:text-3xl mb-8">
+            Perfil de Usuario
+          </h1>
 
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                <div className="lg:col-span-1">
-                    <Card>
-                        <CardContent className="pt-6 flex flex-col items-center text-center">
-                             <Avatar className="h-24 w-24 mb-4">
-                                <AvatarImage src={user.avatarUrl} alt={user.name} />
-                                <AvatarFallback className="text-3xl">
-                                {getUserInitials(user.name)}
-                                </AvatarFallback>
-                            </Avatar>
-                            <h2 className="text-xl font-bold">{user.name}</h2>
-                            <p className="text-muted-foreground">{user.email}</p>
-                             <Badge variant="secondary" className={cn(statusVariant[user.isActive], 'capitalize mt-4')}>
-                                {user.isActive ? 'Activo' : 'Inactivo'}
-                            </Badge>
-                        </CardContent>
-                    </Card>
-                    <Card className="mt-8">
-                        <CardHeader>
-                            <CardTitle className="flex items-center gap-2"><QrCode className="w-5 h-5"/> Código QR de Asistencia</CardTitle>
-                            <CardDescription>Usa este código para registrar tu entrada y salida en el lector.</CardDescription>
-                        </CardHeader>
-                        <CardContent className="flex items-center justify-center p-4 bg-white">
-                           <QRCode
-                                size={256}
-                                style={{ height: "auto", maxWidth: "100%", width: "100%" }}
-                                value={user.id}
-                                viewBox={`0 0 256 256`}
-                            />
-                        </CardContent>
-                    </Card>
-                </div>
-                <div className="lg:col-span-2">
-                    <Card>
-                        <CardHeader>
-                            <CardTitle>Detalles del Usuario</CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                            <dl className="grid grid-cols-1 md:grid-cols-2 gap-y-6 gap-x-4">
-                                {userDetails.map(detail => (
-                                    detail.value && (
-                                    <div key={detail.label} className="flex items-start gap-3">
-                                        <detail.icon className="w-5 h-5 text-muted-foreground mt-1" />
-                                        <div>
-                                            <dt className="font-medium text-sm text-muted-foreground">{detail.label}</dt>
-                                            {detail.isBadge ? (
-                                                <dd>
-                                                    <Badge variant="secondary" className={cn(detail.badgeClass, 'capitalize text-sm')}>
-                                                        {String(detail.value)}
-                                                    </Badge>
-                                                </dd>
-                                            ) : (
-                                                <dd className="text-sm font-semibold">{String(detail.value)}</dd>
-                                            )}
-                                        </div>
-                                    </div>
-                                    )
-                                ))}
-                            </dl>
-                        </CardContent>
-                    </Card>
-                </div>
-            </div>
-        </main>
-      </SidebarInset>
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+              <div className="lg:col-span-1">
+                  <Card>
+                      <CardContent className="pt-6 flex flex-col items-center text-center">
+                           <Avatar className="h-24 w-24 mb-4">
+                              <AvatarImage src={user.avatarUrl} alt={user.name} />
+                              <AvatarFallback className="text-3xl">
+                              {getUserInitials(user.name)}
+                              </AvatarFallback>
+                          </Avatar>
+                          <h2 className="text-xl font-bold">{user.name}</h2>
+                          <p className="text-muted-foreground">{user.email}</p>
+                           <Badge variant="secondary" className={cn(statusVariant[user.isActive], 'capitalize mt-4')}>
+                              {user.isActive ? 'Activo' : 'Inactivo'}
+                          </Badge>
+                      </CardContent>
+                  </Card>
+                  <Card className="mt-8">
+                      <CardHeader>
+                          <CardTitle className="flex items-center gap-2"><QrCode className="w-5 h-5"/> Código QR de Asistencia</CardTitle>
+                          <CardDescription>Usa este código para registrar tu entrada y salida en el lector.</CardDescription>
+                      </CardHeader>
+                      <CardContent className="flex items-center justify-center p-4 bg-white">
+                         <QRCode
+                              size={256}
+                              style={{ height: "auto", maxWidth: "100%", width: "100%" }}
+                              value={user.id}
+                              viewBox={'0 0 256 256'}
+                          />
+                      </CardContent>
+                  </Card>
+              </div>
+              <div className="lg:col-span-2">
+                  <Card>
+                      <CardHeader>
+                          <CardTitle>Detalles del Usuario</CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                          <dl className="grid grid-cols-1 md:grid-cols-2 gap-y-6 gap-x-4">
+                              {userDetails.map(detail => (
+                                  detail.value && (
+                                  <div key={detail.label} className="flex items-start gap-3">
+                                      <detail.icon className="w-5 h-5 text-muted-foreground mt-1" />
+                                      <div>
+                                          <dt className="font-medium text-sm text-muted-foreground">{detail.label}</dt>
+                                          {detail.isBadge ? (
+                                              <dd>
+                                                  <Badge variant="secondary" className={cn(detail.badgeClass, 'capitalize text-sm')}>
+                                                      {String(detail.value)}
+                                                  </Badge>
+                                              </dd>
+                                          ) : (
+                                              <dd className="text-sm font-semibold">{String(detail.value)}</dd>
+                                          )}
+                                      </div>
+                                  </div>
+                                  )
+                              ))}
+                          </dl>
+                      </CardContent>
+                  </Card>
+              </div>
+          </div>
+      </main>
     </div>
   );
 }
