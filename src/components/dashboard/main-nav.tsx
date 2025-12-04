@@ -1,3 +1,4 @@
+
 // src/components/dashboard/main-nav.tsx
 'use client';
 
@@ -82,7 +83,7 @@ export function MainNav() {
                  <Link href={item.href} className="w-full">
                   <SidebarMenuButton
                      isActive={isActive}
-                     className={`w-full justify-start`}
+                     className={'w-full justify-start'}
                   >
                     {item.icon}
                     <span>{item.label}</span>

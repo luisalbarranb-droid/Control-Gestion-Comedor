@@ -1,4 +1,4 @@
-// src/app/layout.tsx
+
 import type { Metadata } from 'next';
 import './globals.css';
 import { Sidebar, SidebarContent, SidebarHeader, SidebarInset, SidebarProvider } from '@/components/ui/sidebar';
