@@ -1,23 +1,23 @@
 'use client';
 
-import React, { createContext, useContext, ReactNode, useState } from 'react';
+import React, { createContext, useContext, ReactNode, DependencyList, useMemo } from 'react';
 import { FirebaseApp } from 'firebase/app';
 import { Firestore } from 'firebase/firestore';
 import { Auth } from 'firebase/auth';
 import { FirebaseErrorListener } from '@/components/FirebaseErrorListener';
 import type { User as FirestoreUser } from '@/lib/types';
 
-// Mock data para desarrollo
+// DATOS DE PRUEBA - SIMULAN UN SUPER ADMIN
 const MOCK_USER = {
-  uid: 'dev-superadmin-uid',
-  email: 'arvecladu@gmail.com',
-  displayName: 'Super Admin'
+  uid: 'dev-superadmin-123',
+  email: 'superadmin@restaurante.com',
+  displayName: 'Super Administrador'
 };
 
 const MOCK_PROFILE: FirestoreUser = {
-  id: 'dev-superadmin-uid',
-  email: 'arvecladu@gmail.com',
-  name: 'Super Admin',
+  id: 'dev-superadmin-123',
+  email: 'superadmin@restaurante.com',
+  name: 'Super Administrador',
   role: 'superadmin' as const,
   creationDate: new Date(),
   lastAccess: new Date(),
@@ -43,25 +43,25 @@ export const FirebaseProvider: React.FC<{
   firestore: Firestore;
   auth: Auth;
 }> = ({ children, firebaseApp, firestore, auth }) => {
-  const [isLoading] = useState(false); // No hay loading en desarrollo
-
+  
   const contextValue: FirebaseContextType = {
     firebaseApp,
     firestore,
     auth,
     user: MOCK_USER,
     profile: MOCK_PROFILE,
-    isUserLoading: isLoading
+    isUserLoading: false  // No hay loading en desarrollo
   };
 
   return (
     <FirebaseContext.Provider value={contextValue}>
-       <FirebaseErrorListener />
+      <FirebaseErrorListener />
       {children}
     </FirebaseContext.Provider>
   );
 };
 
+// HOOKS SIMPLIFICADOS
 export const useFirebase = () => {
   const context = useContext(FirebaseContext);
   if (!context) throw new Error('useFirebase must be used within FirebaseProvider');
@@ -75,31 +75,15 @@ export const useUser = () => {
     profile, 
     isUserLoading, 
     userError: null, 
-    auth,
-    // Para compatibilidad
-    data: profile
+    auth 
   };
 };
 
-export const useFirestore = (): Firestore => {
-    const context = useContext(FirebaseContext);
-    if (!context) throw new Error('useFirestore must be used within FirebaseProvider');
-    return context.firestore;
-};
+export const useFirestore = (): Firestore => useFirebase().firestore;
+export const useAuth = (): Auth => useFirebase().auth;
+export const useFirebaseApp = (): FirebaseApp => useFirebase().firebaseApp;
 
-export const useAuth = (): Auth => {
-    const context = useContext(FirebaseContext);
-    if (!context) throw new Error('useAuth must be used within FirebaseProvider');
-    return context.auth;
-};
-
-export const useFirebaseApp = (): FirebaseApp => {
-    const context = useContext(FirebaseContext);
-    if (!context) throw new Error('useFirebaseApp must be used within FirebaseProvider');
-    return context.firebaseApp;
-};
-
-// Mock para useDoc
+// SIMULACIÓN DE useDoc (para MainNav)
 export const useDoc = <T,>(docRef: any) => {
   return {
     data: MOCK_PROFILE as T,
@@ -108,10 +92,18 @@ export const useDoc = <T,>(docRef: any) => {
   };
 };
 
-// Mock para useMemoFirebase
-export const useMemoFirebase = <T,>(factory: () => T, deps: any[]): T => {
-  // En este mock, simplemente re-ejecutamos la factory,
-  // en una app real, usarías useMemo.
+type MemoFirebase<T> = T & { __memo?: boolean };
+
+// SIMULACIÓN DE useMemoFirebase
+export function useMemoFirebase<T>(factory: () => T, deps: DependencyList): T {
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  return React.useMemo(factory, deps);
-};
+  const memoized = useMemo(factory, deps);
+  if (typeof memoized === 'object' && memoized !== null && !Object.isFrozen(memoized)) {
+    try {
+        (memoized as MemoFirebase<T>).__memo = true;
+    } catch (e) {
+        // This can happen if the object is not extensible
+    }
+  }
+  return memoized;
+}
