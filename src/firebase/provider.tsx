@@ -44,14 +44,24 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
   auth,
 }) => {
   // Since login is removed, we can provide a default non-loading state.
-  // The user will be null.
+  // The user will be null, and we can mock a superadmin profile to grant access to all sections.
   const contextValue = useMemo((): FirebaseContextState => ({
     firebaseApp,
     firestore,
     auth,
-    user: null,
-    profile: null,
-    isUserLoading: false,
+    user: null, // No authenticated user
+    profile: { // Mock a superadmin profile to unlock all UI elements
+      id: 'mock-superadmin',
+      email: 'admin@local.host',
+      name: 'Super Admin',
+      role: 'superadmin',
+      area: 'administracion',
+      isActive: true,
+      creationDate: new Date(),
+      createdBy: 'system',
+      lastAccess: new Date(),
+    },
+    isUserLoading: false, // Loading is always false
     userError: null,
   }), [firebaseApp, firestore, auth]);
 
