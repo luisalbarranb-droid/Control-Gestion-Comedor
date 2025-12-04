@@ -1,6 +1,6 @@
 import { Timestamp } from 'firebase/firestore';
 
-export type Role = 'superadmin' | 'admin' | 'comun' | 'manager' | 'employee' | 'chef' | 'waiter';
+export type Role = 'superadmin' | 'admin' | 'comun';
 export type AreaId = 'servicio' | 'cocina' | 'limpieza' | 'almacen' | 'equipos' | 'administracion' | 'operaciones' | 'rrhh';
 export type TaskStatus = 'pendiente' | 'en-progreso' | 'completada' | 'verificada' | 'rechazada';
 export type TaskPriority = 'baja' | 'media' | 'alta' | 'urgente';
@@ -15,9 +15,9 @@ export interface User {
   role: Role;
   area: AreaId;
   isActive: boolean;
-  creationDate: Timestamp | Date | string;
+  creationDate: Timestamp | Date;
   createdBy: string;
-  lastAccess: Timestamp | Date | string;
+  lastAccess: Timestamp | Date;
   cedula?: string;
   phone?: string;
   address?: string;

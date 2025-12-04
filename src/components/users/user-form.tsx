@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useEffect } from 'react';
@@ -125,7 +126,7 @@ export function UserForm({ isOpen, onOpenChange, onSave, user }: UserFormProps) 
         workerType: values.workerType as WorkerType | undefined,
         contractType: values.contractType as ContractType | undefined,
     };
-    onSave(dataToSave, password);
+    onSave(dataToSave, password || undefined);
   };
 
   return (
