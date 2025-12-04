@@ -1,4 +1,3 @@
-
 'use client';
 
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -15,14 +14,15 @@ import {
 import { useUser } from '@/firebase';
 
 export function UserNav() {
-  const { user, profile } = useUser();
+  const { profile } = useUser();
 
-  if (!user || !profile) {
-    return null; // No renderizar nada si no hay usuario (aunque esté simulado)
+  if (!profile) {
+    // Render nothing if there is no profile, preventing login button
+    return null;
   }
 
   const getInitials = (name: string) => {
-    return name.split(' ').map(n => n[0]).join('').toUpperCase();
+    return name?.split(' ').map(n => n[0]).join('').toUpperCase() || '';
   }
 
   return (
@@ -61,5 +61,3 @@ export function UserNav() {
     </DropdownMenu>
   );
 }
-
-    

@@ -49,11 +49,11 @@ import {
 } from '@/components/ui/alert-dialog';
 
 import type { User, Role } from '@/lib/types';
-import { useCollection, useFirestore, useMemoFirebase, useUser, deleteDocumentNonBlocking } from '@/firebase';
+import { useCollection, useFirestore, useMemoFirebase, useUser, deleteDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase';
 import { collection, doc, setDoc } from 'firebase/firestore';
 import { UserForm } from '@/components/users/user-form';
 import { useToast } from '@/hooks/use-toast';
-import { createUserWithEmailAndPassword } from 'firebase/auth';
+import { createUserWithEmailAndPassword, getAuth } from 'firebase/auth';
 
 
 const roles: Record<Role, { label: string, color: string }> = {
@@ -66,7 +66,7 @@ export default function GestionUsuariosPage() {
   const router = useRouter();
   const { toast } = useToast();
   const firestore = useFirestore();
-  const { auth } = useUser();
+  const auth = getAuth(); // Get the auth instance
 
   const [searchQuery, setSearchQuery] = useState('');
   const [roleFilter, setRoleFilter] = useState('all');
@@ -89,20 +89,19 @@ export default function GestionUsuariosPage() {
     try {
         if (selectedUser) { // Editing existing user
             const userRef = doc(firestore, 'users', selectedUser.id);
-            updateDocumentNonBlocking(userRef, userData);
+            await updateDoc(userRef, userData);
             toast({ title: "Usuario Actualizado", description: `Se ha actualizado la información de ${userData.name}.` });
         } else { // Creating new user
             if (!password) {
                 toast({ variant: 'destructive', title: 'Error', description: 'La contraseña es obligatoria para nuevos usuarios.' });
                 return;
             }
-            const userCredential = await createUserWithEmailAndPassword(auth, userData.email, password);
-            const newUser = userCredential.user;
-            
-            const userRef = doc(firestore, 'users', newUser.uid);
-            await setDoc(userRef, { ...userData, id: newUser.uid, userId: newUser.uid });
-
-            toast({ title: "Usuario Creado", description: `El usuario ${userData.name} ha sido creado con éxito.` });
+            // This is a placeholder as Admin SDK is needed for real user creation without login
+            const randomId = doc(collection(firestore, 'temp')).id;
+            const newUserWithId = { ...userData, id: randomId, userId: randomId };
+            const userRef = doc(firestore, 'users', randomId);
+            await setDoc(userRef, newUserWithId);
+            toast({ title: "Usuario Creado (Simulado)", description: `El usuario ${userData.name} ha sido añadido a Firestore.` });
         }
         setFormOpen(false);
         setSelectedUser(null);
@@ -324,8 +323,8 @@ export default function GestionUsuariosPage() {
           <AlertDialogHeader>
             <AlertDialogTitle>¿Estás seguro de eliminar este usuario?</AlertDialogTitle>
             <AlertDialogDescription>
-              Esta acción no se puede deshacer. Esto eliminará permanentemente el perfil del usuario de la base de datos de Firestore. 
-              La cuenta de autenticación no se verá afectada.
+              Esta acción no se puede deshacer. Esto eliminará permanentemente el perfil del usuario de la base de datos de Firestore.
+              La cuenta de autenticación de Firebase no se puede eliminar desde aquí.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

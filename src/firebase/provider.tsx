@@ -1,14 +1,13 @@
-
 'use client';
 
 import React, { createContext, useContext, ReactNode, useMemo, useState, useEffect, DependencyList } from 'react';
 import { FirebaseApp } from 'firebase/app';
-import { Firestore, doc, onSnapshot, DocumentReference, DocumentData, FirestoreError, DocumentSnapshot, CollectionReference, Query, QuerySnapshot, writeBatch, collection } from 'firebase/firestore';
+import { Firestore, doc, onSnapshot, DocumentReference, DocumentData, FirestoreError, DocumentSnapshot, CollectionReference, Query, QuerySnapshot, writeBatch, collection, getDocs } from 'firebase/firestore';
 import { Auth, User as AuthUser, onAuthStateChanged } from 'firebase/auth';
 import type { User as FirestoreUser } from '@/lib/types';
 import { UseDocResult, WithId, UseCollectionResult, InternalQuery } from '@/firebase';
 import { FirebaseErrorListener } from '@/components/FirebaseErrorListener';
-import { users as mockUsers, areas } from '@/lib/placeholder-data';
+import { users as mockUsers } from '@/lib/placeholder-data';
 import { setDoc } from 'firebase/firestore';
 
 
@@ -33,56 +32,8 @@ export const FirebaseContext = createContext<FirebaseContextState | undefined>(u
 
 // --- PROVIDER COMPONENT ---
 export const FirebaseProvider: React.FC<{ children: ReactNode; firebaseApp: FirebaseApp; firestore: Firestore; auth: Auth; }> = ({ children, firebaseApp, firestore, auth }) => {
-  const [userAuthState, setUserAuthState] = useState<UserAuthState>({
-    user: null,
-    profile: null,
-    isUserLoading: true,
-    userError: null,
-  });
-
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (user) => {
-      if (user) {
-        const profileRef = doc(firestore, 'users', user.uid);
-        const profileUnsub = onSnapshot(profileRef, 
-          (snapshot) => {
-            if (snapshot.exists()) {
-              setUserAuthState({ user, profile: snapshot.data() as FirestoreUser, isUserLoading: false, userError: null });
-            } else {
-              setUserAuthState({ user, profile: null, isUserLoading: false, userError: null });
-            }
-          },
-          (error) => {
-            setUserAuthState({ user, profile: null, isUserLoading: false, userError: error });
-          }
-        );
-        return () => profileUnsub();
-      } else {
-        // No user is signed in. Check for test users.
-         const usersCollectionRef = collection(firestore, 'users');
-         onSnapshot(usersCollectionRef, (snapshot) => {
-            if (snapshot.empty) {
-                console.log("No users found. Creating mock users...");
-                const batch = writeBatch(firestore);
-                mockUsers.forEach(mockUser => {
-                    const docRef = doc(firestore, "users", mockUser.id);
-                    batch.set(docRef, mockUser);
-                });
-                batch.commit().then(() => {
-                    console.log("Mock users created successfully!");
-                }).catch(error => {
-                    console.error("Error creating mock users:", error);
-                });
-            }
-        });
-
-        setUserAuthState({ user: null, profile: null, isUserLoading: false, userError: null });
-      }
-    });
-
-    return () => unsubscribe();
-  }, [auth, firestore]);
-
+  
+  // MOCK USER STATE - This forces the app to behave as if a superadmin is always logged in.
   const MOCK_AUTH_USER: AuthUser = {
     uid: 'dev-superadmin-uid-123',
     email: 'superadmin@restaurante.com',
@@ -113,20 +64,48 @@ export const FirebaseProvider: React.FC<{ children: ReactNode; firebaseApp: Fire
     lastAccess: new Date(),
   };
 
+  const [userAuthState, setUserAuthState] = useState<UserAuthState>({
+    user: MOCK_AUTH_USER,
+    profile: MOCK_PROFILE,
+    isUserLoading: false,
+    userError: null,
+  });
+
+  useEffect(() => {
+    // This effect runs once on mount to populate test data if the DB is empty.
+    const populateTestData = async () => {
+      try {
+        const usersCollectionRef = collection(firestore, 'users');
+        const existingUsersSnapshot = await getDocs(usersCollectionRef);
+
+        if (existingUsersSnapshot.empty) {
+            console.log("No users found. Creating mock users...");
+            const batch = writeBatch(firestore);
+            mockUsers.forEach(mockUser => {
+                const docRef = doc(firestore, "users", mockUser.id);
+                batch.set(docRef, mockUser);
+            });
+            await batch.commit();
+            console.log("Mock users created successfully!");
+        }
+      } catch (error) {
+        console.error("Error checking or creating mock users:", error);
+      }
+    };
+    
+    populateTestData();
+  }, [firestore]);
+
+
   const contextValue: FirebaseContextState = useMemo(() => ({
     firebaseApp,
     firestore,
     auth,
-    // Switch between real auth state and mock state for development if needed
-    // user: userAuthState.user,
-    // profile: userAuthState.profile,
-    // isUserLoading: userAuthState.isUserLoading,
-    // userError: userAuthState.userError,
-     user: MOCK_AUTH_USER,
-     profile: MOCK_PROFILE,
-     isUserLoading: false,
-     userError: null,
-  }), [firebaseApp, firestore, auth]);
+    user: userAuthState.user,
+    profile: userAuthState.profile,
+    isUserLoading: userAuthState.isUserLoading,
+    userError: userAuthState.userError,
+  }), [firebaseApp, firestore, auth, userAuthState]);
 
 
   return (
@@ -159,6 +138,5 @@ export const useUser = (): UserAuthState & { auth: Auth } => {
 // --- UTILITY HOOKS ---
 type MemoFirebase<T> = T & { __memo?: boolean };
 export function useMemoFirebase<T>(factory: () => T, deps: DependencyList): T {
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   return useMemo(factory, deps);
 }
