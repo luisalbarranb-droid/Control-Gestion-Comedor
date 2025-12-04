@@ -1,3 +1,4 @@
+
 'use client';
 
 import { usePathname } from 'next/navigation';
@@ -28,7 +29,7 @@ export function MainNav() {
     { 
       href: '/users', 
       label: 'Gestión de Usuarios', 
-      icon: <Users />
+      icon: <Users /> 
     },
     { href: '/reports', label: 'Reportes', icon: <FileSpreadsheet /> },
     { href: '/stats', label: 'Estadísticas', icon: <AreaChart /> },
@@ -36,21 +37,27 @@ export function MainNav() {
   ];
 
   return (
-    <nav className="p-4">
-      {navItems.map((item) => (
-        <Link
-          key={item.href}
-          href={item.href}
-          className={`flex items-center gap-3 px-4 py-2 rounded-lg transition-colors text-sm font-medium ${
-            pathname === item.href || (item.href !== '/' && pathname?.startsWith(item.href))
-              ? 'bg-primary/10 text-primary'
-              : 'text-muted-foreground hover:bg-muted/50 hover:text-foreground'
-          }`}
-        >
-          {item.icon}
-          <span>{item.label}</span>
-        </Link>
-      ))}
+    <nav className="flex flex-col gap-1 p-4">
+      {navItems.map((item) => {
+        const isActive = pathname === item.href || (item.href !== '/' && pathname?.startsWith(item.href));
+        const isUsers = item.href === '/users';
+
+        return (
+            <Link
+              key={item.href}
+              href={item.href}
+              className={`flex items-center gap-3 px-4 py-2 rounded-lg transition-colors text-sm font-medium ${
+                isActive
+                  ? 'bg-primary/10 text-primary'
+                  : 'text-muted-foreground hover:bg-muted/50 hover:text-foreground'
+              } ${isUsers ? 'border border-primary bg-primary/5 font-semibold' : ''}`}
+            >
+              {item.icon}
+              <span>{item.label}</span>
+            </Link>
+        )
+      })}
     </nav>
   );
 }
+
