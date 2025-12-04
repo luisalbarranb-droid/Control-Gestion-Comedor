@@ -34,11 +34,12 @@ import { Switch } from '@/components/ui/switch';
 import { areas } from '@/lib/placeholder-data';
 import type { User, Role, AreaId, WorkerType, ContractType } from '@/lib/types';
 import { Textarea } from '../ui/textarea';
+import { useToast } from '@/hooks/use-toast';
 
 const formSchema = z.object({
   name: z.string().min(2, "El nombre es obligatorio."),
   email: z.string().email("Debe ser un email válido."),
-  password: z.string().optional(),
+  password: z.string().min(6, 'La contraseña debe tener al menos 6 caracteres').optional().or(z.literal('')),
   cedula: z.string().optional(),
   phone: z.string().optional(),
   address: z.string().optional(),
@@ -65,7 +66,7 @@ const workerTypes: WorkerType[] = ['empleado', 'obrero'];
 const contractTypes: ContractType[] = ['determinado', 'indeterminado', 'prueba'];
 
 export function UserForm({ isOpen, onOpenChange, onSave, user }: UserFormProps) {
-
+  const { toast } = useToast();
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -110,6 +111,12 @@ export function UserForm({ isOpen, onOpenChange, onSave, user }: UserFormProps) 
   }, [user, isOpen, form]);
 
   const onSubmit = (values: FormValues) => {
+    // Si es un usuario nuevo, el password es obligatorio
+    if (!user && !values.password) {
+        form.setError('password', { message: 'La contraseña es obligatoria para nuevos usuarios' });
+        return;
+    }
+
     const { password, ...userData } = values;
     const dataToSave = {
         ...userData,
@@ -119,7 +126,6 @@ export function UserForm({ isOpen, onOpenChange, onSave, user }: UserFormProps) 
         contractType: values.contractType as ContractType | undefined,
     };
     onSave(dataToSave, password);
-    onOpenChange(false);
   };
 
   return (
@@ -335,7 +341,7 @@ export function UserForm({ isOpen, onOpenChange, onSave, user }: UserFormProps) 
 
             <DialogFooter className="pt-4">
               <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
-              <Button type="submit">{user ? 'Guardar Cambios' : 'Crear Usuario'}</Button>
+              <Button type="submit" disabled={form.formState.isSubmitting}>{user ? 'Guardar Cambios' : 'Crear Usuario'}</Button>
             </DialogFooter>
           </form>
         </Form>

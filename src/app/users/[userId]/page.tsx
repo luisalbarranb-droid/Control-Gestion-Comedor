@@ -30,6 +30,10 @@ const roleVariant: Record<Role, string> = {
   superadmin: 'bg-purple-100 text-purple-800',
   admin: 'bg-blue-100 text-blue-800',
   comun: 'bg-gray-100 text-gray-800',
+  manager: 'bg-blue-100 text-blue-800', // Added
+  employee: 'bg-green-100 text-green-800', // Added
+  chef: 'bg-orange-100 text-orange-800', // Added
+  waiter: 'bg-yellow-100 text-yellow-800', // Added
 };
 
 const statusVariant: Record<boolean, string> = {
@@ -46,6 +50,7 @@ const contractTypeVariant: Record<string, string> = {
 const formatDate = (date: any) => {
     if (!date) return 'N/A';
     const d = date.toDate ? date.toDate() : new Date(date);
+    if(isNaN(d.getTime())) return 'N/A';
     return format(d, 'dd MMMM, yyyy', { locale: es });
 };
 
@@ -65,15 +70,14 @@ export default function UserProfilePage() {
   
   useEffect(() => {
     if (!isAuthLoading && !authUser) {
-      router.push('/login');
+      router.push('/');
     }
   }, [isAuthLoading, authUser, router]);
 
   const isLoading = isAuthLoading || (authUser && isProfileLoading);
 
-  if (isLoading) {
-    return (
-      <div className="min-h-screen w-full">
+  const renderSkeleton = () => (
+     <div className="min-h-screen w-full">
         <Sidebar>
           <SidebarHeader className="p-4 justify-center flex items-center gap-2">
             <SquareCheck className="size-8 text-primary" />
@@ -91,7 +95,10 @@ export default function UserProfilePage() {
           </main>
         </SidebarInset>
       </div>
-    );
+  )
+
+  if (isLoading) {
+    return renderSkeleton();
   }
 
   if (!user) {
