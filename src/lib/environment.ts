@@ -1,4 +1,4 @@
-// src/lib/environment.ts
+
 'use client';
 
 /**
@@ -11,40 +11,34 @@ export const Environment = {
     if (typeof window === 'undefined') return false;
     
     const url = window.location.href;
-    return (
+    const isStudioEnv =
       url.includes('firebase-studio') ||
-      url.includes('firebaseapp.com') ||
-      /web-[a-z0-9]+\.web\.app/.test(url) ||
-      document.cookie.includes('firebase-studio')
-    );
+      url.includes('web.app') || // Más genérico para URLs de Firebase Hosting
+      url.includes('firebaseapp.com');
+      
+    // En Studio, forzamos el mock auth. En local, lo leemos del .env
+    return isStudioEnv;
   },
   
-  // Detectar desarrollo local
-  isLocalDevelopment: (): boolean => {
-    return process.env.NODE_ENV === 'development' && 
-           !Environment.isFirebaseStudio();
+  // Usar autenticación simulada
+  shouldUseMockAuth: (): boolean => {
+    const isStudio = Environment.isFirebaseStudio();
+    // Forzar mock en Studio. En otros entornos (local), respetar la variable de entorno.
+    if (isStudio) return true;
+    return process.env.NEXT_PUBLIC_MOCK_AUTH === 'true';
   },
-  
-  // Detectar producción
-  isProduction: (): boolean => {
-    return process.env.NODE_ENV === 'production' && 
-           !Environment.isFirebaseStudio();
-  },
-  
+
   // Obtener configuración según entorno
   getConfig: () => {
     const isStudio = Environment.isFirebaseStudio();
+    const useMockAuth = Environment.shouldUseMockAuth();
     
     return {
       isStudio,
-      isLocal: Environment.isLocalDevelopment(),
-      isProd: Environment.isProduction(),
       
       // Configuración de Firebase
       firebase: {
-        // En Studio, usamos autenticación simulada
-        // En local, usamos Firebase real
-        useMockAuth: isStudio,
+        useMockAuth: useMockAuth,
         mockUser: {
           uid: isStudio ? 'studio-superadmin' : 'local-superadmin',
           email: isStudio ? 'admin@firebase-studio.com' : 'admin@localhost.com',
@@ -52,14 +46,6 @@ export const Environment = {
           role: 'superadmin' as const
         }
       },
-      
-      // Features habilitadas
-      features: {
-        userManagement: true,
-        tasks: true,
-        attendance: true,
-        overrideAuth: isStudio // Sobreescribir auth en Studio
-      }
     };
   }
 };

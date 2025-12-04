@@ -1,7 +1,6 @@
 
 import type { Metadata } from 'next';
 import './globals.css';
-import { Sidebar, SidebarContent, SidebarHeader, SidebarInset, SidebarProvider } from '@/components/ui/sidebar';
 import { Toaster } from '@/components/ui/toaster';
 import { SmartAuthProvider } from '@/providers/SmartAuthProvider';
 import { MainNav } from '@/components/dashboard/main-nav';
@@ -31,19 +30,15 @@ export default function RootLayout({
       </head>
       <body className="font-body antialiased">
         <SmartAuthProvider>
-          <SidebarProvider>
-            <div className="min-h-screen w-full">
-                <div className="flex">
-                  <Sidebar>
-                     <MainNav />
-                  </Sidebar>
-                  <SidebarInset>
-                      <Header />
-                      {children}
-                  </SidebarInset>
-                </div>
+            <div className="min-h-screen w-full flex">
+              <aside className="w-64 border-r fixed inset-y-0 bg-background z-50">
+                <MainNav />
+              </aside>
+              <div className="flex-1 flex flex-col ml-64">
+                <Header />
+                <main>{children}</main>
+              </div>
             </div>
-          </SidebarProvider>
           <Toaster />
         </SmartAuthProvider>
       </body>

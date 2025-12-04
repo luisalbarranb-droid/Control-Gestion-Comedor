@@ -1,5 +1,4 @@
 
-// src/components/dashboard/main-nav.tsx
 'use client';
 
 import { usePathname, useRouter } from 'next/navigation';
@@ -14,8 +13,7 @@ import {
   ClipboardCheck,
   QrCode,
   FileSpreadsheet,
-  LogOut,
-  User as UserIcon
+  LogOut
 } from 'lucide-react';
 import Link from 'next/link';
 import { useSmartAuth } from '@/providers/SmartAuthProvider';
@@ -28,12 +26,11 @@ import {
   SidebarMenuButton,
 } from '@/components/ui/sidebar';
 
-
 export function MainNav() {
   const pathname = usePathname();
   const router = useRouter();
   const { user, logout, environment } = useSmartAuth();
-  const isStudio = Environment.isFirebaseStudio();
+  const isStudio = environment.isStudio;
 
   const navItems = [
     { href: '/', label: 'Dashboard', icon: <Home />, show: true },
@@ -46,8 +43,7 @@ export function MainNav() {
       href: '/users', 
       label: 'Gestión de Usuarios', 
       icon: <Users />, 
-      show: user?.role === 'superadmin' || user?.role === 'admin',
-      highlight: isStudio
+      show: user?.role === 'superadmin' || user?.role === 'admin'
     },
     { href: '/reports', label: 'Reportes', icon: <FileSpreadsheet />, show: true },
     { href: '/stats', label: 'Estadísticas', icon: <AreaChart />, show: true },
@@ -96,7 +92,7 @@ export function MainNav() {
       </SidebarContent>
 
       <div className="p-4 border-t mt-auto">
-          {!isStudio && user && (
+          {user && !isStudio && (
             <button
               onClick={handleLogout}
               className="w-full flex items-center gap-3 px-4 py-3 text-muted-foreground hover:bg-red-50 hover:text-red-700 rounded-lg transition-colors"
@@ -105,13 +101,13 @@ export function MainNav() {
               <span className="font-medium">Cerrar Sesión</span>
             </button>
           )}
-           {isStudio && (
+           {user && isStudio && (
              <div className="bg-yellow-100 border border-yellow-300 text-yellow-800 px-3 py-2 rounded-lg">
                 <div className="flex items-center gap-2">
                     <div className="h-2 w-2 bg-yellow-500 rounded-full animate-pulse"></div>
                     <span className="text-xs font-medium">Firebase Studio</span>
                 </div>
-                 <p className="text-xs mt-1">Auth simulada como <strong>{user?.role}</strong>.</p>
+                 <p className="text-xs mt-1">Simulando como <strong>{user.role}</strong>.</p>
              </div>
            )}
       </div>
