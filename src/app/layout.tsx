@@ -4,6 +4,13 @@ import { Toaster } from '@/components/ui/toaster';
 import { FirebaseErrorListener } from '@/components/FirebaseErrorListener';
 import { Header } from '@/components/dashboard/header';
 import { MainNav } from '@/components/dashboard/main-nav';
+import {
+  Sidebar,
+  SidebarContent,
+  SidebarHeader,
+  SidebarInset,
+  SidebarProvider,
+} from '@/components/ui/sidebar';
 import { SquareCheck } from 'lucide-react';
 import { FirebaseProvider } from '@/firebase';
 
@@ -21,7 +28,11 @@ export default function RootLayout({
     <html lang="es" suppressHydrationWarning>
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <link
+          rel="preconnect"
+          href="https://fonts.gstatic.com"
+          crossOrigin="anonymous"
+        />
         <link
           href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
           rel="stylesheet"
@@ -29,26 +40,25 @@ export default function RootLayout({
       </head>
       <body className="font-body antialiased">
         <FirebaseProvider>
-          <div className="min-h-screen w-full bg-background flex">
-            {/* --- Barra lateral simplificada con CSS Flexbox --- */}
-            <aside className="fixed inset-y-0 left-0 z-10 hidden w-64 flex-col border-r bg-card sm:flex">
-              <div className="p-4 justify-center flex items-center gap-2 border-b h-14">
-                <SquareCheck className="size-8 text-primary" />
-                <h1 className="font-headline text-2xl font-bold">Comedor</h1>
-              </div>
-              <MainNav />
-            </aside>
-            
-            {/* --- Contenido Principal --- */}
-            <div className="flex flex-col flex-1 sm:pl-64">
-              <Header />
-              <main className="flex-1 p-4 sm:p-6 md:p-8">
-                {children}
-              </main>
+          <SidebarProvider>
+            <div className="min-h-screen w-full">
+              <Sidebar>
+                <SidebarHeader className="p-4 justify-center flex items-center gap-2">
+                  <SquareCheck className="size-8 text-primary" />
+                  <h1 className="font-headline text-2xl font-bold">Comedor</h1>
+                </SidebarHeader>
+                <SidebarContent>
+                  <MainNav />
+                </SidebarContent>
+              </Sidebar>
+              <SidebarInset>
+                <Header />
+                <main className="flex-1 p-4 sm:p-6 md:p-8">{children}</main>
+              </SidebarInset>
             </div>
-          </div>
-          <Toaster />
-          <FirebaseErrorListener />
+            <Toaster />
+            <FirebaseErrorListener />
+          </SidebarProvider>
         </FirebaseProvider>
       </body>
     </html>
