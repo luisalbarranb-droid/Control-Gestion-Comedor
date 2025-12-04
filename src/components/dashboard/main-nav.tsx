@@ -1,3 +1,4 @@
+
 'use client';
 
 import { usePathname } from 'next/navigation';
@@ -11,14 +12,14 @@ import {
   BookOpen,
   ClipboardCheck,
   QrCode,
-  FileSpreadsheet
+  FileSpreadsheet,
+  Settings
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 export function MainNav() {
   const pathname = usePathname();
 
-  // Lista estática y sin condiciones. Todos los módulos son visibles siempre.
   const navItems = [
     { href: '/', label: 'Dashboard', icon: <Home className="h-5 w-5" /> },
     { href: '/tasks', label: 'Tareas', icon: <ClipboardList className="h-5 w-5" /> },
@@ -33,6 +34,7 @@ export function MainNav() {
     },
     { href: '/reports', label: 'Reportes', icon: <FileSpreadsheet className="h-5 w-5" /> },
     { href: '/stats', label: 'Estadísticas', icon: <AreaChart className="h-5 w-5" /> },
+    { href: '/settings', label: 'Configuración', icon: <Settings className="h-5 w-5" /> },
   ];
 
   return (

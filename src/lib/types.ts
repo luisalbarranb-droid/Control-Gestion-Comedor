@@ -1,6 +1,7 @@
+
 import { Timestamp } from 'firebase/firestore';
 
-export type Role = 'superadmin' | 'admin' | 'comun' | 'manager' | 'chef' | 'waiter' | 'employee';
+export type Role = 'superadmin' | 'admin' | 'comun';
 export type AreaId = 'servicio' | 'cocina' | 'limpieza' | 'almacen' | 'equipos' | 'administracion' | 'operaciones' | 'rrhh';
 export type TaskStatus = 'pendiente' | 'en-progreso' | 'completada' | 'verificada' | 'rechazada';
 export type TaskPriority = 'baja' | 'media' | 'alta' | 'urgente';
