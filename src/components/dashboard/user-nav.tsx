@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -17,7 +18,7 @@ export function UserNav() {
   const { profile } = useUser();
 
   if (!profile) {
-    // Render nothing if there is no profile, preventing login button
+    // Esto no debería ocurrir en el modo simulado, pero es una buena práctica.
     return null;
   }
 
@@ -55,7 +56,7 @@ export function UserNav() {
         </DropdownMenuGroup>
         <DropdownMenuSeparator />
         <DropdownMenuItem>
-          Cerrar Sesión
+          Cerrar Sesión (Simulado)
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

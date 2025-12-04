@@ -1,8 +1,10 @@
+
 import type { Metadata } from 'next';
 import './globals.css';
 import { SidebarProvider } from '@/components/ui/sidebar';
 import { Toaster } from '@/components/ui/toaster';
-import { FirebaseClientProvider } from '@/firebase/client-provider';
+import { FirebaseProvider } from '@/firebase/provider'; // Cambiado
+import { firebaseApp, auth, firestore } from '@/firebase'; // Añadido
 
 export const metadata: Metadata = {
   title: 'Comedor Control',
@@ -25,11 +27,13 @@ export default function RootLayout({
         />
       </head>
       <body className="font-body antialiased">
-        <FirebaseClientProvider>
+        <FirebaseProvider
+            firebaseApp={firebaseApp}
+            auth={auth}
+            firestore={firestore}
+        >
           <SidebarProvider>{children}</SidebarProvider>
           <Toaster />
-        </FirebaseClientProvider>
+        </FirebaseProvider>
       </body>
     </html>
-  );
-}

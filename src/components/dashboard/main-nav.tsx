@@ -1,3 +1,4 @@
+
 'use client';
 
 import Link from 'next/link';
@@ -20,7 +21,6 @@ import {
   SidebarMenuButton,
 } from '@/components/ui/sidebar';
 
-// VERSIÓN SIMPLE - TODOS LOS MÓDULOS VISIBLES
 export function MainNav() {
   const pathname = usePathname();
 
