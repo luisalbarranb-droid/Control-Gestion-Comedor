@@ -1,3 +1,4 @@
+
 // src/app/users/[userId]/page.tsx - Detalle de usuario
 'use client';
 
@@ -42,8 +43,8 @@ const roles = {
   superadmin: { label: 'Super Admin', color: 'bg-purple-100 text-purple-800' },
   admin: { label: 'Administrador', color: 'bg-red-100 text-red-800' },
   chef: { label: 'Chef', color: 'bg-orange-100 text-orange-800' },
-  mesero: { label: 'Mesero', color: 'bg-yellow-100 text-yellow-800' },
-  empleado: { label: 'Empleado', color: 'bg-blue-100 text-blue-800' },
+  waiter: { label: 'Mesero', color: 'bg-yellow-100 text-yellow-800' },
+  employee: { label: 'Empleado', color: 'bg-blue-100 text-blue-800' },
 };
 
 export default function DetalleUsuarioPage() {

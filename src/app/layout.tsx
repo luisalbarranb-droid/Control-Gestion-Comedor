@@ -31,10 +31,10 @@ export default function RootLayout({
       <body className="font-body antialiased">
         <SmartAuthProvider>
             <div className="min-h-screen w-full flex">
-              <aside className="w-64 border-r fixed inset-y-0 bg-background z-50">
+              <aside className="w-64 border-r fixed inset-y-0 bg-background z-50 hidden md:block">
                 <MainNav />
               </aside>
-              <div className="flex-1 flex flex-col ml-64">
+              <div className="flex-1 flex flex-col md:ml-64">
                 <Header />
                 <main>{children}</main>
               </div>
