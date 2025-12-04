@@ -1,9 +1,6 @@
 
 'use client';
 
-// Importar el override para asegurar que se ejecute al inicio
-import '@/lib/firebase-override';
-
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
@@ -27,7 +24,6 @@ import {
 export function MainNav() {
   const pathname = usePathname();
 
-  // NAVEGACIÓN COMPLETA - TODO VISIBLE
   const navItems = [
     { href: '/', label: 'Dashboard', icon: <Home /> },
     { href: '/tasks', label: 'Tareas', icon: <ClipboardList /> },
@@ -37,7 +33,7 @@ export function MainNav() {
     { href: '/inventory', label: 'Inventario', icon: <Archive /> },
     { 
       href: '/users', 
-      label: '🔥 GESTIÓN DE USUARIOS 🔥', 
+      label: 'Gestión de Usuarios', 
       icon: <Users />
     },
     { href: '/reports', label: 'Reportes', icon: <FileSpreadsheet /> },

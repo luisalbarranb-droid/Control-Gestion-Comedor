@@ -3,8 +3,8 @@ import type { Metadata } from 'next';
 import './globals.css';
 import { SidebarProvider } from '@/components/ui/sidebar';
 import { Toaster } from '@/components/ui/toaster';
-import { FirebaseProvider } from '@/firebase/provider'; // Cambiado
-import { firebaseApp, auth, firestore } from '@/firebase'; // Añadido
+import { FirebaseProvider } from '@/firebase/provider';
+import { firebaseApp, auth, firestore } from '@/firebase';
 
 export const metadata: Metadata = {
   title: 'Comedor Control',
