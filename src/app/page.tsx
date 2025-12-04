@@ -1,7 +1,5 @@
 'use client';
 
-import { useEffect } from 'react';
-import { useRouter } from 'next/navigation';
 import {
   Sidebar,
   SidebarContent,
@@ -13,33 +11,11 @@ import { MainNav } from '@/components/dashboard/main-nav';
 import { OverviewCards } from '@/components/dashboard/overview-cards';
 import { TaskCharts } from '@/components/dashboard/task-charts';
 import { RecentTasks } from '@/components/dashboard/recent-tasks';
-import { SquareCheck, Loader2 } from 'lucide-react';
+import { SquareCheck } from 'lucide-react';
 import AIPrioritizer from '@/components/dashboard/ai-prioritizer';
 import { TopPerformers } from '@/components/dashboard/top-performers';
-import { useUser } from '@/firebase';
 
 export default function Dashboard() {
-  const { user, isUserLoading } = useUser();
-  const router = useRouter();
-
-  useEffect(() => {
-    // Si la autenticación ha terminado y no hay usuario, redirige al login.
-    if (!isUserLoading && !user) {
-      router.push('/login');
-    }
-  }, [user, isUserLoading, router]);
-
-  // Mientras se verifica el estado de autenticación, muestra un estado de carga.
-  if (isUserLoading || !user) {
-    return (
-      <div className="min-h-screen w-full flex items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-        <p className="ml-2">Cargando...</p>
-      </div>
-    );
-  }
-
-  // Si el usuario está autenticado, muestra el dashboard.
   return (
     <div className="min-h-screen w-full">
       <Sidebar>
