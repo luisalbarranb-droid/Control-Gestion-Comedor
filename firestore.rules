@@ -42,8 +42,9 @@ service cloud.firestore {
       // LIST: Only admins and superadmins can list all users.
       allow list: if isAdminOrHigher();
       
-      // WRITE: Only superadmins can create, update, or delete users.
-      allow create, update, delete: if isSuperAdmin();
+      // WRITE: Only superadmins can create, update, or delete users. A user can update their own name.
+      allow create, delete: if isSuperAdmin();
+      allow update: if isSuperAdmin() || (isOwner(userId) && request.resource.data.keys().hasOnly(['name', 'lastAccess']));
     }
 
     match /areas/{areaId} {
@@ -52,16 +53,10 @@ service cloud.firestore {
     }
 
     match /tasks/{taskId} {
-      // Any authenticated user can list tasks (queries will filter them)
-      // Any participant (creator, assignee) or admin can get a specific task
-      allow get: if isSignedIn() && (get(/databases/$(database)/documents/tasks/$(taskId)).data.asignadoA == request.auth.uid || get(/databases/$(database)/documents/tasks/$(taskId)).data.creadoPor == request.auth.uid || isAdminOrHigher());
-      allow list: if isSignedIn();
-      // Anyone can create a task, but they must be the creator
+      allow get, list: if isSignedIn();
       allow create: if isSignedIn() && isCreator('creadoPor');
-      // Only participants or admins can update, and creator is immutable
-      allow update: if isSignedIn() && (resource.data.asignadoA == request.auth.uid || resource.data.creadoPor == request.auth.uid || isAdminOrHigher()) && request.resource.data.creadoPor == resource.data.creadoPor;
-      // Only creator or admin can delete
-      allow delete: if isSignedIn() && (resource.data.creadoPor == request.auth.uid || isAdminOrHigher());
+      allow update: if isSignedIn() && (isOwner(resource.data.asignadoA) || isOwner(resource.data.creadoPor) || isAdminOrHigher());
+      allow delete: if isSignedIn() && (isOwner(resource.data.creadoPor) || isAdminOrHigher());
     }
     
     match /inventory/{itemId} {
@@ -104,8 +99,8 @@ service cloud.firestore {
     
     match /attendance/{recordId} {
       allow get: if isSignedIn() && (isOwner(resource.data.userId) || isAdminOrHigher());
-      allow list: if isSignedIn(); // Users can only list their own records due to query constraints
-      allow create, update, delete: if isAdminOrHigher(); // Only admins can manage records
+      allow list: if isSignedIn();
+      allow create, update, delete: if isAdminOrHigher();
     }
     
     match /daysOff/{dayOffId} {
@@ -114,3 +109,5 @@ service cloud.firestore {
     }
   }
 }
+
+    

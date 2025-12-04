@@ -1,3 +1,4 @@
+
 import { Timestamp } from 'firebase/firestore';
 
 export type Role = 'superadmin' | 'admin' | 'comun';
@@ -15,13 +16,13 @@ export interface User {
   role: Role;
   area: AreaId;
   isActive: boolean;
-  creationDate: Date | Timestamp;
+  creationDate: Timestamp | Date;
   createdBy: string;
-  lastAccess: Date | Timestamp;
+  lastAccess: Timestamp | Date;
   cedula?: string;
   phone?: string;
   address?: string;
-  contractEndDate?: Date | Timestamp;
+  contractEndDate?: Timestamp | Date;
   avatarUrl?: string;
   workerType?: WorkerType;
   contractType?: ContractType;
@@ -67,10 +68,10 @@ export interface Task {
   estado: TaskStatus;
   prioridad: TaskPriority;
   periodicidad: TaskPeriodicity;
-  fechaCreacion: Date | Timestamp;
-  fechaVencimiento: Date | Timestamp;
-  fechaCompletado?: Date | Timestamp;
-  proximaEjecucion?: Date | Timestamp;
+  fechaCreacion: Timestamp | Date;
+  fechaVencimiento: Timestamp | Date;
+  fechaCompletado?: Timestamp | Date;
+  proximaEjecucion?: Timestamp | Date;
   checklist: ChecklistItem[];
   evidencias: Evidence[];
   comentarios: Comment[];
@@ -116,8 +117,8 @@ export interface InventoryItem {
   cantidad: number;
   unidad: UnitOfMeasure;
   stockMinimo: number;
-  fechaCreacion: Date | Timestamp;
-  ultimaActualizacion: Date | Timestamp;
+  fechaCreacion: Timestamp | Date;
+  ultimaActualizacion: Timestamp | Date;
   proveedor?: string;
   costoUnitario?: number;
 }
@@ -186,7 +187,7 @@ export interface MenuItem {
 
 export interface Menu {
   id: string;
-  date: Date | Timestamp;
+  date: Timestamp | Date;
   pax: number; // number of people
   items: MenuItem[];
 }
@@ -237,8 +238,8 @@ export type LeaveType = 'justificado' | 'no-justificado' | 'vacaciones';
 export interface AttendanceRecord {
     id: string;
     userId: string;
-    checkIn: Date | Timestamp;
-    checkOut?: Date | Timestamp;
+    checkIn: Timestamp | Date;
+    checkOut?: Timestamp | Date;
     status: AttendanceStatus;
     leaveType?: LeaveType;
 }
@@ -272,3 +273,5 @@ export interface DayOff {
   weekStartDate: string; // YYYY-MM-DD
   dayOff: DayOfWeek; // The one flexible day off
 }
+
+    
