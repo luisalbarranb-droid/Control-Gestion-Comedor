@@ -142,7 +142,7 @@ export function MainNav() {
           50% { opacity: 0.9; transform: scale(1.02); }
         }
         .animate-pulse-slow {
-          animation: pulse-slow 2.5s ease-in-out infinite;
+          animation: pulse-slow 2.s ease-in-out infinite;
         }
       `}</style>
     </div>
