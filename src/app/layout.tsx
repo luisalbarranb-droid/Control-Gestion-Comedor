@@ -1,11 +1,12 @@
 // src/app/layout.tsx
 import type { Metadata } from 'next';
 import './globals.css';
-import { SidebarProvider } from '@/components/ui/sidebar';
+import { Sidebar, SidebarContent, SidebarHeader, SidebarInset, SidebarProvider } from '@/components/ui/sidebar';
 import { Toaster } from '@/components/ui/toaster';
 import { SmartAuthProvider } from '@/providers/SmartAuthProvider';
 import { MainNav } from '@/components/dashboard/main-nav';
 import { Environment } from '@/lib/environment';
+import { Header } from '@/components/dashboard/header';
 
 
 export const metadata: Metadata = {
@@ -32,18 +33,19 @@ export default function RootLayout({
       </head>
       <body className="font-body antialiased">
         <SmartAuthProvider>
+          <SidebarProvider>
             <div className="min-h-screen w-full">
-              <SidebarProvider>
                 <div className="flex">
                   <Sidebar>
                      <MainNav />
                   </Sidebar>
                   <SidebarInset>
+                      <Header />
                       {children}
                   </SidebarInset>
                 </div>
-              </SidebarProvider>
             </div>
+          </SidebarProvider>
           <Toaster />
         </SmartAuthProvider>
       </body>

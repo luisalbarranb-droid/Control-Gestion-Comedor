@@ -1,17 +1,8 @@
 'use client';
 
-import {
-  Sidebar,
-  SidebarContent,
-  SidebarHeader,
-  SidebarInset,
-} from '@/components/ui/sidebar';
-import { Header } from '@/components/dashboard/header';
-import { MainNav } from '@/components/dashboard/main-nav';
 import { OverviewCards } from '@/components/dashboard/overview-cards';
 import { TaskCharts } from '@/components/dashboard/task-charts';
 import { RecentTasks } from '@/components/dashboard/recent-tasks';
-import { SquareCheck } from 'lucide-react';
 import AIPrioritizer from '@/components/dashboard/ai-prioritizer';
 import { TopPerformers } from '@/components/dashboard/top-performers';
 
