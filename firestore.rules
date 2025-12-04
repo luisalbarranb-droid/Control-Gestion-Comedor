@@ -54,9 +54,9 @@ service cloud.firestore {
 
     match /tasks/{taskId} {
       allow get, list: if isSignedIn();
-      allow create: if isSignedIn() && isCreator('creadoPor');
-      allow update: if isSignedIn() && (isOwner(resource.data.asignadoA) || isOwner(resource.data.creadoPor) || isAdminOrHigher());
-      allow delete: if isSignedIn() && (isOwner(resource.data.creadoPor) || isAdminOrHigher());
+      allow create: if isSignedIn() && isCreator('createdBy');
+      allow update: if isSignedIn() && (isOwner(resource.data.assignedTo) || isOwner(resource.data.createdBy) || isAdminOrHigher());
+      allow delete: if isSignedIn() && (isOwner(resource.data.createdBy) || isAdminOrHigher());
     }
     
     match /inventory/{itemId} {
@@ -80,7 +80,7 @@ service cloud.firestore {
 
     function isTaskParticipant(taskId) {
       let taskData = get(/databases/$(database)/documents/tasks/$(taskId)).data;
-      return isOwner(taskData.asignadoA) || isOwner(taskData.creadoPor) || isAdminOrHigher();
+      return isOwner(taskData.assignedTo) || isOwner(taskData.createdBy) || isAdminOrHigher();
     }
 
     match /evidences/{evidenceId} {
@@ -109,5 +109,3 @@ service cloud.firestore {
     }
   }
 }
-
-    

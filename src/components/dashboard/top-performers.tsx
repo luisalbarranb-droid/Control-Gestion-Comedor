@@ -1,4 +1,3 @@
-
 'use client';
 
 import { Medal } from 'lucide-react';
@@ -113,5 +112,3 @@ export function TopPerformers() {
     </Card>
   );
 }
-
-    

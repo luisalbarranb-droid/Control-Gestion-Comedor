@@ -8,6 +8,8 @@ import {
   CollectionReference,
   DocumentReference,
   SetOptions,
+  WriteBatch,
+  writeBatch,
 } from 'firebase/firestore';
 import { errorEmitter } from '@/firebase/error-emitter';
 import {FirestorePermissionError} from '@/firebase/errors';
@@ -83,5 +85,23 @@ export function deleteDocumentNonBlocking(docRef: DocumentReference) {
           operation: 'delete',
         })
       )
+    });
+}
+
+/**
+ * Commits a batch write operation.
+ * Does NOT await the write operation internally.
+ */
+export function commitBatchNonBlocking(batch: WriteBatch) {
+    batch.commit().catch(error => {
+        // Batch writes don't have a single path, so we emit a generic error.
+        // In a real-world scenario, you might want to log the operations within the batch.
+        errorEmitter.emit(
+            'permission-error',
+            new FirestorePermissionError({
+                path: 'batch operation',
+                operation: 'write',
+            })
+        )
     });
 }

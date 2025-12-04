@@ -64,7 +64,7 @@ export interface Task {
   descripcion: string;
   area: AreaId;
   asignadoA: string; // userId
-  creadoPor: string; // userId
+  createdBy: string; // userId
   estado: TaskStatus;
   prioridad: TaskPriority;
   periodicidad: TaskPeriodicity;
@@ -273,5 +273,3 @@ export interface DayOff {
   weekStartDate: string; // YYYY-MM-DD
   dayOff: DayOfWeek; // The one flexible day off
 }
-
-    
