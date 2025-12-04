@@ -1,7 +1,6 @@
-
 'use client';
 
-import { usePathname, useRouter } from 'next/navigation';
+import { usePathname } from 'next/navigation';
 import Link from 'next/link';
 import {
   Home,
@@ -19,7 +18,7 @@ import {
 export function MainNav() {
   const pathname = usePathname();
 
-  // Módulos EXACTAMENTE como los tienes, pero con Gestión de Usuarios VISIBLE
+  // TODOS los módulos VISIBLES - SIN filtros de permisos
   const navItems = [
     { href: '/', label: 'Dashboard', icon: <Home /> },
     { href: '/tasks', label: 'Tareas', icon: <ClipboardList /> },
@@ -29,9 +28,8 @@ export function MainNav() {
     { href: '/inventory', label: 'Inventario', icon: <Archive /> },
     { 
       href: '/users', 
-      label: 'Gestión de Usuarios', 
-      icon: <Users />,
-      highlight: true  // ← ¡NUEVO: Esto lo hace visible!
+      label: '👑 Gestión de Usuarios', // 👑 Icono para destacarlo
+      icon: <Users /> 
     },
     { href: '/reports', label: 'Reportes', icon: <FileSpreadsheet /> },
     { href: '/stats', label: 'Estadísticas', icon: <AreaChart /> },
@@ -39,18 +37,26 @@ export function MainNav() {
   ];
 
   return (
-    <nav className="w-64 bg-white border-r h-full p-4">
+    <div className="w-64 bg-white border-r h-full overflow-y-auto">
       {/* Logo */}
-      <div className="mb-8">
-        <h1 className="text-xl font-bold text-gray-800">Comedor</h1>
+      <div className="p-6 border-b">
+        <div className="flex items-center gap-3">
+          <div className="h-10 w-10 bg-gradient-to-br from-blue-600 to-purple-600 rounded-lg flex items-center justify-center">
+            <span className="text-white font-bold">C</span>
+          </div>
+          <div>
+            <h1 className="font-bold text-gray-900">Comedor</h1>
+            <p className="text-xs text-green-600">✅ Sistema Activo</p>
+          </div>
+        </div>
       </div>
 
       {/* Navegación */}
-      <div className="space-y-1">
+      <nav className="p-4 space-y-1">
         {navItems.map((item) => {
           const isActive = pathname === item.href || 
                           (item.href !== '/' && pathname?.startsWith(item.href));
-          const isHighlighted = item.href === '/users'; // ← Detecta Gestión de Usuarios
+          const isUsers = item.href === '/users';
           
           return (
             <Link
@@ -59,26 +65,32 @@ export function MainNav() {
               className={`
                 flex items-center gap-3 px-4 py-3 rounded-lg transition-all
                 ${isActive ? 'bg-blue-50 text-blue-700 border border-blue-200' : 'hover:bg-gray-50'}
-                ${isHighlighted ? 'border-2 border-blue-400 bg-blue-50 shadow-sm' : ''}
+                ${isUsers ? 'border-2 border-blue-400 bg-blue-50 shadow-sm font-semibold' : ''}
               `}
             >
-              <div className={`${isHighlighted ? 'text-blue-600' : ''}`}>
+              <div className={`${isUsers ? 'text-blue-600' : ''}`}>
                 {item.icon}
               </div>
-              <span className={`font-medium ${isHighlighted ? 'text-blue-800 font-semibold' : ''}`}>
+              <span className={`${isUsers ? 'text-blue-800' : ''}`}>
                 {item.label}
               </span>
               
-              {/* Badge especial para Gestión de Usuarios */}
-              {isHighlighted && (
-                <span className="ml-auto text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">
-                  ¡Nuevo!
+              {/* Badge especial para Usuarios */}
+              {isUsers && (
+                <span className="ml-auto">
+                  <span className="h-2 w-2 bg-blue-500 rounded-full animate-ping"></span>
                 </span>
               )}
             </Link>
           );
         })}
+      </nav>
+      
+      {/* Nota de debug */}
+      <div className="p-4 mt-8 border-t text-xs text-gray-500">
+        <p>Módulos activos: <strong>10/10</strong></p>
+        <p className="text-green-600">✓ Gestión de Usuarios: VISIBLE</p>
       </div>
-    </nav>
+    </div>
   );
 }
