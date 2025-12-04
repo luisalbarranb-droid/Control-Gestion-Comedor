@@ -1,4 +1,3 @@
-
 import type { Metadata } from 'next';
 import './globals.css';
 import { Toaster } from '@/components/ui/toaster';
@@ -31,13 +30,16 @@ export default function RootLayout({
       <body className="font-body antialiased">
         <FirebaseProvider>
           <div className="min-h-screen w-full bg-background flex">
-            <aside className="fixed inset-y-0 left-0 z-10 hidden w-64 flex-col border-r bg-white sm:flex">
-              <div className="p-4 justify-center flex items-center gap-2 border-b h-16">
+            {/* --- Barra lateral simplificada con CSS Flexbox --- */}
+            <aside className="fixed inset-y-0 left-0 z-10 hidden w-64 flex-col border-r bg-card sm:flex">
+              <div className="p-4 justify-center flex items-center gap-2 border-b h-14">
                 <SquareCheck className="size-8 text-primary" />
                 <h1 className="font-headline text-2xl font-bold">Comedor</h1>
               </div>
               <MainNav />
             </aside>
+            
+            {/* --- Contenido Principal --- */}
             <div className="flex flex-col flex-1 sm:pl-64">
               <Header />
               <main className="flex-1 p-4 sm:p-6 md:p-8">

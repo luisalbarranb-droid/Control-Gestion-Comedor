@@ -16,21 +16,22 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
+// Array de navegación estático sin lógica condicional.
+const navItems = [
+  { href: '/', label: 'Dashboard', icon: <Home className="h-5 w-5" /> },
+  { href: '/tasks', label: 'Tareas', icon: <ClipboardList className="h-5 w-5" /> },
+  { href: '/attendance', label: 'Asistencia', icon: <QrCode className="h-5 w-5" /> },
+  { href: '/menus', label: 'Menus', icon: <BookOpen className="h-5 w-5" /> },
+  { href: '/daily-closing', label: 'Cierres Diarios', icon: <ClipboardCheck className="h-5 w-5" /> },
+  { href: '/inventory', label: 'Inventario', icon: <Archive className="h-5 w-5" /> },
+  { href: '/users', label: 'Gestión de Usuarios', icon: <Users className="h-5 w-5" /> },
+  { href: '/reports', label: 'Reportes', icon: <FileSpreadsheet className="h-5 w-5" /> },
+  { href: '/stats', label: 'Estadísticas', icon: <AreaChart className="h-5 w-5" /> },
+  { href: '/settings', label: 'Configuración', icon: <Settings className="h-5 w-5" /> },
+];
+
 export function MainNav() {
   const pathname = usePathname();
-
-  const navItems = [
-    { href: '/', label: 'Dashboard', icon: <Home className="h-5 w-5" /> },
-    { href: '/tasks', label: 'Tareas', icon: <ClipboardList className="h-5 w-5" /> },
-    { href: '/attendance', label: 'Asistencia', icon: <QrCode className="h-5 w-5" /> },
-    { href: '/menus', label: 'Menus', icon: <BookOpen className="h-5 w-5" /> },
-    { href: '/daily-closing', label: 'Cierres Diarios', icon: <ClipboardCheck className="h-5 w-5" /> },
-    { href: '/inventory', label: 'Inventario', icon: <Archive className="h-5 w-5" /> },
-    { href: '/users', label: 'Gestión de Usuarios', icon: <Users className="h-5 w-5" /> },
-    { href: '/reports', label: 'Reportes', icon: <FileSpreadsheet className="h-5 w-5" /> },
-    { href: '/stats', label: 'Estadísticas', icon: <AreaChart className="h-5 w-5" /> },
-    { href: '/settings', label: 'Configuración', icon: <Settings className="h-5 w-5" /> },
-  ];
 
   return (
     <nav className="flex flex-col gap-2 py-4">
