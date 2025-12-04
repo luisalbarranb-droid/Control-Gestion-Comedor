@@ -6,6 +6,7 @@ import { Firestore, doc, onSnapshot, DocumentReference, DocumentData, FirestoreE
 import { Auth, User as AuthUser } from 'firebase/auth';
 import type { User as FirestoreUser } from '@/lib/types';
 import { UseDocResult, WithId, UseCollectionResult, InternalQuery } from '@/firebase';
+import { FirebaseErrorListener } from '@/components/FirebaseErrorListener';
 
 // --- MOCK DATA PARA FORZAR SUPERADMIN ---
 const MOCK_AUTH_USER: AuthUser = {
@@ -57,7 +58,7 @@ type FirebaseContextState = FirebaseServices & UserAuthState;
 // --- CONTEXT CREATION ---
 export const FirebaseContext = createContext<FirebaseContextState | undefined>(undefined);
 
-// --- PROVIDER COMPONENT (SIMPLIFICADO) ---
+// --- PROVIDER COMPONENT ---
 export const FirebaseProvider: React.FC<{ children: ReactNode; firebaseApp: FirebaseApp; firestore: Firestore; auth: Auth; }> = ({ children, firebaseApp, firestore, auth }) => {
   const contextValue: FirebaseContextState = useMemo(() => ({
     firebaseApp,
@@ -71,12 +72,13 @@ export const FirebaseProvider: React.FC<{ children: ReactNode; firebaseApp: Fire
 
   return (
     <FirebaseContext.Provider value={contextValue}>
+      <FirebaseErrorListener />
       {children}
     </FirebaseContext.Provider>
   );
 };
 
-// --- HOOKS (SIMPLIFICADOS) ---
+// --- HOOKS ---
 function useFirebaseContext(): FirebaseContextState {
   const context = useContext(FirebaseContext);
   if (context === undefined) {
@@ -102,33 +104,126 @@ export const useUser = (): UserAuthState & { auth: Auth } => {
   };
 };
 
-// --- UTILITY HOOKS (SIMULACIONES) ---
+// --- UTILITY HOOKS ---
 type MemoFirebase<T> = T & { __memo?: boolean };
 export function useMemoFirebase<T>(factory: () => T, deps: DependencyList): T {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   return useMemo(factory, deps);
 }
 
-// Simulación de useDoc que devuelve el perfil del superadmin
-export function useDoc<T = any>(docRef: DocumentReference | null | undefined): UseDocResult<T> {
-  if (docRef?.path.includes('users/dev-superadmin-uid-123')) {
-    return { data: MOCK_PROFILE as WithId<T>, isLoading: false, error: null };
-  }
-  return { data: null, isLoading: false, error: null };
+// RESTAURADO: Hook `useDoc` real para que los componentes puedan leer documentos.
+export function useDoc<T = any>(
+  memoizedDocRef: DocumentReference<DocumentData> | null | undefined,
+  options: { disabled?: boolean } = { disabled: false },
+): UseDocResult<T> {
+  type StateDataType = WithId<T> | null;
+
+  const [data, setData] = useState<StateDataType>(null);
+  const [isLoading, setIsLoading] = useState<boolean>(!options.disabled);
+  const [error, setError] = useState<FirestoreError | Error | null>(null);
+
+  useEffect(() => {
+    if (memoizedDocRef && memoizedDocRef.path.includes('dev-superadmin-uid-123')) {
+        setData(MOCK_PROFILE as WithId<T>);
+        setIsLoading(false);
+        return;
+    }
+
+    if (!memoizedDocRef || options.disabled) {
+      setData(null);
+      setIsLoading(false);
+      setError(null);
+      return;
+    }
+
+    setIsLoading(true);
+    setError(null);
+
+    const unsubscribe = onSnapshot(
+      memoizedDocRef,
+      (snapshot: DocumentSnapshot<DocumentData>) => {
+        if (snapshot.exists()) {
+          setData({ ...(snapshot.data() as T), id: snapshot.id });
+        } else {
+          setData(null);
+        }
+        setError(null);
+        setIsLoading(false);
+      },
+      (error: FirestoreError) => {
+        const contextualError = new FirestorePermissionError({
+          operation: 'get',
+          path: memoizedDocRef.path,
+        })
+        setError(contextualError)
+        setData(null)
+        setIsLoading(false)
+        errorEmitter.emit('permission-error', contextualError);
+      }
+    );
+
+    return () => unsubscribe();
+  }, [memoizedDocRef, options.disabled]);
+
+  return { data, isLoading, error };
 }
 
-// Simulación de useCollection que devuelve una lista con el superadmin
+
+// RESTAURADO Y CORREGIDO: useCollection para que lea la base de datos real.
 export function useCollection<T = any>(
     memoizedTargetRefOrQuery: ((CollectionReference<DocumentData> | Query<DocumentData>) & {__memo?: boolean})  | null | undefined,
-    options?: { disabled?: boolean },
+    options: { disabled?: boolean } = { disabled: false },
 ): UseCollectionResult<T> {
-    const { users } = require('@/lib/placeholder-data');
-    if (memoizedTargetRefOrQuery?.type === 'collection' && (memoizedTargetRefOrQuery as CollectionReference).path === 'users') {
-        return { data: users as WithId<T>[], isLoading: false, error: null };
+  type ResultItemType = WithId<T>;
+  type StateDataType = ResultItemType[] | null;
+
+  const [data, setData] = useState<StateDataType>(null);
+  const [isLoading, setIsLoading] = useState<boolean>(!options.disabled);
+  const [error, setError] = useState<FirestoreError | Error | null>(null);
+
+  useEffect(() => {
+    if (!memoizedTargetRefOrQuery || options.disabled) {
+      setData(null);
+      setIsLoading(false);
+      setError(null);
+      return;
     }
-     if (memoizedTargetRefOrQuery?.type === 'collection' && (memoizedTargetRefOrQuery as CollectionReference).path === 'tasks') {
-        const { tasks } = require('@/lib/placeholder-data');
-        return { data: tasks as WithId<T>[], isLoading: false, error: null };
-    }
-    return { data: [], isLoading: false, error: null };
+
+    setIsLoading(true);
+    setError(null);
+
+    const unsubscribe = onSnapshot(
+      memoizedTargetRefOrQuery,
+      (snapshot: QuerySnapshot<DocumentData>) => {
+        const results: ResultItemType[] = [];
+        snapshot.forEach(doc => {
+          results.push({ ...(doc.data() as T), id: doc.id });
+        });
+        setData(results);
+        setError(null);
+        setIsLoading(false);
+      },
+      (error: FirestoreError) => {
+        const path: string =
+          memoizedTargetRefOrQuery.type === 'collection'
+            ? (memoizedTargetRefOrQuery as CollectionReference).path
+            : (memoizedTargetRefOrQuery as unknown as InternalQuery)._query.path.canonicalString()
+
+        const contextualError = new FirestorePermissionError({
+          operation: 'list',
+          path,
+        })
+
+        setError(contextualError)
+        setData(null)
+        setIsLoading(false)
+
+        errorEmitter.emit('permission-error', contextualError);
+      }
+    );
+
+    return () => unsubscribe();
+  }, [memoizedTargetRefOrQuery, options.disabled]);
+  
+  return { data, isLoading, error };
 }

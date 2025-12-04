@@ -23,16 +23,10 @@ import { Loader2 } from 'lucide-react';
 export const dynamic = 'force-dynamic';
 
 export default function AttendancePage() {
-  const { user: authUser, isUserLoading: isAuthLoading } = useUser();
+  const { user: authUser, profile: currentUser, isUserLoading: isAuthLoading } = useUser();
   const firestore = useFirestore();
 
-  const userDocRef = useMemoFirebase(() => {
-    if (!firestore || !authUser) return null;
-    return doc(firestore, 'users', authUser.uid);
-  }, [firestore, authUser]);
-  const { data: currentUser, isLoading: isProfileLoading } = useDoc<User>(userDocRef);
-  
-  const rol = currentUser?.rol;
+  const rol = currentUser?.role;
   const isAdmin = rol === 'admin' || rol === 'superadmin';
 
   // --- Fetch all users ---
@@ -67,7 +61,7 @@ export default function AttendancePage() {
     }, [firestore, authUser, weekStartDateString]);
   const { data: daysOff, isLoading: isLoadingDaysOff } = useCollection(daysOffQuery, { disabled: !authUser });
 
-  const isLoading = isAuthLoading || isProfileLoading || isLoadingUsers || isLoadingAttendance || isLoadingDaysOff;
+  const isLoading = isAuthLoading || isLoadingUsers || isLoadingAttendance || isLoadingDaysOff;
 
   if (isLoading) {
     return (

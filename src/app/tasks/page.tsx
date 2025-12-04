@@ -68,13 +68,7 @@ const statusVariant: Record<TaskStatus, string> = {
 
 export default function TasksPage() {
   const firestore = useFirestore();
-  const { user: authUser, isUserLoading: isAuthLoading } = useUser();
-  
-  const userDocRef = useMemoFirebase(() => {
-    if (!firestore || !authUser) return null;
-    return doc(firestore, 'users', authUser.uid);
-  }, [firestore, authUser]);
-  const { data: currentUser, isLoading: isProfileLoading } = useDoc<User>(userDocRef);
+  const { user: authUser, profile: currentUser, isUserLoading: isAuthLoading } = useUser();
 
   const role = currentUser?.role;
   const isAdmin = role === 'admin' || role === 'superadmin';
@@ -82,7 +76,6 @@ export default function TasksPage() {
   const tasksQuery = useMemoFirebase(
     () => {
         if (!firestore || !authUser) return null;
-        // Admins can see all tasks, common users only see tasks assigned to them
         return isAdmin 
             ? collection(firestore, 'tasks')
             : query(collection(firestore, 'tasks'), where('asignadoA', '==', authUser.uid));
@@ -113,8 +106,8 @@ export default function TasksPage() {
       id: docRef.id,
       creadoPor: currentUser.id,
       fechaCreacion: serverTimestamp(),
-      estado: 'pendiente',
-      periodicidad: 'unica',
+      estado: 'pendiente' as TaskStatus,
+      periodicidad: newTaskData.periodicidad || 'unica',
       checklist: [],
       evidencias: [],
       comentarios: [],
@@ -122,10 +115,10 @@ export default function TasksPage() {
       recurrente: false,
     };
     
-    addDocumentNonBlocking(collectionRef, fullyNewTask);
+    addDocumentNonBlocking(docRef, fullyNewTask);
   };
 
-  const isLoading = isLoadingTasks || isLoadingUsers || isAuthLoading || isProfileLoading;
+  const isLoading = isLoadingTasks || isLoadingUsers || isAuthLoading;
 
   if (isLoading) {
       return (
@@ -187,7 +180,6 @@ export default function TasksPage() {
                       const user = getUser(task.asignadoA);
                       const area = getArea(task.area);
                       
-                      // Handle Firestore Timestamp
                       const fechaVencimiento = task.fechaVencimiento?.toDate ? task.fechaVencimiento.toDate() : new Date(task.fechaVencimiento as any);
 
                       return (
@@ -230,7 +222,7 @@ export default function TasksPage() {
                                 <AvatarImage src={user?.avatarUrl} />
                                 <AvatarFallback>
                                   {user?.name
-                                    .split(' ')
+                                    ?.split(' ')
                                     .map((n) => n[0])
                                     .join('')}
                                 </AvatarFallback>

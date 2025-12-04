@@ -2,15 +2,16 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Plus, Search, MoreVertical, Edit, Trash2, Eye, User, Mail, Phone, CheckCircle, XCircle } from 'lucide-react';
+import { Plus, Search, MoreVertical, Edit, Trash2, Eye, User as UserIcon, Mail, Phone, CheckCircle, XCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { users as usuariosEjemplo } from '@/lib/placeholder-data';
-import type { Role } from '@/lib/types';
+import type { User, Role } from '@/lib/types';
+import { useCollection, useFirestore, useMemoFirebase, useUser } from '@/firebase';
+import { collection } from 'firebase/firestore';
 
 
 const roles: Record<Role, { label: string, color: string }> = {
@@ -21,10 +22,17 @@ const roles: Record<Role, { label: string, color: string }> = {
 
 export default function GestionUsuariosPage() {
   const router = useRouter();
+  const firestore = useFirestore();
+  const { user: authUser } = useUser();
+
   const [busqueda, setBusqueda] = useState('');
   const [filtroRol, setFiltroRol] = useState('all');
 
-  const usuariosFiltrados = usuariosEjemplo.filter(usuario => {
+  const usersCollectionRef = useMemoFirebase(() => (firestore ? collection(firestore, 'users') : null), [firestore]);
+  const { data: usuarios, isLoading } = useCollection<User>(usersCollectionRef, { disabled: !authUser });
+
+
+  const usuariosFiltrados = usuarios?.filter(usuario => {
     const coincideBusqueda = 
       usuario.name.toLowerCase().includes(busqueda.toLowerCase()) ||
       usuario.email.toLowerCase().includes(busqueda.toLowerCase());
@@ -32,12 +40,12 @@ export default function GestionUsuariosPage() {
     const coincideRol = filtroRol === 'all' || usuario.role === filtroRol;
     
     return coincideBusqueda && coincideRol;
-  });
+  }) || [];
 
   const estadisticas = {
-    total: usuariosEjemplo.length,
-    activos: usuariosEjemplo.filter(u => u.isActive).length,
-    admins: usuariosEjemplo.filter(u => u.role === 'admin' || u.role === 'superadmin').length,
+    total: usuarios?.length || 0,
+    activos: usuarios?.filter(u => u.isActive).length || 0,
+    admins: usuarios?.filter(u => u.role === 'admin' || u.role === 'superadmin').length || 0,
   };
 
   return (
@@ -61,7 +69,7 @@ export default function GestionUsuariosPage() {
                 <p className="text-sm text-gray-500">Total Usuarios</p>
                 <p className="text-2xl font-bold">{estadisticas.total}</p>
               </div>
-              <User className="h-8 w-8 text-blue-500" />
+              <UserIcon className="h-8 w-8 text-blue-500" />
             </div>
           </CardContent>
         </Card>
@@ -83,7 +91,7 @@ export default function GestionUsuariosPage() {
                 <p className="text-sm text-gray-500">Administradores</p>
                 <p className="text-2xl font-bold text-purple-600">{estadisticas.admins}</p>
               </div>
-              <User className="h-8 w-8 text-purple-500" />
+              <UserIcon className="h-8 w-8 text-purple-500" />
             </div>
           </CardContent>
         </Card>
@@ -132,12 +140,13 @@ export default function GestionUsuariosPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {usuariosFiltrados.map((usuario) => (
+                {isLoading && <TableRow><TableCell colSpan={6} className="text-center h-24">Cargando usuarios...</TableCell></TableRow>}
+                {!isLoading && usuariosFiltrados.map((usuario) => (
                   <TableRow key={usuario.id}>
                     <TableCell>
                       <div className="flex items-center gap-3">
                         <div className="h-10 w-10 bg-gray-100 rounded-full flex items-center justify-center">
-                          <User className="h-5 w-5 text-gray-600" />
+                          <UserIcon className="h-5 w-5 text-gray-600" />
                         </div>
                         <p className="font-medium">{usuario.name}</p>
                       </div>
@@ -172,7 +181,7 @@ export default function GestionUsuariosPage() {
                       </div>
                     </TableCell>
                     <TableCell>
-                      {usuario.lastAccess ? new Date(usuario.lastAccess).toLocaleDateString() : 'Nunca'}
+                      {usuario.lastAccess ? new Date((usuario.lastAccess as any).toDate()).toLocaleDateString() : 'Nunca'}
                     </TableCell>
                     <TableCell className="text-right">
                       <DropdownMenu>
