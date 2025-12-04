@@ -2,10 +2,8 @@
 import type { Metadata } from 'next';
 import './globals.css';
 import { Toaster } from '@/components/ui/toaster';
-import { SmartAuthProvider } from '@/providers/SmartAuthProvider';
-import { MainNav } from '@/components/dashboard/main-nav';
-import { Header } from '@/components/dashboard/header';
-
+import { FirebaseProvider } from '@/firebase/provider';
+import { FirebaseErrorListener } from '@/components/FirebaseErrorListener';
 
 export const metadata: Metadata = {
   title: 'Sistema Comedor - Gestión Inteligente',
@@ -29,18 +27,11 @@ export default function RootLayout({
         />
       </head>
       <body className="font-body antialiased">
-        <SmartAuthProvider>
-            <div className="min-h-screen w-full flex">
-              <aside className="w-64 border-r fixed inset-y-0 bg-background z-50 hidden md:block">
-                <MainNav />
-              </aside>
-              <div className="flex-1 flex flex-col md:ml-64">
-                <Header />
-                <main>{children}</main>
-              </div>
-            </div>
+        <FirebaseProvider>
+          {children}
           <Toaster />
-        </SmartAuthProvider>
+          <FirebaseErrorListener />
+        </FirebaseProvider>
       </body>
     </html>
   );
