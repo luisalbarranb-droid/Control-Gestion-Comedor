@@ -1,10 +1,9 @@
 'use client';
 
-import React, { DependencyList, createContext, useContext, ReactNode, useMemo, useState, useEffect } from 'react';
+import React, { DependencyList, createContext, useContext, ReactNode, useMemo } from 'react';
 import { FirebaseApp } from 'firebase/app';
-import { Firestore, doc, onSnapshot } from 'firebase/firestore';
+import { Firestore } from 'firebase/firestore';
 import { Auth, User as AuthUser } from 'firebase/auth';
-import { onAuthStateChanged } from 'firebase/auth';
 import { FirebaseErrorListener } from '@/components/FirebaseErrorListener';
 import type { User as FirestoreUser } from '@/lib/types';
 
@@ -21,6 +20,7 @@ interface FirebaseProviderProps extends FirebaseServices {
   children: ReactNode;
 }
 
+// Since login is removed, user state is simplified
 interface UserAuthState {
   user: AuthUser | null;
   profile: FirestoreUser | null;
@@ -43,69 +43,17 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
   firestore,
   auth,
 }) => {
-  const [userAuthState, setUserAuthState] = useState<UserAuthState>({
-    user: auth.currentUser, // Initialize with current user, might be null
-    profile: null,
-    isUserLoading: true,      // Start loading until first check is complete
-    userError: null,
-  });
-
-  useEffect(() => {
-    let profileUnsubscribe: (() => void) | null = null;
-    
-    const authUnsubscribe = onAuthStateChanged(
-      auth,
-      (user) => {
-        if (profileUnsubscribe) {
-          profileUnsubscribe();
-          profileUnsubscribe = null;
-        }
-
-        if (user) {
-          setUserAuthState(prevState => ({ ...prevState, user, isUserLoading: true, userError: null }));
-          
-          const profileRef = doc(firestore, 'users', user.uid);
-          profileUnsubscribe = onSnapshot(profileRef, 
-            (docSnap) => {
-              if (docSnap.exists()) {
-                const profileData = { id: docSnap.id, ...docSnap.data() } as FirestoreUser;
-                setUserAuthState(prevState => ({ ...prevState, profile: profileData, isUserLoading: false }));
-              } else {
-                 setUserAuthState(prevState => ({ ...prevState, profile: null, isUserLoading: false }));
-              }
-            },
-            (error) => {
-              console.error("FirebaseProvider: Profile snapshot error:", error);
-              setUserAuthState(prevState => ({ ...prevState, profile: null, isUserLoading: false, userError: error }));
-            }
-          );
-        } else {
-          // No user, clear all user-related state
-          setUserAuthState({ user: null, profile: null, isUserLoading: false, userError: null });
-        }
-      },
-      (error) => {
-        console.error("FirebaseProvider: Auth state error:", error);
-        if (profileUnsubscribe) profileUnsubscribe();
-        setUserAuthState({ user: null, profile: null, isUserLoading: false, userError: error });
-      }
-    );
-
-    return () => {
-      authUnsubscribe();
-      if (profileUnsubscribe) profileUnsubscribe();
-    };
-  }, [auth, firestore]);
-
+  // Since login is removed, we can provide a default non-loading state.
+  // The user will be null.
   const contextValue = useMemo((): FirebaseContextState => ({
     firebaseApp,
     firestore,
     auth,
-    user: userAuthState.user,
-    profile: userAuthState.profile,
-    isUserLoading: userAuthState.isUserLoading,
-    userError: userAuthState.userError,
-  }), [firebaseApp, firestore, auth, userAuthState]);
+    user: null,
+    profile: null,
+    isUserLoading: false,
+    userError: null,
+  }), [firebaseApp, firestore, auth]);
 
   return (
     <FirebaseContext.Provider value={contextValue}>
