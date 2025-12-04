@@ -92,12 +92,8 @@ export default function TasksPage() {
   const { data: tasks, isLoading: isLoadingTasks } = useCollection<Task>(tasksQuery);
 
   const usersQuery = useMemoFirebase(
-    () => {
-      // Only fetch all users if the current user is an admin
-      if (!firestore || !isAdmin) return null;
-      return collection(firestore, 'users');
-    },
-    [firestore, isAdmin]
+    () => (firestore ? collection(firestore, 'users') : null),
+    [firestore]
   );
   const { data: users, isLoading: isLoadingUsers } = useCollection<User>(usersQuery);
 
@@ -129,7 +125,7 @@ export default function TasksPage() {
     addDocumentNonBlocking(collectionRef, fullyNewTask);
   };
 
-  const isLoading = isLoadingTasks || (isAdmin && isLoadingUsers) || isAuthLoading || isProfileLoading;
+  const isLoading = isLoadingTasks || isLoadingUsers || isAuthLoading || isProfileLoading;
 
   if (isLoading) {
       return (

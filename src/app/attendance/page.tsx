@@ -35,15 +35,12 @@ export default function AttendancePage() {
   const rol = currentUser?.rol;
   const isAdmin = rol === 'admin' || rol === 'superadmin';
 
-  // --- Fetch users: all if admin, otherwise just the current user ---
-  const usersCollectionRef = useMemoFirebase(() => {
-    if (!firestore || !isAdmin) return null;
-    return collection(firestore, 'users');
-  }, [firestore, isAdmin]);
-  
-  const { data: allUsers, isLoading: isLoadingUsers } = useCollection(usersCollectionRef, {
-    disabled: !isAdmin,
-  });
+  // --- Fetch all users ---
+  const usersCollectionRef = useMemoFirebase(
+    () => (firestore ? collection(firestore, 'users') : null),
+    [firestore]
+  );
+  const { data: allUsers, isLoading: isLoadingUsers } = useCollection<User>(usersCollectionRef);
 
   const usersToDisplay = isAdmin ? allUsers : (currentUser ? [currentUser] : []);
 
@@ -70,7 +67,7 @@ export default function AttendancePage() {
     }, [firestore, authUser, weekStartDateString]);
   const { data: daysOff, isLoading: isLoadingDaysOff } = useCollection(daysOffQuery, { disabled: !authUser });
 
-  const isLoading = isAuthLoading || isProfileLoading || (isAdmin && isLoadingUsers) || isLoadingAttendance || isLoadingDaysOff;
+  const isLoading = isAuthLoading || isProfileLoading || isLoadingUsers || isLoadingAttendance || isLoadingDaysOff;
 
   if (isLoading) {
     return (
