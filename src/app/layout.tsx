@@ -31,17 +31,17 @@ export default function RootLayout({
       </head>
       <body className="font-body antialiased">
         <FirebaseProvider>
-          <div className="min-h-screen w-full bg-background">
+          <div className="min-h-screen w-full bg-background flex">
             <aside className="fixed inset-y-0 left-0 z-10 hidden w-64 flex-col border-r bg-white sm:flex">
-              <div className="p-4 justify-center flex items-center gap-2 border-b">
+              <div className="p-4 justify-center flex items-center gap-2 border-b h-16">
                 <SquareCheck className="size-8 text-primary" />
                 <h1 className="font-headline text-2xl font-bold">Comedor</h1>
               </div>
               <MainNav />
             </aside>
-            <div className="flex flex-col sm:gap-4 sm:py-4 sm:pl-72">
+            <div className="flex flex-col flex-1 sm:pl-64">
               <Header />
-              <main className="grid flex-1 items-start gap-4 p-4 sm:px-6 sm:py-0 md:gap-8">
+              <main className="flex-1 p-4 sm:p-6 md:p-8">
                 {children}
               </main>
             </div>
@@ -53,3 +53,4 @@ export default function RootLayout({
     </html>
   );
 }
+
