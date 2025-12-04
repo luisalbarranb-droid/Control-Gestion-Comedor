@@ -15,10 +15,12 @@ import {
   QrCode,
   FileSpreadsheet
 } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 export function MainNav() {
   const pathname = usePathname();
 
+  // Lista estática y sin condiciones. Todos los módulos son visibles siempre.
   const navItems = [
     { href: '/', label: 'Dashboard', icon: <Home /> },
     { href: '/tasks', label: 'Tareas', icon: <ClipboardList /> },
@@ -46,11 +48,13 @@ export function MainNav() {
             <Link
               key={item.href}
               href={item.href}
-              className={`flex items-center gap-3 px-4 py-2 rounded-lg transition-colors text-sm font-medium ${
+              className={cn(
+                'flex items-center gap-3 px-4 py-2 rounded-lg transition-colors text-sm font-medium',
                 isActive
                   ? 'bg-primary/10 text-primary'
-                  : 'text-muted-foreground hover:bg-muted/50 hover:text-foreground'
-              } ${isUsers ? 'border border-primary bg-primary/5 font-semibold' : ''}`}
+                  : 'text-muted-foreground hover:bg-muted/50 hover:text-foreground',
+                isUsers ? 'font-bold border border-primary/50' : ''
+              )}
             >
               {item.icon}
               <span>{item.label}</span>
@@ -60,4 +64,3 @@ export function MainNav() {
     </nav>
   );
 }
-
