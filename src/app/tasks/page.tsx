@@ -43,7 +43,7 @@ import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import { CreateTaskForm } from '@/components/tasks/create-task-form';
 import { TaskDetails } from '@/components/tasks/task-details';
-import { useCollection, useDoc, useFirestore, useMemoFirebase, useUser, addDocumentNonBlocking } from '@/firebase';
+import { useCollection, useFirestore, useMemoFirebase, useUser, addDocumentNonBlocking } from '@/firebase';
 import { collection, doc, serverTimestamp, query, where } from 'firebase/firestore';
 
 
@@ -84,11 +84,11 @@ export default function TasksPage() {
   );
   const { data: tasks, isLoading: isLoadingTasks } = useCollection<Task>(tasksQuery);
 
-  const usersQuery = useMemoFirebase(
+  const usersCollectionRef = useMemoFirebase(
     () => (firestore ? collection(firestore, 'users') : null),
     [firestore]
   );
-  const { data: users, isLoading: isLoadingUsers } = useCollection<User>(usersQuery);
+  const { data: users, isLoading: isLoadingUsers } = useCollection<User>(usersCollectionRef);
 
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   
@@ -270,3 +270,5 @@ export default function TasksPage() {
     </div>
   );
 }
+
+    
