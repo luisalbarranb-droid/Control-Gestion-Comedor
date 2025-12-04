@@ -2,8 +2,17 @@
 import type { Metadata } from 'next';
 import './globals.css';
 import { Toaster } from '@/components/ui/toaster';
-import { FirebaseProvider } from '@/firebase/provider';
 import { FirebaseErrorListener } from '@/components/FirebaseErrorListener';
+import { Header } from '@/components/dashboard/header';
+import { MainNav } from '@/components/dashboard/main-nav';
+import {
+  Sidebar,
+  SidebarContent,
+  SidebarHeader,
+  SidebarInset,
+} from '@/components/ui/sidebar';
+import { SquareCheck } from 'lucide-react';
+
 
 export const metadata: Metadata = {
   title: 'Sistema Comedor - Gestión Inteligente',
@@ -27,11 +36,23 @@ export default function RootLayout({
         />
       </head>
       <body className="font-body antialiased">
-        <FirebaseProvider>
-          {children}
-          <Toaster />
-          <FirebaseErrorListener />
-        </FirebaseProvider>
+        <div className="min-h-screen w-full">
+            <Sidebar>
+                <SidebarHeader className="p-4 justify-center flex items-center gap-2">
+                <SquareCheck className="size-8 text-primary" />
+                <h1 className="font-headline text-2xl font-bold">Comedor</h1>
+                </SidebarHeader>
+                <SidebarContent>
+                <MainNav />
+                </SidebarContent>
+            </Sidebar>
+            <SidebarInset>
+                <Header />
+                {children}
+            </SidebarInset>
+        </div>
+        <Toaster />
+        <FirebaseErrorListener />
       </body>
     </html>
   );

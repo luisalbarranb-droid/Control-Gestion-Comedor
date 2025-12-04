@@ -1,4 +1,3 @@
-
 'use client';
 
 import { usePathname } from 'next/navigation';
@@ -15,13 +14,9 @@ import {
   QrCode,
   FileSpreadsheet
 } from 'lucide-react';
-import { useUser } from '@/firebase';
 
 export function MainNav() {
   const pathname = usePathname();
-  const { profile } = useUser();
-
-  const isAdmin = profile?.role === 'superadmin' || profile?.role === 'admin';
 
   const navItems = [
     { href: '/', label: 'Dashboard', icon: <Home /> },
@@ -30,7 +25,11 @@ export function MainNav() {
     { href: '/menus', label: 'Menus', icon: <BookOpen /> },
     { href: '/daily-closing', label: 'Cierres Diarios', icon: <ClipboardCheck /> },
     { href: '/inventory', label: 'Inventario', icon: <Archive /> },
-    ...(isAdmin ? [{ href: '/users', label: 'Usuarios', icon: <Users /> }] : []),
+    { 
+      href: '/users', 
+      label: 'Gestión de Usuarios', 
+      icon: <Users />
+    },
     { href: '/reports', label: 'Reportes', icon: <FileSpreadsheet /> },
     { href: '/stats', label: 'Estadísticas', icon: <AreaChart /> },
     { href: '/settings', label: 'Configuración', icon: <Settings /> },
