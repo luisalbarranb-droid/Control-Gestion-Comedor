@@ -1,14 +1,16 @@
-
+// src/app/layout.tsx
 import type { Metadata } from 'next';
 import './globals.css';
 import { SidebarProvider } from '@/components/ui/sidebar';
 import { Toaster } from '@/components/ui/toaster';
-import { FirebaseProvider } from '@/firebase/provider';
-import { firebaseApp, auth, firestore } from '@/firebase';
+import { SmartAuthProvider } from '@/providers/SmartAuthProvider';
+import { MainNav } from '@/components/dashboard/main-nav';
+import { Environment } from '@/lib/environment';
+
 
 export const metadata: Metadata = {
-  title: 'Comedor Control',
-  description: 'Sistema Avanzado de Gestión de Tareas',
+  title: 'Sistema Comedor - Gestión Inteligente',
+  description: 'Sistema de gestión para comedor industrial',
 };
 
 export default function RootLayout({
@@ -16,9 +18,11 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const isStudio = Environment.isFirebaseStudio();
+  
   return (
     <html lang="es" suppressHydrationWarning>
-      <head>
+       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link
@@ -27,13 +31,22 @@ export default function RootLayout({
         />
       </head>
       <body className="font-body antialiased">
-        <FirebaseProvider
-            firebaseApp={firebaseApp}
-            auth={auth}
-            firestore={firestore}
-        >
-          <SidebarProvider>{children}</SidebarProvider>
+        <SmartAuthProvider>
+            <div className="min-h-screen w-full">
+              <SidebarProvider>
+                <div className="flex">
+                  <Sidebar>
+                     <MainNav />
+                  </Sidebar>
+                  <SidebarInset>
+                      {children}
+                  </SidebarInset>
+                </div>
+              </SidebarProvider>
+            </div>
           <Toaster />
-        </FirebaseProvider>
+        </SmartAuthProvider>
       </body>
     </html>
+  );
+}
