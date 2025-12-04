@@ -1,7 +1,6 @@
-
 import { Timestamp } from 'firebase/firestore';
 
-export type Role = 'superadmin' | 'admin' | 'comun';
+export type Role = 'superadmin' | 'admin' | 'comun' | 'manager' | 'employee' | 'chef' | 'waiter';
 export type AreaId = 'servicio' | 'cocina' | 'limpieza' | 'almacen' | 'equipos' | 'administracion' | 'operaciones' | 'rrhh';
 export type TaskStatus = 'pendiente' | 'en-progreso' | 'completada' | 'verificada' | 'rechazada';
 export type TaskPriority = 'baja' | 'media' | 'alta' | 'urgente';
@@ -10,15 +9,15 @@ export type WorkerType = 'obrero' | 'empleado';
 export type ContractType = 'determinado' | 'indeterminado' | 'prueba';
 
 export interface User {
-  id: string; // Document ID from Firestore, should be same as uid
+  id: string;
   email: string;
   name: string;
   role: Role;
   area: AreaId;
   isActive: boolean;
-  creationDate: Timestamp | Date;
+  creationDate: Timestamp | Date | string;
   createdBy: string;
-  lastAccess: Timestamp | Date;
+  lastAccess: Timestamp | Date | string;
   cedula?: string;
   phone?: string;
   address?: string;
@@ -26,6 +25,9 @@ export interface User {
   avatarUrl?: string;
   workerType?: WorkerType;
   contractType?: ContractType;
+  department?: string;
+  position?: string;
+  permissions?: string[];
 }
 
 export interface Area {

@@ -1,15 +1,19 @@
 'use client';
 
 import { useState } from 'react';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Plus, Search, MoreVertical, Edit, Trash2, Eye } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
 import {
-  Sidebar,
-  SidebarContent,
-  SidebarHeader,
-  SidebarInset,
-} from '@/components/ui/sidebar';
-import { Header } from '@/components/dashboard/header';
-import { MainNav } from '@/components/dashboard/main-nav';
-import { MoreHorizontal, SquareCheck, PlusCircle } from 'lucide-react';
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import {
   Table,
   TableBody,
@@ -18,250 +22,225 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import { areas } from '@/lib/placeholder-data';
-import type { User, Role } from '@/lib/types';
-import { cn } from '@/lib/utils';
-import Link from 'next/link';
-import { useToast } from '@/hooks/use-toast';
-import { useCollection, useDoc, useFirestore, useMemoFirebase, useUser, setDocumentNonBlocking, addDocumentNonBlocking } from '@/firebase';
-import { collection, doc, serverTimestamp, setDoc, updateDoc } from 'firebase/firestore';
-import { Loader2 } from 'lucide-react';
-import { UserForm } from '@/components/users/user-form';
-import { createUserWithEmailAndPassword } from 'firebase/auth';
+import { useRouter } from 'next/navigation';
+import type { Role } from '@/lib/types';
 
-export const dynamic = 'force-dynamic';
+// Datos de ejemplo para desarrollo
+const mockUsers = [
+  {
+    id: '1',
+    email: 'superadmin@empresa.com',
+    name: 'Juan Pérez',
+    role: 'superadmin' as Role,
+    department: 'Administración',
+    position: 'Director General',
+    active: true,
+    createdAt: '2024-01-15',
+    lastLogin: '2024-12-03'
+  },
+  {
+    id: '2',
+    email: 'admin@empresa.com',
+    name: 'María García',
+    role: 'admin' as Role,
+    department: 'Recursos Humanos',
+    position: 'Gerente de RH',
+    active: true,
+    createdAt: '2024-02-20',
+    lastLogin: '2024-12-02'
+  },
+  {
+    id: '3',
+    email: 'chef@restaurante.com',
+    name: 'Carlos López',
+    role: 'chef' as Role,
+    department: 'Cocina',
+    position: 'Chef Principal',
+    active: true,
+    createdAt: '2024-03-10',
+    lastLogin: '2024-12-01'
+  },
+  {
+    id: '4',
+    email: 'mesero@restaurante.com',
+    name: 'Ana Rodríguez',
+    role: 'waiter' as Role,
+    department: 'Servicio',
+    position: 'Mesero',
+    active: true,
+    createdAt: '2024-04-05',
+    lastLogin: '2024-11-30'
+  },
+  {
+    id: '5',
+    email: 'empleado@empresa.com',
+    name: 'Pedro Sánchez',
+    role: 'employee' as Role,
+    department: 'Operaciones',
+    position: 'Operario',
+    active: false,
+    createdAt: '2024-05-12',
+    lastLogin: '2024-11-15'
+  },
+];
 
-const roleVariant: Record<Role, string> = {
-  superadmin: 'bg-purple-100 text-purple-800',
-  admin: 'bg-blue-100 text-blue-800',
-  comun: 'bg-gray-100 text-gray-800',
+const roleColors: Record<Role, string> = {
+  superadmin: 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-300',
+  admin: 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300',
+  manager: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300',
+  employee: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300',
+  chef: 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-300',
+  waiter: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300',
+  comun: 'bg-gray-100 text-gray-800'
 };
 
-const statusVariant: Record<boolean, string> = {
-  true: 'bg-green-100 text-green-800',
-  false: 'bg-red-100 text-red-800',
+const roleLabels: Record<Role, string> = {
+  superadmin: 'Super Admin',
+  admin: 'Administrador',
+  manager: 'Gerente',
+  employee: 'Empleado',
+  chef: 'Chef',
+  waiter: 'Mesero',
+  comun: 'Común',
 };
 
 export default function UsersPage() {
-  const { user: authUser, isUserLoading: isAuthLoading, auth } = useUser();
-  const firestore = useFirestore();
-  const { toast } = useToast();
+  const router = useRouter();
+  const [users, setUsers] = useState(mockUsers);
+  const [search, setSearch] = useState('');
+  const [filterRole, setFilterRole] = useState<string>('all');
 
-  const userDocRef = useMemoFirebase(() => {
-    if (!firestore || !authUser) return null;
-    return doc(firestore, 'users', authUser.uid);
-  }, [firestore, authUser]);
-  
-  const { data: currentUser, isLoading: isProfileLoading } = useDoc<User>(userDocRef, {
-      disabled: !authUser || isAuthLoading
+  const filteredUsers = users.filter(user => {
+    const matchesSearch = 
+      user.name.toLowerCase().includes(search.toLowerCase()) ||
+      user.email.toLowerCase().includes(search.toLowerCase());
+    
+    const matchesRole = filterRole === 'all' || user.role === filterRole;
+    
+    return matchesSearch && matchesRole;
   });
 
-  const isSuperAdmin = currentUser?.role === 'superadmin';
-  const isAdminOrHigher = currentUser?.role === 'admin' || currentUser?.role === 'superadmin';
-
-  const usersCollectionRef = useMemoFirebase(
-    () => (firestore && isAdminOrHigher ? collection(firestore, 'users') : null),
-    [firestore, isAdminOrHigher]
-  );
-  const { data: allUsers, isLoading: isLoadingUsers } = useCollection<User>(usersCollectionRef, {
-    disabled: !isAdminOrHigher,
-  });
-  
-  const [isFormOpen, setFormOpen] = useState(false);
-  const [selectedUser, setSelectedUser] = useState<User | null>(null);
-  
-  const handleOpenForm = (user: User | null = null) => {
-    setSelectedUser(user);
-    setFormOpen(true);
-  }
-
-  const handleSaveUser = async (userData: User, password?: string) => {
-    if (!auth || !firestore || !currentUser) {
-        toast({ variant: 'destructive', title: 'Error', description: 'No se ha podido autenticar la acción.' });
-        return;
+  const handleDelete = (id: string) => {
+    if (confirm('¿Está seguro de eliminar este usuario?')) {
+      setUsers(prev => prev.filter(user => user.id !== id));
     }
-
-    if (selectedUser) { // Editing existing user
-        const userRef = doc(firestore, 'users', selectedUser.id);
-        const dataToUpdate = { ...userData };
-        delete (dataToUpdate as any).id; // Do not write id inside the document
-        updateDoc(userRef, dataToUpdate);
-        toast({ title: 'Usuario actualizado', description: `Los datos de ${userData.name} han sido guardados.` });
-    } else { // Creating new user
-        if (!password) {
-            toast({ variant: 'destructive', title: 'Error', description: 'La contraseña es obligatoria para nuevos usuarios.' });
-            return;
-        }
-        
-        try {
-            // Firestore doesn't allow creating auth users directly. This has to be handled carefully.
-            // This is a placeholder for a backend function that would create the auth user.
-            // For the prototype, we will simulate this.
-            
-            const newUserDocRef = doc(collection(firestore, 'users'));
-            
-            const newUserDoc: User = {
-                ...userData,
-                id: newUserDocRef.id,
-                createdBy: currentUser.id,
-                creationDate: serverTimestamp(),
-                lastAccess: serverTimestamp(),
-            }
-            
-            // In a real app, you would first create the auth user, get the UID, then create the doc.
-            // For now, we are creating a document with a random ID. This will not be a real user.
-            await setDoc(newUserDocRef, newUserDoc);
-            
-            toast({ title: 'Usuario Creado (Simulado)', description: `${userData.name} ha sido añadido. Inicie sesión con la nueva cuenta.` });
-
-        } catch (error: any) {
-             console.error("Error creating user:", error);
-            let description = 'Ocurrió un error inesperado.';
-            toast({ variant: 'destructive', title: 'Error al crear usuario', description });
-        }
-    }
-    setFormOpen(false);
-    setSelectedUser(null);
   };
 
-  const getAreaName = (areaId: string) => areas.find((a) => a.id === areaId)?.nombre || 'N/A';
-  const getUserInitials = (name: string) => name ? name.split(' ').map((n) => n[0]).join('') : '';
-
-  const usersToDisplay = isAdminOrHigher ? allUsers : (currentUser ? [currentUser] : []);
-  const isLoading = isAuthLoading || isProfileLoading || (isAdminOrHigher && isLoadingUsers);
-
-  if (isLoading) {
-    return (
-        <div className="min-h-screen w-full flex items-center justify-center">
-            <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-            <p className="ml-2">Cargando usuarios...</p>
-        </div>
-    )
-  }
-
   return (
-    <div className="min-h-screen w-full">
-      <Sidebar>
-        <SidebarHeader className="p-4 justify-center flex items-center gap-2">
-          <SquareCheck className="size-8 text-primary" />
-          <h1 className="font-headline text-2xl font-bold">Comedor</h1>
-        </SidebarHeader>
-        <SidebarContent>
-          <MainNav />
-        </SidebarContent>
-      </Sidebar>
-      <SidebarInset>
-        <Header />
-        <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
-          <div className="flex items-center justify-between">
-            <h1 className="font-headline text-2xl font-bold md:text-3xl">
-              Gestión de Usuarios
-            </h1>
-            {isSuperAdmin && (
-              <Button onClick={() => handleOpenForm()}>
-                <PlusCircle className="mr-2 h-4 w-4" />
-                Añadir Usuario
-              </Button>
-            )}
+    <div className="container mx-auto p-6">
+      <div className="flex justify-between items-center mb-6">
+        <div>
+          <h1 className="text-3xl font-bold">Gestión de Usuarios</h1>
+          <p className="text-gray-500">Administra los usuarios del sistema</p>
+        </div>
+        <Button onClick={() => router.push('/users/new')}>
+          <Plus className="mr-2 h-4 w-4" />
+          Nuevo Usuario
+        </Button>
+      </div>
+
+      <Card>
+        <CardHeader>
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+            <CardTitle>Lista de Usuarios</CardTitle>
+            <div className="flex flex-col sm:flex-row gap-2 w-full md:w-auto">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+                <Input
+                  placeholder="Buscar por nombre o email..."
+                  className="pl-10"
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                />
+              </div>
+              <select
+                className="px-3 py-2 border rounded-md bg-background text-foreground"
+                value={filterRole}
+                onChange={(e) => setFilterRole(e.target.value)}
+              >
+                <option value="all">Todos los roles</option>
+                <option value="superadmin">Super Admin</option>
+                <option value="admin">Administrador</option>
+                <option value="manager">Gerente</option>
+                <option value="employee">Empleado</option>
+                <option value="chef">Chef</option>
+                <option value="waiter">Mesero</option>
+              </select>
+            </div>
           </div>
-          <Card>
-            <CardHeader>
-              <CardTitle>Usuarios</CardTitle>
-              <CardDescription>
-                Administra los usuarios del sistema, sus roles y permisos.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Nombre</TableHead>
-                    <TableHead className="hidden md:table-cell">Email</TableHead>
-                    <TableHead>Rol</TableHead>
-                    <TableHead className="hidden sm:table-cell">Área</TableHead>
-                    <TableHead className="hidden sm:table-cell">Estado</TableHead>
-                    <TableHead>
-                      <span className="sr-only">Acciones</span>
-                    </TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {usersToDisplay && usersToDisplay.map((user) => (
-                    <TableRow key={user.id}>
-                      <TableCell>
-                         <Link href={`/users/${user.id}`} className="flex items-center gap-3 hover:underline">
-                          <Avatar className="h-9 w-9">
-                            <AvatarImage src={user.avatarUrl} alt={user.name} />
-                            <AvatarFallback>
-                              {getUserInitials(user.name)}
-                            </AvatarFallback>
-                          </Avatar>
-                          <div className="font-medium">{user.name}</div>
-                        </Link>
-                      </TableCell>
-                      <TableCell className="hidden md:table-cell">
-                        {user.email}
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant="secondary" className={cn(roleVariant[user.role], 'capitalize')}>
-                          {user.role}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="hidden sm:table-cell">
-                        {getAreaName(user.area)}
-                      </TableCell>
-                       <TableCell className="hidden sm:table-cell">
-                        <Badge variant="secondary" className={cn(statusVariant[user.isActive], 'capitalize')}>
-                          {user.isActive ? 'Activo' : 'Inactivo'}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button
-                              aria-haspopup="true"
-                              size="icon"
-                              variant="ghost"
-                            >
-                              <MoreHorizontal className="h-4 w-4" />
-                              <span className="sr-only">Toggle menu</span>
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuLabel>Acciones</DropdownMenuLabel>
-                            <DropdownMenuItem asChild><Link href={`/users/${user.id}`}>Ver Perfil</Link></DropdownMenuItem>
-                            {isSuperAdmin && <DropdownMenuItem onClick={() => handleOpenForm(user)}>Editar</DropdownMenuItem>}
-                            {isSuperAdmin && <DropdownMenuItem>Desactivar</DropdownMenuItem>}
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </CardContent>
-          </Card>
-        </main>
-      </SidebarInset>
-      {isFormOpen && (
-        <UserForm 
-          isOpen={isFormOpen}
-          onOpenChange={setFormOpen}
-          onSave={handleSaveUser}
-          user={selectedUser}
-        />
-      )}
+        </CardHeader>
+        <CardContent>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Nombre</TableHead>
+                <TableHead>Email</TableHead>
+                <TableHead>Rol</TableHead>
+                <TableHead>Departamento</TableHead>
+                <TableHead>Estado</TableHead>
+                <TableHead>Último acceso</TableHead>
+                <TableHead className="text-right">Acciones</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {filteredUsers.map((user) => (
+                <TableRow key={user.id}>
+                  <TableCell className="font-medium">{user.name}</TableCell>
+                  <TableCell>{user.email}</TableCell>
+                  <TableCell>
+                    <Badge className={roleColors[user.role]}>
+                      {roleLabels[user.role]}
+                    </Badge>
+                  </TableCell>
+                  <TableCell>{user.department}</TableCell>
+                  <TableCell>
+                    <Badge variant={user.active ? "default" : "secondary"}>
+                      {user.active ? 'Activo' : 'Inactivo'}
+                    </Badge>
+                  </TableCell>
+                  <TableCell>
+                    {user.lastLogin ? new Date(user.lastLogin).toLocaleDateString() : 'Nunca'}
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="sm">
+                          <MoreVertical className="h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuLabel>Acciones</DropdownMenuLabel>
+                        <DropdownMenuItem onClick={() => router.push(`/users/${user.id}`)}>
+                          <Eye className="mr-2 h-4 w-4" />
+                          Ver detalles
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => router.push(`/users/${user.id}/edit`)}>
+                          <Edit className="mr-2 h-4 w-4" />
+                          Editar
+                        </DropdownMenuItem>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem 
+                          onClick={() => handleDelete(user.id)}
+                          className="text-red-600"
+                        >
+                          <Trash2 className="mr-2 h-4 w-4" />
+                          Eliminar
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+          
+          {filteredUsers.length === 0 && (
+            <div className="text-center py-8">
+              <p className="text-gray-500">No se encontraron usuarios</p>
+            </div>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 }
