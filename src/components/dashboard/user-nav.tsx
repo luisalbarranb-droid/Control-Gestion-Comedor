@@ -1,6 +1,6 @@
 'use client';
 
-// User navigation has been removed as login is no longer required.
+// Este componente se vacía para eliminar el botón de "Iniciar Sesión" de forma definitiva.
 export function UserNav() {
   return null;
 }

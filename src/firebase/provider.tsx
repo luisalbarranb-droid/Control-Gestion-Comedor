@@ -33,12 +33,15 @@ const MOCK_USER: AuthUser = {
 
 const MOCK_PROFILE: FirestoreUser = {
   id: 'dev-superadmin-uid-123',
+  userId: 'dev-superadmin-uid-123',
   email: 'superadmin@restaurante.com',
   name: 'Super Administrador',
   role: 'superadmin',
-  creationDate: new Date().toISOString(),
-  lastAccess: new Date().toISOString(),
-  isActive: true
+  area: 'administracion',
+  isActive: true,
+  creationDate: new Date(),
+  createdBy: 'system',
+  lastAccess: new Date(),
 };
 
 // --- TYPE DEFINITIONS ---
@@ -72,7 +75,7 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
   firestore,
   auth,
 }) => {
-  // EN DESARROLLO: Siempre devolvemos el usuario mock
+  // EN DESARROLLO: Siempre devolvemos el usuario mock para forzar el rol de superadmin
   const [userAuthState] = useState<UserAuthState>({
     user: MOCK_USER,
     profile: MOCK_PROFILE,
@@ -125,11 +128,6 @@ export const useFirebaseApp = (): FirebaseApp => {
 
 export const useUser = (): UserAuthState & { auth: Auth } => {
   const { user, profile, isUserLoading, userError, auth } = useFirebaseContext();
-  console.log('🔧 useUser hook llamado:', { 
-    user: user?.email, 
-    role: profile?.role,
-    hasProfile: !!profile 
-  });
   return { user, profile, isUserLoading, userError, auth };
 };
 
@@ -137,12 +135,14 @@ export const useUser = (): UserAuthState & { auth: Auth } => {
 type MemoFirebase<T> = T & { __memo?: boolean };
 
 export function useMemoFirebase<T>(factory: () => T, deps: DependencyList): T {
+  // En el modo simulado, la memoización estricta no es necesaria, pero mantenemos el hook
+  // para consistencia de la API.
   return useMemo(factory, deps);
 }
 
-// HOOK ESPECIAL PARA MainNav
-export const useDoc = <T,>(docRef: any) => {
-  console.log('🔧 useDoc hook llamado (MOCK)', docRef);
+// HOOK ESPECIAL PARA MainNav (Simulado)
+export const useDoc = <T,>(docRef: any): { data: T | null, isLoading: boolean, error: Error | null } => {
+  // Devuelve el perfil simulado para cualquier llamada a useDoc
   return {
     data: MOCK_PROFILE as T,
     isLoading: false,
