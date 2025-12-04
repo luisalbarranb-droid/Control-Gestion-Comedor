@@ -33,9 +33,7 @@ export function UserNav() {
     return doc(firestore, 'users', authUser.uid);
   }, [firestore, authUser]);
 
-  const { data: currentUser, isLoading: isProfileLoading } = useDoc<User>(userDocRef, {
-    disabled: !authUser
-  });
+  const { data: currentUser, isLoading: isProfileLoading } = useDoc<User>(userDocRef);
   
   const isLoading = isAuthLoading || (authUser && isProfileLoading);
 
@@ -91,11 +89,10 @@ export function UserNav() {
             <Link href={`/users/${currentUser.id}`}>Perfil</Link>
           </DropdownMenuItem>
           {currentUser.role === 'superadmin' && (
-            <DropdownMenuItem>Facturación</DropdownMenuItem>
+             <DropdownMenuItem asChild>
+                <Link href="/settings">Configuración</Link>
+            </DropdownMenuItem>
           )}
-          <DropdownMenuItem asChild>
-            <Link href="/settings">Ajustes</Link>
-          </DropdownMenuItem>
         </DropdownMenuGroup>
         <DropdownMenuSeparator />
         <DropdownMenuItem onClick={handleSignOut}>

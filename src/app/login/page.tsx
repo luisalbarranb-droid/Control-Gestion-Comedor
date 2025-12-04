@@ -16,7 +16,7 @@ import { Label } from '@/components/ui/label';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2 } from 'lucide-react';
-import { useAuth, useUser, useFirestore } from '@/firebase';
+import { useAuth, useUser, useFirestore, setDocumentNonBlocking } from '@/firebase';
 import { signInWithEmailAndPassword, createUserWithEmailAndPassword, User as FirebaseAuthUser, updateProfile } from 'firebase/auth';
 import { doc, getDoc, serverTimestamp, setDoc, updateDoc } from 'firebase/firestore';
 import type { User } from '@/lib/types';
@@ -71,11 +71,11 @@ export default function LoginPage() {
           creationDate: serverTimestamp(),
           lastAccess: serverTimestamp(),
         };
-        await setDoc(userRef, newUser);
+        setDocumentNonBlocking(userRef, newUser);
         await updateProfile(firebaseUser, { displayName: newUser.name });
 
       } else {
-        await updateDoc(userRef, { lastAccess: serverTimestamp() });
+        updateDocumentNonBlocking(userRef, { lastAccess: serverTimestamp() });
       }
     };
 
@@ -105,7 +105,6 @@ export default function LoginPage() {
                 description = 'La contraseña es demasiado débil. Debe tener al menos 6 caracteres.'
             } else if (creationError.code === 'auth/email-already-in-use') {
                  description = 'El correo electrónico ya está en uso. Intentando iniciar sesión de nuevo...';
-                 // This case should ideally not happen if signIn is tried first, but as a fallback:
                  try {
                     await signInWithEmailAndPassword(auth, email, password);
                     router.push('/');

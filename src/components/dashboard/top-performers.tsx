@@ -1,6 +1,6 @@
 'use client';
 
-import { Medal } from 'lucide-react';
+import { Medal, Loader2 } from 'lucide-react';
 import {
   Card,
   CardContent,
@@ -14,7 +14,6 @@ import { useCollection, useFirestore, useUser, useMemoFirebase } from '@/firebas
 import { collection } from 'firebase/firestore';
 import type { Task, User } from '@/lib/types';
 import { useMemo } from 'react';
-import { Loader2 } from 'lucide-react';
 
 export function TopPerformers() {
   const firestore = useFirestore();
@@ -84,7 +83,7 @@ export function TopPerformers() {
       </CardHeader>
       <CardContent>
         {isLoading ? (
-          <div className="flex justify-center items-center h-full">
+          <div className="flex justify-center items-center h-full min-h-[150px]">
             <Loader2 className="h-6 w-6 animate-spin" />
           </div>
         ) : (

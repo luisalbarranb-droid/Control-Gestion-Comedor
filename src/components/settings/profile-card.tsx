@@ -55,9 +55,7 @@ export function ProfileCard() {
     return doc(firestore, 'users', authUser.uid);
   }, [firestore, authUser]);
 
-  const { data: user, isLoading: isProfileLoading } = useDoc<User>(userDocRef, {
-      disabled: !authUser || isAuthLoading
-  });
+  const { data: user, isLoading: isProfileLoading } = useDoc<User>(userDocRef);
   
   const isLoading = isAuthLoading || (authUser && isProfileLoading);
 

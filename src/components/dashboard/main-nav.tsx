@@ -52,7 +52,6 @@ export function MainNav() {
   const isLoading = isAuthLoading || isProfileLoading || !isClient;
   const role = currentUser?.role;
   
-  // Según tus reglas de Firestore:
   const isAdminOrHigher = role === 'admin' || role === 'superadmin';
   const isSuperAdmin = role === 'superadmin';
 
@@ -63,15 +62,9 @@ export function MainNav() {
     { href: '/menus', label: 'Menus', icon: <BookOpen /> },
     { href: '/daily-closing', label: 'Cierres Diarios', icon: <ClipboardCheck /> },
     { href: '/inventory', label: 'Inventario', icon: <Archive /> },
-    
-    // IMPORTANTE: Según tus reglas, admin puede LISTAR usuarios, solo superadmin puede CREAR/ELIMINAR
-    // Pero el menú debe ser visible para ambos roles (admin y superadmin)
     { href: '/users', label: 'Gestión de Usuarios', icon: <Users />, adminOnly: true },
-    
     { href: '/reports', label: 'Reportes', icon: <FileSpreadsheet /> },
     { href: '/stats', label: 'Estadísticas', icon: <AreaChart /> },
-    
-    // Configuración solo para superadmin según tus reglas
     { href: '/settings', label: 'Configuración', icon: <Settings />, superAdminOnly: true },
   ];
 
@@ -103,10 +96,10 @@ export function MainNav() {
           <Link 
             href={item.href}
             className="block w-full"
-            aria-current={pathname === item.href || pathname.startsWith(`${item.href}/`) ? 'page' : undefined}
+            aria-current={pathname === item.href || (item.href !=='/' && pathname.startsWith(item.href)) ? 'page' : undefined}
           >
             <SidebarMenuButton 
-              isActive={pathname === item.href || (item.href !== '/' && pathname.startsWith(item.href))}
+              isActive={pathname === item.href || (item.href !=='/' && pathname.startsWith(item.href))}
               className="w-full justify-start"
             >
               {item.icon}

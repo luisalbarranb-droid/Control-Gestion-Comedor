@@ -13,7 +13,7 @@ import { MainNav } from '@/components/dashboard/main-nav';
 import { OverviewCards } from '@/components/dashboard/overview-cards';
 import { TaskCharts } from '@/components/dashboard/task-charts';
 import { RecentTasks } from '@/components/dashboard/recent-tasks';
-import { SquareCheck } from 'lucide-react';
+import { SquareCheck, Loader2 } from 'lucide-react';
 import AIPrioritizer from '@/components/dashboard/ai-prioritizer';
 import { TopPerformers } from '@/components/dashboard/top-performers';
 import { useUser } from '@/firebase';
@@ -33,7 +33,8 @@ export default function Dashboard() {
   if (isUserLoading || !user) {
     return (
       <div className="min-h-screen w-full flex items-center justify-center">
-        <p>Cargando...</p>
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+        <p className="ml-2">Cargando...</p>
       </div>
     );
   }

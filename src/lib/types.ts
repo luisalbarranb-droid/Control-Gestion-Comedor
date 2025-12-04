@@ -64,7 +64,7 @@ export interface Task {
   descripcion: string;
   area: AreaId;
   asignadoA: string; // userId
-  createdBy: string; // userId
+  creadoPor: string; // userId
   estado: TaskStatus;
   prioridad: TaskPriority;
   periodicidad: TaskPeriodicity;

@@ -15,23 +15,12 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter }
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { ProfileCard } from '@/components/settings/profile-card';
-import { useDoc, useFirestore, useMemoFirebase, useUser } from '@/firebase';
-import { doc } from 'firebase/firestore';
-import type { User } from '@/lib/types';
+import { useUser } from '@/firebase';
 
 
 export default function SettingsPage() {
-  const { user: authUser, isUserLoading: isAuthLoading } = useUser();
-  const firestore = useFirestore();
-
-  const userDocRef = useMemoFirebase(() => {
-    if (!firestore || !authUser) return null;
-    return doc(firestore, 'users', authUser.uid);
-  }, [firestore, authUser]);
-
-  const { data: currentUser, isLoading: isProfileLoading } = useDoc<User>(userDocRef);
-
-  const role = currentUser?.role;
+  const { profile } = useUser();
+  const role = profile?.role;
   const isAdmin = role === 'admin' || role === 'superadmin';
 
   return (

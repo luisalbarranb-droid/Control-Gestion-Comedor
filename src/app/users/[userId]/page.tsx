@@ -45,10 +45,8 @@ const contractTypeVariant: Record<string, string> = {
 
 const formatDate = (date: any) => {
     if (!date) return 'N/A';
-    if (date.toDate) {
-      return format(date.toDate(), 'dd MMMM, yyyy', { locale: es });
-    }
-    return format(new Date(date), 'dd MMMM, yyyy', { locale: es });
+    const d = date.toDate ? date.toDate() : new Date(date);
+    return format(d, 'dd MMMM, yyyy', { locale: es });
 };
 
 export default function UserProfilePage() {
@@ -63,9 +61,7 @@ export default function UserProfilePage() {
     () => (firestore && userId ? doc(firestore, 'users', userId) : null),
     [firestore, userId]
   );
-  const { data: user, isLoading: isProfileLoading } = useDoc<UserType>(userDocRef, {
-      disabled: !userId || !authUser
-  });
+  const { data: user, isLoading: isProfileLoading } = useDoc<UserType>(userDocRef);
   
   useEffect(() => {
     if (!isAuthLoading && !authUser) {

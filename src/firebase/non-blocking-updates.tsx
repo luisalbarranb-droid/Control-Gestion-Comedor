@@ -9,7 +9,6 @@ import {
   DocumentReference,
   SetOptions,
   WriteBatch,
-  writeBatch,
 } from 'firebase/firestore';
 import { errorEmitter } from '@/firebase/error-emitter';
 import {FirestorePermissionError} from '@/firebase/errors';
@@ -19,8 +18,8 @@ import {FirestorePermissionError} from '@/firebase/errors';
  * Does NOT await the write operation internally.
  */
 export function setDocumentNonBlocking(docRef: DocumentReference, data: any, options?: SetOptions) {
-  const setWithOptions = options ? setDoc(docRef, data, options) : setDoc(docRef, data);
-  setWithOptions.catch(error => {
+  const operation = options ? setDoc(docRef, data, options) : setDoc(docRef, data);
+  operation.catch(error => {
     errorEmitter.emit(
       'permission-error',
       new FirestorePermissionError({
