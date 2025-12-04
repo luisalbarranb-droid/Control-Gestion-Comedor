@@ -19,41 +19,25 @@ import {
   SidebarMenuButton,
 } from '@/components/ui/sidebar';
 import Link from 'next/link';
-import { useDoc, useFirestore, useMemoFirebase, useUser } from '@/firebase';
-import type { User } from '@/lib/types';
-import { doc } from 'firebase/firestore';
-import { useState, useEffect } from 'react';
+import { useUser } from '@/firebase'; // SOLO usa useUser, NO useDoc
 
 interface NavItem {
   href: string;
   label: string;
   icon: React.ReactNode;
-  adminOnly?: boolean; // Para admin y superadmin
-  superAdminOnly?: boolean; // Solo para superadmin
+  adminOnly?: boolean;
+  superAdminOnly?: boolean;
 }
 
 export function MainNav() {
   const pathname = usePathname();
-  const { user: authUser, isUserLoading: isAuthLoading } = useUser();
-  const firestore = useFirestore();
-  const [isClient, setIsClient] = useState(false);
-
-  useEffect(() => {
-    setIsClient(true);
-  }, []);
-
-  const userDocRef = useMemoFirebase(() => {
-    if (!firestore || !authUser) return null;
-    return doc(firestore, 'users', authUser.uid);
-  }, [firestore, authUser]);
-
-  const { data: currentUser, isLoading: isProfileLoading } = useDoc<User>(userDocRef);
-
-  const isLoading = isAuthLoading || isProfileLoading || !isClient;
-  const role = currentUser?.role;
   
-  const isAdminOrHigher = role === 'admin' || role === 'superadmin';
-  const isSuperAdmin = role === 'superadmin';
+  // CORRECCIÓN: Usa useUser que ya incluye el profile
+  const { profile: currentUser, isUserLoading } = useUser();
+
+  const isLoading = isUserLoading;
+  const isAdminOrHigher = currentUser?.role === 'admin' || currentUser?.role === 'superadmin';
+  const isSuperAdmin = currentUser?.role === 'superadmin';
 
   const allNavItems: NavItem[] = [
     { href: '/', label: 'Dashboard', icon: <Home /> },
@@ -77,11 +61,11 @@ export function MainNav() {
   if (isLoading) {
     return (
       <SidebarMenu>
-        {Array.from({ length: 6 }).map((_, i) => (
+        {Array.from({ length: 8 }).map((_, i) => (
           <SidebarMenuItem key={i}>
-            <div className="flex items-center gap-3 px-3 py-2">
-              <div className="h-5 w-5 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" />
-              <div className="h-4 w-24 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" />
+            <div className="flex items-center gap-2 p-2">
+              <div className="h-6 w-6 bg-muted rounded-md animate-pulse" />
+              <div className="h-4 w-24 bg-muted rounded-md animate-pulse" />
             </div>
           </SidebarMenuItem>
         ))}
@@ -93,15 +77,8 @@ export function MainNav() {
     <SidebarMenu>
       {navItems.map((item) => (
         <SidebarMenuItem key={item.href}>
-          <Link 
-            href={item.href}
-            className="block w-full"
-            aria-current={pathname === item.href || (item.href !=='/' && pathname.startsWith(item.href)) ? 'page' : undefined}
-          >
-            <SidebarMenuButton 
-              isActive={pathname === item.href || (item.href !=='/' && pathname.startsWith(item.href))}
-              className="w-full justify-start"
-            >
+          <Link href={item.href} className="block w-full">
+            <SidebarMenuButton isActive={pathname === item.href || (item.href !== '/' && pathname.startsWith(item.href))}>
               {item.icon}
               <span>{item.label}</span>
             </SidebarMenuButton>
