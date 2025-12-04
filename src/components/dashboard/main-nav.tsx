@@ -5,7 +5,6 @@ import Link from 'next/link';
 import {
   Home,
   Users,
-  Settings,
   ClipboardList,
   AreaChart,
   Archive,
@@ -34,7 +33,6 @@ export function MainNav() {
     },
     { href: '/reports', label: 'Reportes', icon: <FileSpreadsheet className="h-5 w-5" /> },
     { href: '/stats', label: 'Estadísticas', icon: <AreaChart className="h-5 w-5" /> },
-    { href: '/settings', label: 'Configuración', icon: <Settings className="h-5 w-5" /> },
   ];
 
   return (
