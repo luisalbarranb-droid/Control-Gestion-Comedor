@@ -5,7 +5,6 @@ import { Sidebar, SidebarContent, SidebarHeader, SidebarInset, SidebarProvider }
 import { Toaster } from '@/components/ui/toaster';
 import { SmartAuthProvider } from '@/providers/SmartAuthProvider';
 import { MainNav } from '@/components/dashboard/main-nav';
-import { Environment } from '@/lib/environment';
 import { Header } from '@/components/dashboard/header';
 
 
@@ -19,7 +18,6 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const isStudio = Environment.isFirebaseStudio();
   
   return (
     <html lang="es" suppressHydrationWarning>
