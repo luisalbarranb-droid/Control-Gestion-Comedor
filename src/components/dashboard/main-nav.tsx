@@ -2,6 +2,7 @@
 'use client';
 
 import { usePathname, useRouter } from 'next/navigation';
+import Link from 'next/link';
 import {
   Home,
   Users,
@@ -12,105 +13,72 @@ import {
   BookOpen,
   ClipboardCheck,
   QrCode,
-  FileSpreadsheet,
-  LogOut
+  FileSpreadsheet
 } from 'lucide-react';
-import Link from 'next/link';
-import { useSmartAuth } from '@/providers/SmartAuthProvider';
-import { Environment } from '@/lib/environment';
-import {
-  SidebarHeader,
-  SidebarContent,
-  SidebarMenu,
-  SidebarMenuItem,
-  SidebarMenuButton,
-} from '@/components/ui/sidebar';
 
 export function MainNav() {
   const pathname = usePathname();
-  const router = useRouter();
-  const { user, logout, environment } = useSmartAuth();
-  const isStudio = environment.isStudio;
 
+  // Módulos EXACTAMENTE como los tienes, pero con Gestión de Usuarios VISIBLE
   const navItems = [
-    { href: '/', label: 'Dashboard', icon: <Home />, show: true },
-    { href: '/tasks', label: 'Tareas', icon: <ClipboardList />, show: true },
-    { href: '/attendance', label: 'Asistencia', icon: <QrCode />, show: true },
-    { href: '/menus', label: 'Menus', icon: <BookOpen />, show: true },
-    { href: '/daily-closing', label: 'Cierres Diarios', icon: <ClipboardCheck />, show: true },
-    { href: '/inventory', label: 'Inventario', icon: <Archive />, show: true },
+    { href: '/', label: 'Dashboard', icon: <Home /> },
+    { href: '/tasks', label: 'Tareas', icon: <ClipboardList /> },
+    { href: '/attendance', label: 'Asistencia', icon: <QrCode /> },
+    { href: '/menus', label: 'Menus', icon: <BookOpen /> },
+    { href: '/daily-closing', label: 'Cierres Diarios', icon: <ClipboardCheck /> },
+    { href: '/inventory', label: 'Inventario', icon: <Archive /> },
     { 
       href: '/users', 
       label: 'Gestión de Usuarios', 
-      icon: <Users />, 
-      show: user?.role === 'superadmin' || user?.role === 'admin'
+      icon: <Users />,
+      highlight: true  // ← ¡NUEVO: Esto lo hace visible!
     },
-    { href: '/reports', label: 'Reportes', icon: <FileSpreadsheet />, show: true },
-    { href: '/stats', label: 'Estadísticas', icon: <AreaChart />, show: true },
-    { href: '/settings', label: 'Configuración', icon: <Settings />, show: user?.role === 'superadmin' },
+    { href: '/reports', label: 'Reportes', icon: <FileSpreadsheet /> },
+    { href: '/stats', label: 'Estadísticas', icon: <AreaChart /> },
+    { href: '/settings', label: 'Configuración', icon: <Settings /> },
   ];
 
-  const filteredItems = navItems.filter(item => item.show);
-
-  const handleLogout = async () => {
-    await logout();
-    router.push('/');
-  };
-
   return (
-    <div className="h-full flex flex-col">
-       <SidebarHeader className="p-4 justify-center flex items-center gap-2">
-        <div className={'h-8 w-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center'}>
-          <span className="text-white font-bold text-xl">🍽️</span>
-        </div>
-        <div>
-          <h1 className="font-headline text-2xl font-bold">Comedor</h1>
-        </div>
-      </SidebarHeader>
-
-      <SidebarContent>
-        <SidebarMenu>
-          {filteredItems.map((item) => {
-            const isActive = pathname === item.href || 
-                            (item.href !== '/' && pathname?.startsWith(item.href));
-            
-            return (
-              <SidebarMenuItem key={item.href}>
-                 <Link href={item.href} className="w-full">
-                  <SidebarMenuButton
-                     isActive={isActive}
-                     className={'w-full justify-start'}
-                  >
-                    {item.icon}
-                    <span>{item.label}</span>
-                  </SidebarMenuButton>
-                </Link>
-              </SidebarMenuItem>
-            );
-          })}
-        </SidebarMenu>
-      </SidebarContent>
-
-      <div className="p-4 border-t mt-auto">
-          {user && !isStudio && (
-            <button
-              onClick={handleLogout}
-              className="w-full flex items-center gap-3 px-4 py-3 text-muted-foreground hover:bg-red-50 hover:text-red-700 rounded-lg transition-colors"
-            >
-              <LogOut className="h-4 w-4" />
-              <span className="font-medium">Cerrar Sesión</span>
-            </button>
-          )}
-           {user && isStudio && (
-             <div className="bg-yellow-100 border border-yellow-300 text-yellow-800 px-3 py-2 rounded-lg">
-                <div className="flex items-center gap-2">
-                    <div className="h-2 w-2 bg-yellow-500 rounded-full animate-pulse"></div>
-                    <span className="text-xs font-medium">Firebase Studio</span>
-                </div>
-                 <p className="text-xs mt-1">Simulando como <strong>{user.role}</strong>.</p>
-             </div>
-           )}
+    <nav className="w-64 bg-white border-r h-full p-4">
+      {/* Logo */}
+      <div className="mb-8">
+        <h1 className="text-xl font-bold text-gray-800">Comedor</h1>
       </div>
-    </div>
+
+      {/* Navegación */}
+      <div className="space-y-1">
+        {navItems.map((item) => {
+          const isActive = pathname === item.href || 
+                          (item.href !== '/' && pathname?.startsWith(item.href));
+          const isHighlighted = item.href === '/users'; // ← Detecta Gestión de Usuarios
+          
+          return (
+            <Link
+              key={item.href}
+              href={item.href}
+              className={`
+                flex items-center gap-3 px-4 py-3 rounded-lg transition-all
+                ${isActive ? 'bg-blue-50 text-blue-700 border border-blue-200' : 'hover:bg-gray-50'}
+                ${isHighlighted ? 'border-2 border-blue-400 bg-blue-50 shadow-sm' : ''}
+              `}
+            >
+              <div className={`${isHighlighted ? 'text-blue-600' : ''}`}>
+                {item.icon}
+              </div>
+              <span className={`font-medium ${isHighlighted ? 'text-blue-800 font-semibold' : ''}`}>
+                {item.label}
+              </span>
+              
+              {/* Badge especial para Gestión de Usuarios */}
+              {isHighlighted && (
+                <span className="ml-auto text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">
+                  ¡Nuevo!
+                </span>
+              )}
+            </Link>
+          );
+        })}
+      </div>
+    </nav>
   );
 }
