@@ -32,7 +32,7 @@ import {
   doc,
   orderBy 
 } from 'firebase/firestore';
-import { useCollection, useFirestore } from '@/firebase';
+import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
 import type { User, DayOff } from '@/lib/types';
 
 export default function PlanningPage() {
@@ -57,15 +57,15 @@ export default function PlanningPage() {
   }, [weekStart]);
 
   // 2. Cargar Usuarios
-  const usersQuery = useMemo(() => {
-    if (!firestore) return null;
-    return query(collection(firestore, 'users'), orderBy('name', 'asc'));
-  }, [firestore]);
+  const usersQuery = useMemoFirebase(
+    () => (firestore ? query(collection(firestore, 'users'), orderBy('name', 'asc')) : null),
+    [firestore]
+  );
   
   const { data: users, isLoading: isLoadingUsers } = useCollection<User>(usersQuery);
 
   // 3. Cargar Días Libres Existentes para esta semana
-  const daysOffQuery = useMemo(() => {
+  const daysOffQuery = useMemoFirebase(() => {
     if (!firestore) return null;
     // IMPORTANTE: Filtramos por string para evitar problemas de Timestamp
     return query(
@@ -88,9 +88,6 @@ export default function PlanningPage() {
         if (!initialSelection[dayOff.userId]) {
           initialSelection[dayOff.userId] = [];
         }
-        // Asumimos que dayOff.date es un string YYYY-MM-DD
-        // Si fuera Timestamp por datos viejos, esto lo ignoraría o requeriría conversión,
-        // pero para datos nuevos funcionará perfecto.
         if (typeof dayOff.date === 'string') {
              initialSelection[dayOff.userId].push(dayOff.date);
         }
@@ -175,7 +172,8 @@ export default function PlanningPage() {
     }
   };
 
-  const getUserInitials = (name: string) => name ? name.substring(0, 2).toUpperCase() : 'US';
+  const getUserInitials = (name: string) => name ? name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase() : 'US';
+  const getUserName = (user: User) => (user as any).name || (user as any).nombres || "Usuario";
 
   if (isLoadingUsers) {
     return <div className="flex h-screen items-center justify-center">Cargando personal...</div>;
@@ -246,17 +244,18 @@ export default function PlanningPage() {
                             // Usamos el ID del usuario como clave
                             const userId = user.id || 'unknown';
                             const userDays = selectedDays[userId] || [];
+                            const userName = getUserName(user);
                             
                             return (
                                 <TableRow key={userId}>
                                     <TableCell className="font-medium">
                                         <div className="flex items-center gap-3">
                                             <Avatar className="h-8 w-8">
-                                                <AvatarFallback>{getUserInitials(user.name || '')}</AvatarFallback>
+                                                <AvatarFallback>{getUserInitials(userName)}</AvatarFallback>
                                                 {/* <AvatarImage src={user.avatarUrl} /> */}
                                             </Avatar>
                                             <div className="flex flex-col">
-                                                <span>{user.name}</span>
+                                                <span>{userName}</span>
                                                 <span className="text-xs text-muted-foreground capitalize">{user.role || 'Empleado'}</span>
                                             </div>
                                         </div>
