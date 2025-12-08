@@ -83,7 +83,7 @@ export default function ReportsPage() {
         </Card>
 
         {/* Reporte de Menús */}
-        <Card className="hover:shadow-md transition-shadow">
+        <Card className="hover-shadow-md transition-shadow">
             <CardHeader>
                 <div className="flex justify-between items-start">
                     <CardTitle className="text-xl">Reportes de Menús</CardTitle>

@@ -92,8 +92,8 @@ export default function InventoryReportsPage() {
       description: 'El reporte de inventario ha sido descargado.',
     });
   };
-
-  const KPI_CARDS = [
+  
+    const KPI_CARDS = [
     { title: 'Valor Total del Inventario', value: `$${totalInventoryValue.toFixed(2)}`, icon: DollarSign },
     { title: 'Artículos Totales', value: items.length, icon: Package },
     { title: 'Artículos con Bajo Stock', value: lowStockItems.length, icon: AlertCircle, className: 'text-red-500' },
