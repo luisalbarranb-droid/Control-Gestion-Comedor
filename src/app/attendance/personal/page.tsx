@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { PlusCircle, Search } from 'lucide-react';
+import { FileSpreadsheet, CalendarDays, PlusCircle, Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   Table,
@@ -15,8 +15,8 @@ import {
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Input } from '@/components/ui/input';
-import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
-import { collection, query, orderBy } from 'firebase/firestore';
+import { useCollection, useFirestore, useMemoFirebase, useUser } from '@/firebase';
+import { collection, query, orderBy, addDoc, serverTimestamp } from 'firebase/firestore';
 import type { User } from '@/lib/types';
 import { EmployeeForm } from '@/components/attendance/employee-form';
 import { useToast } from '@/hooks/use-toast';
@@ -24,8 +24,12 @@ import { useToast } from '@/hooks/use-toast';
 export default function EmployeeListPage() {
   const { toast } = useToast();
   const firestore = useFirestore();
+  const { user: authUser, profile: currentUser } = useUser();
   const [isFormOpen, setFormOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
+
+  const role = currentUser?.role;
+  const isAdmin = role === 'admin' || role === 'superadmin';
 
   const usersQuery = useMemoFirebase(
     () => (firestore ? query(collection(firestore, 'users'), orderBy('name', 'asc')) : null),
@@ -33,37 +37,73 @@ export default function EmployeeListPage() {
   );
   const { data: users, isLoading } = useCollection<User>(usersQuery);
 
-  const handleSaveEmployee = (employeeData: any) => {
-    console.log('Saving employee:', employeeData);
-    // Aquí iría la lógica para guardar en Firestore
-    toast({
-      title: 'Expediente Guardado',
-      description: `Los datos para ${employeeData.nombres} ${employeeData.apellidos} han sido guardados.`,
-    });
-    setFormOpen(false);
+  const handleSaveEmployee = async (employeeData: Omit<User, 'id'>) => {
+    if (!firestore || !authUser) return;
+
+    try {
+      await addDoc(collection(firestore, 'users'), {
+        ...employeeData,
+        name: `${employeeData.nombres} ${employeeData.apellidos}`,
+        email: `${employeeData.nombres.split(' ')[0].toLowerCase()}.${employeeData.apellidos.split(' ')[0].toLowerCase()}@example.com`, // Dummy email
+        role: 'comun', // Default role
+        isActive: true,
+        createdBy: authUser.uid,
+        creationDate: serverTimestamp(),
+        lastAccess: serverTimestamp(),
+      });
+
+      toast({
+        title: 'Expediente Guardado',
+        description: `Los datos para ${employeeData.nombres} ${employeeData.apellidos} han sido guardados.`,
+      });
+      setFormOpen(false);
+    } catch (error) {
+       console.error("Error saving employee:", error);
+       toast({
+        variant: "destructive",
+        title: "Error al guardar",
+        description: "No se pudo guardar el expediente.",
+      });
+    }
   };
   
   const filteredUsers = users?.filter(user => 
-    user.name?.toLowerCase().includes(searchTerm.toLowerCase()) || 
-    user.email?.toLowerCase().includes(searchTerm.toLowerCase())
+    (user.name?.toLowerCase() || '').includes(searchTerm.toLowerCase()) || 
+    (user.email?.toLowerCase() || '').includes(searchTerm.toLowerCase())
   );
 
-  const getUserInitials = (name: string | undefined) => name ? name.split(' ').map((n) => n[0]).join('').substring(0, 2) : 'U';
+  const getUserInitials = (name: string | undefined) => name ? name.split(' ').map((n) => n[0]).join('').substring(0, 2).toUpperCase() : 'U';
+  const getUserName = (user: User) => (user as any).name || (user as any).nombre || 'Usuario sin nombre';
 
   return (
     <div className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
-      <div className="flex items-center justify-between">
-        <div>
-            <h1 className="font-headline text-2xl font-bold md:text-3xl">
-            Gestión de Expedientes
-            </h1>
-            <p className="text-muted-foreground">Administra la información de todo el personal.</p>
+       <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-4">
+            <div>
+                <h1 className="font-headline text-2xl font-bold md:text-3xl">
+                Gestión de Personal y Asistencia
+                </h1>
+                <p className="text-muted-foreground">Administra expedientes, planifica días libres y consulta reportes.</p>
+            </div>
+            
+            <div className="flex flex-wrap items-center gap-2">
+                <Button variant="default" className="bg-blue-600 hover:bg-blue-700 text-white" onClick={() => setFormOpen(true)}>
+                  <PlusCircle className="mr-2 h-4 w-4" />
+                  Nuevo Expediente
+                </Button>
+                <Button variant="outline" asChild>
+                    <Link href="/attendance/planning">
+                        <CalendarDays className="mr-2 h-4 w-4" />
+                        Planificar Libres
+                    </Link>
+                </Button>
+                <Button variant="secondary" asChild>
+                    <Link href="/attendance/reports">
+                        <FileSpreadsheet className="mr-2 h-4 w-4" />
+                        Reportes de Asistencia
+                    </Link>
+                </Button>
+            </div>
         </div>
-        <Button onClick={() => setFormOpen(true)}>
-          <PlusCircle className="mr-2 h-4 w-4" />
-          Nuevo Expediente
-        </Button>
-      </div>
 
        <div className="relative max-w-md">
             <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500" />
@@ -106,11 +146,11 @@ export default function EmployeeListPage() {
                   <TableCell>
                     <div className="flex items-center gap-3">
                       <Avatar>
-                        <AvatarImage src={user.avatarUrl} alt={user.name} />
-                        <AvatarFallback>{getUserInitials(user.name)}</AvatarFallback>
+                        <AvatarImage src={user.avatarUrl} alt={getUserName(user)} />
+                        <AvatarFallback>{getUserInitials(getUserName(user))}</AvatarFallback>
                       </Avatar>
                       <div>
-                        <div className="font-medium">{user.name}</div>
+                        <div className="font-medium">{getUserName(user)}</div>
                         <div className="text-sm text-muted-foreground">{user.email}</div>
                       </div>
                     </div>
@@ -124,6 +164,13 @@ export default function EmployeeListPage() {
                   </TableCell>
                 </TableRow>
               ))}
+               {filteredUsers && filteredUsers.length === 0 && !isLoading && (
+                 <TableRow>
+                  <TableCell colSpan={4} className="text-center h-24">
+                    No se encontraron empleados.
+                  </TableCell>
+                </TableRow>
+              )}
             </TableBody>
           </Table>
         </CardContent>

@@ -14,7 +14,7 @@ import { cn } from '@/lib/utils';
 interface PlanningTableProps {
   week: Date;
   users: User[];
-  daysOff: DayOff[]; // Recibimos los días libres ya cargados
+  daysOff: Omit<DayOff, 'id'>[]; // Accepts local state without ID
   onToggleDay: (userId: string, dateIso: string, currentStatus: boolean) => void;
 }
 
@@ -22,7 +22,6 @@ export function PlanningTable({ week, users, daysOff, onToggleDay }: PlanningTab
   
   const weekStartDate = startOfWeek(week, { weekStartsOn: 1 });
 
-  // Generar columnas (Lunes a Domingo)
   const weekdays = useMemo(() => {
     return Array.from({ length: 7 }).map((_, i) => {
       const day = addDays(weekStartDate, i);
@@ -36,18 +35,18 @@ export function PlanningTable({ week, users, daysOff, onToggleDay }: PlanningTab
     });
   }, [weekStartDate]);
 
-  // Verificar si un día está marcado
   const isDayChecked = (userId: string, dateIso: string) => {
       return daysOff.some(d => d.userId === userId && d.date === dateIso);
   };
 
-  // Contar días libres (Domingo + Marcados)
   const getDaysOffCount = (userId: string) => {
       const manual = daysOff.filter(d => d.userId === userId).length;
-      return manual + 1; // +1 por el domingo
+      return manual + 1; // +1 for the fixed Sunday
   };
 
-  const getUserInitials = (name: string) => name ? name.split(' ').map((n) => n[0]).join('').substring(0, 2) : 'US';
+  const getUserInitials = (name: string | undefined) => name ? name.split(' ').map((n) => n[0]).join('').substring(0, 2).toUpperCase() : 'U';
+  const getUserName = (user: User) => (user as any).name || (user as any).nombre || 'Usuario sin nombre';
+  const getUserRole = (user: User) => (user as any).role || 'comun';
 
   return (
     <div className="border rounded-lg overflow-hidden">
@@ -77,12 +76,12 @@ export function PlanningTable({ week, users, daysOff, onToggleDay }: PlanningTab
                                         <Avatar className="h-8 w-8">
                                             <AvatarImage src={(user as any).avatarUrl} />
                                             <AvatarFallback className="bg-blue-100 text-blue-700 text-xs">
-                                                {getUserInitials((user as any).nombre || (user as any).name)}
+                                                {getUserInitials(getUserName(user))}
                                             </AvatarFallback>
                                         </Avatar>
                                         <div>
-                                            <div className="font-medium text-gray-900">{(user as any).nombre || (user as any).name || 'Usuario'}</div>
-                                            <div className="text-[10px] text-gray-500 capitalize">{(user as any).role === 'admin' ? 'Admin' : 'Personal'}</div>
+                                            <div className="font-medium text-gray-900">{getUserName(user)}</div>
+                                            <div className="text-[10px] text-gray-500 capitalize">{getUserRole(user)}</div>
                                         </div>
                                     </div>
                                     
@@ -101,7 +100,6 @@ export function PlanningTable({ week, users, daysOff, onToggleDay }: PlanningTab
                             {weekdays.map((day) => {
                                 const checked = isDayChecked(user.id, day.isoDate);
 
-                                // CASO DOMINGO (Fijo)
                                 if (day.isSunday) {
                                     return (
                                         <TableCell key={day.isoDate} className="p-2 text-center border-l bg-orange-50/30">
@@ -113,7 +111,6 @@ export function PlanningTable({ week, users, daysOff, onToggleDay }: PlanningTab
                                     );
                                 }
 
-                                // CASO DÍAS NORMALES (Clickeables)
                                 return (
                                     <TableCell key={day.isoDate} className={cn("p-2 text-center border-l transition-colors", checked && "bg-blue-50/50")}>
                                         <div className="flex justify-center">

@@ -34,6 +34,8 @@ export interface User {
   createdAt?: string | Date;
   updatedAt?: string | Date;
   lastLogin?: string | Date;
+  nombres?: string;
+  apellidos?: string;
 }
 
 export interface Area {
@@ -272,12 +274,9 @@ export interface LeaveRecord {
     approvedBy?: string; // admin or superadmin userId
 }
 
-// 0 for Monday, 1 for Tuesday, etc. up to 6 for Sunday
-export type DayOfWeek = 0 | 1 | 2 | 3 | 4 | 5 | 6;
-
 export interface DayOff {
   id: string;
   userId: string;
   weekStartDate: string; // YYYY-MM-DD
-  dayOff: DayOfWeek; // The one flexible day off
+  date: string; // YYYY-MM-DD
 }

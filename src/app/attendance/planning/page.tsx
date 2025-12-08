@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { ChevronLeft, ChevronRight, Lock } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Lock, Save } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/components/ui/card';
 import { PlanningTable } from '@/components/attendance/planning-table';
@@ -10,7 +10,7 @@ import type { DayOff, User } from '@/lib/types';
 import { startOfWeek, endOfWeek, addWeeks, subWeeks, format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { useCollection, useDoc, useFirestore, useMemoFirebase, useUser, setDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase';
-import { collection, doc } from 'firebase/firestore';
+import { collection, doc, writeBatch, query, where } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 
 export const dynamic = 'force-dynamic';
@@ -19,6 +19,7 @@ export default function PlanningPage() {
   const { toast } = useToast();
   const firestore = useFirestore();
   const { user: authUser, isUserLoading: isAuthLoading } = useUser();
+  const [localDaysOff, setLocalDaysOff] = useState<Omit<DayOff, 'id'>[]>([]);
 
   const userDocRef = useMemoFirebase(() => {
     if (!firestore || !authUser) return null;
@@ -26,8 +27,6 @@ export default function PlanningPage() {
   }, [firestore, authUser]);
   const { data: currentUser, isLoading: isProfileLoading } = useDoc<User>(userDocRef);
   
-  // --- ACCESO LIBERADO PARA LA DEMO ---
-  // Forzamos que siempre sea admin para que puedas ver y probar la pantalla sin bloqueos
   const isAdmin = true; 
 
   const [currentWeek, setCurrentWeek] = useState(new Date());
@@ -38,14 +37,23 @@ export default function PlanningPage() {
   );
   const { data: users, isLoading: isLoadingUsers } = useCollection<User>(usersCollectionRef);
   
-  const daysOffCollectionRef = useMemoFirebase(
-    () => (firestore && authUser ? collection(firestore, 'daysOff') : null),
-    [firestore, authUser]
-  );
-  const { data: daysOff, isLoading: isLoadingDaysOff } = useCollection<DayOff>(daysOffCollectionRef);
+  const weekStartDate = startOfWeek(currentWeek, { weekStartsOn: 1 });
+  const weekStartDateString = format(weekStartDate, 'yyyy-MM-dd');
+  
+  const daysOffQuery = useMemoFirebase(() => {
+    if (!firestore) return null;
+    return query(collection(firestore, 'daysOff'), where('weekStartDate', '==', weekStartDateString));
+  }, [firestore, weekStartDateString]);
+  
+  const { data: remoteDaysOff, isLoading: isLoadingDaysOff } = useCollection<DayOff>(daysOffQuery);
 
-  const weekStart = startOfWeek(currentWeek, { weekStartsOn: 1 }); // Lunes
-  const weekEnd = endOfWeek(currentWeek, { weekStartsOn: 1 }); // Domingo
+  useState(() => {
+    if (remoteDaysOff) {
+      setLocalDaysOff(remoteDaysOff);
+    }
+  }, [remoteDaysOff]);
+
+  const weekEnd = endOfWeek(currentWeek, { weekStartsOn: 1 });
 
   const handlePreviousWeek = () => {
     setCurrentWeek(subWeeks(currentWeek, 1));
@@ -54,61 +62,75 @@ export default function PlanningPage() {
   const handleNextWeek = () => {
     setCurrentWeek(addWeeks(currentWeek, 1));
   };
+
+  const handleToggleDay = (userId: string, dateIso: string, isCurrentlyChecked: boolean) => {
+    setLocalDaysOff(prev => {
+        if (isCurrentlyChecked) {
+            return prev.filter(d => !(d.userId === userId && d.date === dateIso));
+        } else {
+            return [...prev, { userId, date: dateIso, weekStartDate: weekStartDateString }];
+        }
+    });
+  };
   
-  const handleSave = (newDaysOff: Omit<DayOff, 'id'>[]) => {
+  const handleSave = async () => {
     if (!firestore) {
-      toast({
-        variant: 'destructive',
-        title: "Error de conexión",
-        description: "No se pudo conectar a la base de datos."
-      });
+      toast({ variant: 'destructive', title: 'Error de conexión' });
       return;
     }
-  
-    const weekStartDate = newDaysOff[0]?.weekStartDate;
-  
-    const existingForWeek = daysOff?.filter(d => d.weekStartDate === weekStartDate) || [];
-    existingForWeek.forEach(dayOffDoc => {
+
+    const batch = writeBatch(firestore);
+
+    // First, delete all existing days off for the current week from Firestore
+    remoteDaysOff?.forEach(dayOffDoc => {
       const docRef = doc(firestore, 'daysOff', dayOffDoc.id);
-      deleteDocumentNonBlocking(docRef);
+      batch.delete(docRef);
     });
-  
-    newDaysOff.forEach(dayOff => {
-      const docId = `${dayOff.userId}_${dayOff.weekStartDate}`;
+
+    // Then, add all the current local days off to the batch
+    localDaysOff.forEach(dayOff => {
+      const docId = `${dayOff.userId}_${dayOff.date}`; // Use date for uniqueness
       const docRef = doc(firestore, 'daysOff', docId);
-      setDocumentNonBlocking(docRef, { ...dayOff, id: docId }, { merge: false });
+      batch.set(docRef, { ...dayOff, id: docId });
     });
-  
-    toast({
+
+    try {
+      await batch.commit();
+      toast({
         title: "Planificación Guardada",
         description: "Los días libres para la semana han sido actualizados."
-    });
+      });
+    } catch (error) {
+       toast({
+        variant: 'destructive',
+        title: "Error al guardar",
+        description: "No se pudieron actualizar los días libres.",
+      });
+      console.error("Error saving days off:", error);
+    }
   };
 
   const isLoading = isAuthLoading || isProfileLoading || isLoadingUsers || isLoadingDaysOff;
 
-  // Quitamos el bloqueo de carga estricto para que al menos se vea la estructura
   if (isLoading && !users) {
-    return (
-        <div className="flex items-center justify-center h-full p-8">
-            <p>Cargando...</p>
-        </div>
-    )
+    return <div className="flex items-center justify-center h-full p-8"><p>Cargando...</p></div>;
   }
 
-  // --- ESTRUCTURA LIMPIA ---
   return (
     <div className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
         <div className="flex items-center justify-between">
             <div>
-                <h1 className="font-headline text-2xl font-bold md:text-3xl">
-                Planificación de Días Libres
-                </h1>
+                <h1 className="font-headline text-2xl font-bold md:text-3xl">Planificación de Días Libres</h1>
                 <p className="text-muted-foreground">Asigna el día libre rotativo de la semana para cada empleado.</p>
             </div>
-            <Button asChild variant="outline">
-                <Link href="/attendance">Volver a Asistencia</Link>
-            </Button>
+             <div className="flex items-center gap-2">
+                <Button onClick={handleSave} className="bg-blue-600 hover:bg-blue-700 text-white">
+                    <Save className="mr-2 h-4 w-4" /> Guardar Cambios
+                </Button>
+                <Button asChild variant="outline">
+                    <Link href="/attendance/personal">Volver a Personal</Link>
+                </Button>
+            </div>
         </div>
 
         <Card>
@@ -137,8 +159,8 @@ export default function PlanningPage() {
             <PlanningTable 
                 week={currentWeek} 
                 users={users || []} 
-                initialDaysOff={daysOff || []} 
-                onSave={handleSave}
+                daysOff={localDaysOff || []} 
+                onToggleDay={handleToggleDay}
             />
             )}
         </CardContent>
