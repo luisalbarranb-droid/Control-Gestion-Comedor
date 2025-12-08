@@ -1,14 +1,7 @@
 
 'use client';
 
-import {
-  Sidebar,
-  SidebarContent,
-  SidebarHeader,
-  SidebarInset,
-} from '@/components/ui/sidebar';
-import { MainNav } from '@/components/dashboard/main-nav';
-import { SquareCheck, BarChart, FileSpreadsheet, Users, Package, BookOpen } from 'lucide-react';
+import { BarChart, FileSpreadsheet, Users, Package, BookOpen } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
@@ -48,8 +41,7 @@ const reportCards = [
 
 export default function ReportsPage() {
   return (
-    <div className="min-h-screen w-full">
-      <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
+    <div className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
         <div className="flex items-center justify-between">
           <h1 className="font-headline text-2xl font-bold md:text-3xl">
             Central de Reportes
@@ -79,8 +71,6 @@ export default function ReportsPage() {
             </Card>
           ))}
         </div>
-
-      </main>
     </div>
   );
 }
