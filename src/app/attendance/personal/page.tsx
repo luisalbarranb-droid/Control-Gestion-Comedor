@@ -15,16 +15,29 @@ import {
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Input } from '@/components/ui/input';
-import { useCollection, useFirestore, useMemoFirebase, useUser } from '@/firebase';
-import { collection, query, orderBy, addDoc, serverTimestamp } from 'firebase/firestore';
+import { useCollection, useFirestore, useMemoFirebase, useUser, addDocumentNonBlocking } from '@/firebase';
+import { collection, query, orderBy, serverTimestamp } from 'firebase/firestore';
 import type { User } from '@/lib/types';
 import { EmployeeForm } from '@/components/attendance/employee-form';
 import { useToast } from '@/hooks/use-toast';
 
+// Helper to get a safe name from the user object
+const getUserName = (user: User): string => {
+  return (user as any).name || (user as any).nombres || 'Usuario sin nombre';
+};
+
+// Helper to get initials from a name string
+const getUserInitials = (name: string): string => {
+  if (!name) return 'U';
+  return name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
+};
+
+
 export default function EmployeeListPage() {
   const { toast } = useToast();
   const firestore = useFirestore();
-  const { user: authUser, profile: currentUser } = useUser();
+  const { user: authUser, profile: currentUser, isUserLoading } = useUser();
+  
   const [isFormOpen, setFormOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
 
@@ -35,45 +48,37 @@ export default function EmployeeListPage() {
     () => (firestore ? query(collection(firestore, 'users'), orderBy('name', 'asc')) : null),
     [firestore]
   );
-  const { data: users, isLoading } = useCollection<User>(usersQuery);
+  const { data: users, isLoading: isLoadingUsers } = useCollection<User>(usersQuery);
 
   const handleSaveEmployee = async (employeeData: Omit<User, 'id'>) => {
     if (!firestore || !authUser) return;
 
-    try {
-      await addDoc(collection(firestore, 'users'), {
-        ...employeeData,
-        name: `${employeeData.nombres} ${employeeData.apellidos}`,
-        email: `${employeeData.nombres.split(' ')[0].toLowerCase()}.${employeeData.apellidos.split(' ')[0].toLowerCase()}@example.com`, // Dummy email
-        role: 'comun', // Default role
-        isActive: true,
-        createdBy: authUser.uid,
-        creationDate: serverTimestamp(),
-        lastAccess: serverTimestamp(),
-      });
+    const finalData = {
+      ...employeeData,
+      name: `${employeeData.nombres} ${employeeData.apellidos}`,
+      email: `${employeeData.nombres?.split(' ')[0].toLowerCase()}.${employeeData.apellidos?.split(' ')[0].toLowerCase()}@example.com`,
+      role: 'comun',
+      isActive: true,
+      createdBy: authUser.uid,
+      creationDate: serverTimestamp(),
+      lastAccess: serverTimestamp(),
+    };
+    
+    addDocumentNonBlocking(collection(firestore, 'users'), finalData);
 
-      toast({
-        title: 'Expediente Guardado',
-        description: `Los datos para ${employeeData.nombres} ${employeeData.apellidos} han sido guardados.`,
-      });
-      setFormOpen(false);
-    } catch (error) {
-       console.error("Error saving employee:", error);
-       toast({
-        variant: "destructive",
-        title: "Error al guardar",
-        description: "No se pudo guardar el expediente.",
-      });
-    }
+    toast({
+      title: 'Expediente Guardado',
+      description: `Los datos para ${finalData.name} han sido guardados.`,
+    });
+    setFormOpen(false);
   };
   
   const filteredUsers = users?.filter(user => 
-    (user.name?.toLowerCase() || '').includes(searchTerm.toLowerCase()) || 
+    getUserName(user).toLowerCase().includes(searchTerm.toLowerCase()) || 
     (user.email?.toLowerCase() || '').includes(searchTerm.toLowerCase())
   );
 
-  const getUserInitials = (name: string | undefined) => name ? name.split(' ').map((n) => n[0]).join('').substring(0, 2).toUpperCase() : 'U';
-  const getUserName = (user: User) => (user as any).name || (user as any).nombre || 'Usuario sin nombre';
+  const isLoading = isUserLoading || isLoadingUsers;
 
   return (
     <div className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
@@ -136,35 +141,40 @@ export default function EmployeeListPage() {
             <TableBody>
               {isLoading && (
                 <TableRow>
-                  <TableCell colSpan={4} className="text-center">
+                  <TableCell colSpan={4} className="text-center h-24">
                     Cargando...
                   </TableCell>
                 </TableRow>
               )}
-              {filteredUsers && filteredUsers.map((user) => (
-                <TableRow key={user.id}>
-                  <TableCell>
-                    <div className="flex items-center gap-3">
-                      <Avatar>
-                        <AvatarImage src={user.avatarUrl} alt={getUserName(user)} />
-                        <AvatarFallback>{getUserInitials(getUserName(user))}</AvatarFallback>
-                      </Avatar>
-                      <div>
-                        <div className="font-medium">{getUserName(user)}</div>
-                        <div className="text-sm text-muted-foreground">{user.email}</div>
+              {!isLoading && filteredUsers && filteredUsers.map((user) => {
+                const userName = getUserName(user);
+                const userInitials = getUserInitials(userName);
+
+                return (
+                  <TableRow key={user.id}>
+                    <TableCell>
+                      <div className="flex items-center gap-3">
+                        <Avatar>
+                          <AvatarImage src={user.avatarUrl} alt={userName} />
+                          <AvatarFallback>{userInitials}</AvatarFallback>
+                        </Avatar>
+                        <div>
+                          <div className="font-medium">{userName}</div>
+                          <div className="text-sm text-muted-foreground">{user.email}</div>
+                        </div>
                       </div>
-                    </div>
-                  </TableCell>
-                  <TableCell>{user.cedula || 'N/A'}</TableCell>
-                  <TableCell className="capitalize">{user.role}</TableCell>
-                  <TableCell className="text-right">
-                    <Button asChild variant="outline" size="sm">
-                      <Link href={`/attendance/personal/${user.id}`}>Ver Expediente</Link>
-                    </Button>
-                  </TableCell>
-                </TableRow>
-              ))}
-               {filteredUsers && filteredUsers.length === 0 && !isLoading && (
+                    </TableCell>
+                    <TableCell>{user.cedula || 'N/A'}</TableCell>
+                    <TableCell className="capitalize">{user.role}</TableCell>
+                    <TableCell className="text-right">
+                      <Button asChild variant="outline" size="sm">
+                        <Link href={`/attendance/personal/${user.id}`}>Ver Expediente</Link>
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                )
+              })}
+               {!isLoading && (!filteredUsers || filteredUsers.length === 0) && (
                  <TableRow>
                   <TableCell colSpan={4} className="text-center h-24">
                     No se encontraron empleados.

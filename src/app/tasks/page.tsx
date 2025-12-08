@@ -31,7 +31,7 @@ import {
 import { areas } from '@/lib/placeholder-data';
 import type { Task, TaskPriority, TaskStatus, User } from '@/lib/types';
 import { cn } from '@/lib/utils';
-import { format } from 'date-fns';
+import { format, isValid } from 'date-fns';
 import { CreateTaskForm } from '@/components/tasks/create-task-form';
 import { TaskDetails } from '@/components/tasks/task-details';
 import { useCollection, useFirestore, useMemoFirebase, useUser, addDocumentNonBlocking, updateDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase';
@@ -54,25 +54,43 @@ const statusVariant: Record<TaskStatus, string> = {
   rechazada: 'bg-red-100 text-red-800',
 };
 
+function convertToDate(date: any): Date | null {
+    if (!date) return null;
+    if (date instanceof Date && isValid(date)) return date;
+    if (date instanceof Timestamp) return date.toDate();
+    const parsed = new Date(date);
+    return isValid(parsed) ? parsed : null;
+}
+
+const getUserName = (user?: User | null): string => {
+    if (!user) return 'N/A';
+    return (user as any).name || (user as any).nombres || 'Usuario';
+}
+
+const getUserInitials = (name?: string): string => {
+    if (!name) return 'U';
+    return name.split(' ').map(n => n[0]).join('').toUpperCase();
+}
+
+
 export default function TasksPage() {
   const firestore = useFirestore();
   const { user: authUser, profile: currentUser, isUserLoading: isAuthLoading } = useUser();
+
+  const [selectedTask, setSelectedTask] = useState<Task | null>(null);
+  const [isFormOpen, setFormOpen] = useState(false);
 
   const role = currentUser?.role;
   const isAdmin = role === 'admin' || role === 'superadmin';
 
   const tasksQuery = useMemoFirebase(
     () => {
-        if (!firestore || !authUser) return null;
-        // Solo ejecutar la consulta si tenemos el perfil del usuario para saber el rol
-        if (!isAuthLoading && currentUser) {
-            return isAdmin
-                ? collection(firestore, 'tasks')
-                : query(collection(firestore, 'tasks'), where('asignadoA', '==', authUser.uid));
-        }
-        return null; // Esperar a que el perfil del usuario cargue
+        if (!firestore || !authUser || isAuthLoading) return null; // Wait until auth is resolved
+        return isAdmin
+            ? query(collection(firestore, 'tasks'))
+            : query(collection(firestore, 'tasks'), where('asignadoA', '==', authUser.uid));
     },
-    [firestore, authUser, isAdmin, isAuthLoading, currentUser]
+    [firestore, authUser, isAdmin, isAuthLoading]
   );
   const { data: tasks, isLoading: isLoadingTasks } = useCollection<Task>(tasksQuery);
 
@@ -82,21 +100,16 @@ export default function TasksPage() {
   );
   const { data: users, isLoading: isLoadingUsers } = useCollection<User>(usersCollectionRef);
 
-  const [selectedTask, setSelectedTask] = useState<Task | null>(null);
-  const [isFormOpen, setFormOpen] = useState(false);
-  
   const getArea = (areaId: string) => areas.find((a) => a.id === areaId);
   const getUser = (userId: string) => users?.find((u) => u.id === userId);
 
   const handleTaskCreate = (newTaskData: Omit<Task, 'id' | 'creadoPor' | 'fechaCreacion' | 'estado' | 'checklist' | 'comentarios' | 'tags' | 'recurrente' | 'evidencias'>) => {
-    if (!firestore || !currentUser) return;
+    if (!firestore || !currentUser?.id) return;
     
     const collectionRef = collection(firestore, 'tasks');
-    const docRef = doc(collectionRef);
-
+    
     const fullyNewTask = {
       ...newTaskData,
-      id: docRef.id,
       creadoPor: currentUser.id,
       fechaCreacion: serverTimestamp(),
       estado: 'pendiente' as TaskStatus,
@@ -109,7 +122,7 @@ export default function TasksPage() {
       fechaVencimiento: Timestamp.fromDate(newTaskData.fechaVencimiento as Date)
     };
     
-    addDocumentNonBlocking(docRef, fullyNewTask);
+    addDocumentNonBlocking(collectionRef, fullyNewTask);
     setFormOpen(false);
   };
   
@@ -130,15 +143,6 @@ export default function TasksPage() {
 
   const isLoading = isLoadingTasks || isLoadingUsers || isAuthLoading;
 
-  if (isLoading) {
-      return (
-          <div className="flex flex-1 items-center justify-center h-full p-8">
-             <p>Cargando tareas...</p>
-          </div>
-      )
-  }
-
-  // --- CONTENIDO LIMPIO (Sin menús duplicados) ---
   return (
     <div className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
         <div className="flex items-center justify-between">
@@ -161,6 +165,9 @@ export default function TasksPage() {
             </CardDescription>
           </CardHeader>
           <CardContent>
+            {isLoading ? (
+              <div className="text-center py-10">Cargando tareas...</div>
+            ) : (
             <Table>
               <TableHeader>
                 <TableRow>
@@ -176,14 +183,14 @@ export default function TasksPage() {
                 {tasks && tasks.map((task) => {
                    const user = getUser(task.asignadoA);
                    const area = getArea(task.area);
-                   const fechaVencimiento = task.fechaVencimiento?.toDate ? task.fechaVencimiento.toDate() : new Date(task.fechaVencimiento as any);
+                   const fechaVencimiento = convertToDate(task.fechaVencimiento);
 
                    return (
                      <TableRow key={task.id} onClick={() => setSelectedTask(task)} className="cursor-pointer hover:bg-gray-50">
                        <TableCell>
                          <div className="font-medium">{task.titulo}</div>
                          <div className="text-sm text-muted-foreground">
-                           Vence: {format(fechaVencimiento, 'dd/MM/yyyy')}
+                           Vence: {fechaVencimiento ? format(fechaVencimiento, 'dd/MM/yyyy') : 'N/A'}
                          </div>
                         </TableCell>
                        <TableCell>
@@ -204,10 +211,10 @@ export default function TasksPage() {
                              <Avatar className="h-8 w-8">
                                 <AvatarImage src={user?.avatarUrl} />
                                <AvatarFallback>
-                                  {user?.name?.split(' ').map((n) => n[0]).join('')}
+                                  {getUserInitials(getUserName(user))}
                                </AvatarFallback>
                              </Avatar>
-                             <span>{user?.name}</span>
+                             <span>{getUserName(user)}</span>
                           </div>
                        </TableCell>
                        <TableCell>
@@ -233,8 +240,14 @@ export default function TasksPage() {
                      </TableRow>
                    );
                 })}
+                 {!tasks || tasks.length === 0 && (
+                     <TableRow>
+                         <TableCell colSpan={6} className="text-center h-24">No se encontraron tareas.</TableCell>
+                     </TableRow>
+                 )}
               </TableBody>
             </Table>
+            )}
           </CardContent>
         </Card>
       
@@ -242,5 +255,3 @@ export default function TasksPage() {
     </div>
   );
 }
-
-    

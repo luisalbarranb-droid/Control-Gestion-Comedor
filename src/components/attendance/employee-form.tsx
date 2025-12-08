@@ -29,25 +29,26 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { FileText } from 'lucide-react';
+import type { User } from '@/lib/types';
 
-// Esquema de validación con todos los campos solicitados
+
 const employeeSchema = z.object({
   cedula: z.string().min(1, 'La cédula es obligatoria'),
   nombres: z.string().min(1, 'Los nombres son obligatorios'),
   apellidos: z.string().min(1, 'Los apellidos son obligatorios'),
-  tipo: z.enum(['empleado', 'obrero']),
-  telefono: z.string().optional(),
-  direccion: z.string().optional(),
-  genero: z.enum(['masculino', 'femenino']),
-  fechaIngreso: z.string().min(1, 'Fecha requerida'),
-  departamento: z.string().min(1, 'Departamento requerido'),
-  tipoContrato: z.enum(['determinado', 'indeterminado', 'prueba']),
-  diasContrato: z.coerce.number().optional(),
-  contratoUrl: z.string().optional(),
+  workerType: z.enum(['empleado', 'obrero']),
+  phone: z.string().optional(),
+  address: z.string().optional(),
+  // genero: z.enum(['masculino', 'femenino']),
+  creationDate: z.string().min(1, 'Fecha requerida'),
+  area: z.string().min(1, 'Departamento requerido'),
+  contractType: z.enum(['determinado', 'indeterminado', 'prueba']),
+  // diasContrato: z.coerce.number().optional(),
+  // contratoUrl: z.string().optional(),
 });
 
 interface EmployeeFormProps {
-  onSave: (data: any) => void;
+  onSave: (data: Omit<User, 'id'>) => void;
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
 }
@@ -59,24 +60,21 @@ export function EmployeeForm({ onSave, isOpen, onOpenChange }: EmployeeFormProps
       cedula: '',
       nombres: '',
       apellidos: '',
-      tipo: 'empleado',
-      telefono: '',
-      direccion: '',
-      genero: 'masculino',
-      fechaIngreso: new Date().toISOString().split('T')[0],
-      departamento: '',
-      tipoContrato: 'indeterminado',
-      diasContrato: 0,
-      contratoUrl: '',
+      workerType: 'empleado',
+      phone: '',
+      address: '',
+      creationDate: new Date().toISOString().split('T')[0],
+      area: 'cocina',
+      contractType: 'indeterminado',
     },
   });
 
   const handleSubmit = (values: z.infer<typeof employeeSchema>) => {
-    onSave(values);
+    // We cast to any because the form has a subset of the User type.
+    // The parent component (`personal/page.tsx`) will add the missing fields.
+    onSave(values as any);
     form.reset();
   };
-
-  const tipoContrato = form.watch('tipoContrato');
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
@@ -90,7 +88,6 @@ export function EmployeeForm({ onSave, isOpen, onOpenChange }: EmployeeFormProps
         <Form {...form}>
           <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
             
-            {/* Sección 1: Datos Personales */}
             <div className="space-y-4 border-b pb-4">
                 <h3 className="font-semibold text-sm text-gray-500 uppercase tracking-wide">Datos Personales</h3>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -105,34 +102,20 @@ export function EmployeeForm({ onSave, isOpen, onOpenChange }: EmployeeFormProps
                     )} />
                 </div>
                 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <FormField control={form.control} name="genero" render={({ field }) => (
-                        <FormItem>
-                            <FormLabel>Género</FormLabel>
-                            <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
-                                <SelectContent>
-                                    <SelectItem value="masculino">Masculino</SelectItem>
-                                    <SelectItem value="femenino">Femenino</SelectItem>
-                                </SelectContent>
-                            </Select>
-                            <FormMessage />
-                        </FormItem>
-                    )} />
-                    <FormField control={form.control} name="telefono" render={({ field }) => (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <FormField control={form.control} name="phone" render={({ field }) => (
                         <FormItem><FormLabel>Teléfono</FormLabel><FormControl><Input placeholder="04xx-..." {...field} /></FormControl><FormMessage /></FormItem>
                     )} />
-                     <FormField control={form.control} name="direccion" render={({ field }) => (
+                     <FormField control={form.control} name="address" render={({ field }) => (
                         <FormItem><FormLabel>Dirección</FormLabel><FormControl><Input placeholder="Habitación..." {...field} /></FormControl><FormMessage /></FormItem>
                     )} />
                 </div>
             </div>
 
-            {/* Sección 2: Datos Laborales */}
-            <div className="space-y-4 border-b pb-4">
+            <div className="space-y-4">
                 <h3 className="font-semibold text-sm text-gray-500 uppercase tracking-wide">Contrato y Cargo</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                     <FormField control={form.control} name="tipo" render={({ field }) => (
+                     <FormField control={form.control} name="workerType" render={({ field }) => (
                         <FormItem>
                             <FormLabel>Tipo de Personal</FormLabel>
                             <Select onValueChange={field.onChange} defaultValue={field.value}>
@@ -145,17 +128,18 @@ export function EmployeeForm({ onSave, isOpen, onOpenChange }: EmployeeFormProps
                             <FormMessage />
                         </FormItem>
                     )} />
-                    <FormField control={form.control} name="departamento" render={({ field }) => (
+                    <FormField control={form.control} name="area" render={({ field }) => (
                         <FormItem>
-                            <FormLabel>Departamento</FormLabel>
+                            <FormLabel>Área/Departamento</FormLabel>
                             <Select onValueChange={field.onChange} defaultValue={field.value}>
                                 <FormControl><SelectTrigger><SelectValue placeholder="Selecciona" /></SelectTrigger></FormControl>
                                 <SelectContent>
                                     <SelectItem value="cocina">Cocina</SelectItem>
-                                    <SelectItem value="mantenimiento">Mantenimiento</SelectItem>
+                                    <SelectItem value="servicio">Servicio</SelectItem>
+                                    <SelectItem value="limpieza">Limpieza</SelectItem>
+                                    <SelectItem value="almacen">Almacén</SelectItem>
+                                    <SelectItem value="equipos">Equipos</SelectItem>
                                     <SelectItem value="administracion">Administración</SelectItem>
-                                    <SelectItem value="logistica">Logística</SelectItem>
-                                    <SelectItem value="rrhh">RRHH</SelectItem>
                                 </SelectContent>
                             </Select>
                             <FormMessage />
@@ -163,8 +147,8 @@ export function EmployeeForm({ onSave, isOpen, onOpenChange }: EmployeeFormProps
                     )} />
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
-                    <FormField control={form.control} name="tipoContrato" render={({ field }) => (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-end">
+                    <FormField control={form.control} name="contractType" render={({ field }) => (
                         <FormItem>
                             <FormLabel>Tipo de Contrato</FormLabel>
                             <Select onValueChange={field.onChange} defaultValue={field.value}>
@@ -178,40 +162,10 @@ export function EmployeeForm({ onSave, isOpen, onOpenChange }: EmployeeFormProps
                             <FormMessage />
                         </FormItem>
                     )} />
-                    
-                    {(tipoContrato === 'determinado' || tipoContrato === 'prueba') && (
-                        <FormField control={form.control} name="diasContrato" render={({ field }) => (
-                            <FormItem>
-                                <FormLabel>Duración (Días)</FormLabel>
-                                <FormControl><Input type="number" {...field} /></FormControl>
-                                <FormMessage />
-                            </FormItem>
-                        )} />
-                    )}
-
-                    <FormField control={form.control} name="fechaIngreso" render={({ field }) => (
+                    <FormField control={form.control} name="creationDate" render={({ field }) => (
                         <FormItem><FormLabel>Fecha de Ingreso</FormLabel><FormControl><Input type="date" {...field} /></FormControl><FormMessage /></FormItem>
                     )} />
                 </div>
-            </div>
-
-            {/* Sección 3: Documentos */}
-            <div className="border-2 border-dashed rounded-lg p-6 bg-blue-50/50 flex flex-col items-center justify-center text-center mt-4">
-                <div className="bg-white p-3 rounded-full shadow-sm mb-2">
-                    <FileText className="h-6 w-6 text-blue-600" />
-                </div>
-                <FormLabel className="mb-1 cursor-pointer">Cargar Contrato Firmado (PDF)</FormLabel>
-                <p className="text-xs text-gray-500 mb-3">Sube el documento digitalizado del contrato</p>
-                <Input 
-                    type="file" 
-                    accept=".pdf" 
-                    className="max-w-xs text-xs file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
-                    onChange={(e) => {
-                        if (e.target.files?.[0]) {
-                            form.setValue('contratoUrl', e.target.files[0].name);
-                        }
-                    }}
-                />
             </div>
 
             <DialogFooter className="pt-4">

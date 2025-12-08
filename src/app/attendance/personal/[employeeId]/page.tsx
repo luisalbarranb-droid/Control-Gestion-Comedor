@@ -1,7 +1,7 @@
 'use client';
 
 import { useDoc, useFirestore, useMemoFirebase } from '@/firebase';
-import { doc } from 'firebase/firestore';
+import { doc, Timestamp } from 'firebase/firestore';
 import { notFound } from 'next/navigation';
 import {
   Card,
@@ -15,20 +15,17 @@ import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { ArrowLeft, Edit } from 'lucide-react';
 import type { User } from '@/lib/types';
-import { format } from 'date-fns';
-import { Timestamp } from 'firebase/firestore';
+import { format, isValid } from 'date-fns';
 
 function convertToDate(date: Date | Timestamp | undefined | string): Date | undefined {
   if (!date) return undefined;
   if (date instanceof Timestamp) return date.toDate();
-  if (date instanceof Date) return date;
-  try {
-    const parsedDate = new Date(date);
-    if (isNaN(parsedDate.getTime())) return undefined;
-    return parsedDate;
-  } catch (e) {
-    return undefined;
+  if (date instanceof Date && isValid(date)) return date;
+  if (typeof date === 'string') {
+      const parsedDate = new Date(date);
+      if (isValid(parsedDate)) return parsedDate;
   }
+  return undefined;
 }
 
 const DetailItem = ({ label, value }: { label: string; value?: string | number | null; }) => (
@@ -38,8 +35,16 @@ const DetailItem = ({ label, value }: { label: string; value?: string | number |
   </div>
 );
 
-const getUserName = (user: User) => (user as any).name || (user as any).nombres || 'Usuario';
-const getUserInitials = (name: string) => name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
+const getUserName = (user?: User | null): string => {
+    if (!user) return 'Usuario';
+    return (user as any).name || (user as any).nombres || 'Usuario';
+}
+
+const getUserInitials = (name: string): string => {
+    if (!name) return 'U';
+    return name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
+}
+
 
 export default function EmployeeDetailsPage({ params }: { params: { employeeId: string } }) {
   const firestore = useFirestore();
@@ -57,7 +62,8 @@ export default function EmployeeDetailsPage({ params }: { params: { employeeId: 
   }
 
   if (!user) {
-    return notFound();
+    notFound();
+    return null; // notFound() throws an error, but this satisfies TypeScript
   }
 
   const name = getUserName(user);
