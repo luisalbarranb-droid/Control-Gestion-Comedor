@@ -62,7 +62,6 @@ function convertToDate(date: Date | Timestamp | undefined): Date | undefined {
 
 /**
  * Función auxiliar para asegurar que los objetos WithId de Firestore sean tratados como el tipo base T.
- * Esto resuelve los errores 2339 al acceder a propiedades.
  */
 function isTypedDocument<T>(doc: any): doc is T {
     return doc && doc.id !== undefined;
@@ -145,21 +144,18 @@ export default function MenusPage() {
 				where('date', '<=', nextWeekEnd),
 			);
 			
-			// CORRECCIÓN LÍNEA 136 (ERROR 2554: Expected 1 arguments, but got 2)
 			const existingDocs = await getDocs(firestore, nextWeekQuery as any); 
-            // Usamos 'as any' en la consulta para evitar errores de tipo de consulta complejos.
 			existingDocs.forEach(doc => {
 				batch.delete(doc.ref);
 			});
 
 			// Copiar menús de la semana actual
-            // CRÍTICO: Comprobar si 'menus' es null (Error 18047)
 			if (menus) { 
                 menus.forEach(menu => {
                     // CORRECCIÓN DE TIPADO DE FECHA
                     const oldDate = convertToDate(menu.date as Date | Timestamp);
                     
-                    if (!oldDate) return; // Si la fecha es inválida, saltamos
+                    if (!oldDate) return; 
 
                     const daysDifference = differenceInDays(oldDate, start); 
                     const newDate = addDays(nextWeekStart, daysDifference); 
@@ -194,7 +190,6 @@ export default function MenusPage() {
 	}, [start]);
 
 	const menusByDay = useMemo(() => {
-        // CRÍTICO: Comprobar si 'menus' es null (Error 18047)
         if (!menus) return [];
 
 		return weekDays.map(day => {
@@ -232,7 +227,6 @@ export default function MenusPage() {
 
 	// Función para obtener el nombre del usuario
 	const getUserName = (uid: string) => {
-        // CRÍTICO: Comprobar si 'users' es null (Error 18047)
         if (!users) return 'Desconocido'; 
 
 		const user = users.find(u => u.uid === uid);
@@ -331,14 +325,14 @@ export default function MenusPage() {
 								selectedDayData?.menus.map(menu => (
 									<TableRow key={menu.id}>
 										<TableCell className="font-semibold text-gray-800">
-											{formatTime((menu as any).time)} {/* Corrección de tipado de propiedad */}
+											{formatTime((menu as any).time)}
 										</TableCell>
-										<TableCell>{(menu as any).name}</TableCell> {/* Corrección de tipado de propiedad */}
+										<TableCell>{(menu as any).name}</TableCell>
 										<TableCell className="text-sm text-gray-600">
-											{(menu as any).ingredients?.join(', ') || 'N/A'} {/* Corrección de tipado de propiedad */}
+											{(menu as any).ingredients?.join(', ') || 'N/A'}
 										</TableCell>
 										<TableCell className="text-sm text-gray-500">
-											{getUserName((menu as any).createdBy)} {/* Corrección de tipado de propiedad */}
+											{getUserName((menu as any).createdBy)}
 										</TableCell>
 										<TableCell className="text-right">
 											<DropdownMenu>
@@ -366,7 +360,6 @@ export default function MenusPage() {
 				</div>
 			</div>
 			
-			{/* Nota: Si el error 2307 persiste, significa que debe crear el componente MenuDialog */}
 			<MenuDialog 
 				isOpen={dialogOpen} 
 				onOpenChange={setDialogOpen} 
