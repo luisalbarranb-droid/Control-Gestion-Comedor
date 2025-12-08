@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { MoreHorizontal, Plus } from 'lucide-react';
 import {
   Table,
@@ -54,22 +54,29 @@ const statusVariant: Record<TaskStatus, string> = {
   rechazada: 'bg-red-100 text-red-800',
 };
 
+// --- FUNCIONES CRÍTICAS PARA MANEJO DE FECHAS (Igual que en Menus/Settings) ---
+function isTimestamp(value: any): value is Timestamp {
+    return value && typeof value === 'object' && value.toDate && typeof value.toDate === 'function';
+}
+
 function convertToDate(date: any): Date | null {
     if (!date) return null;
     if (date instanceof Date && isValid(date)) return date;
-    if (date instanceof Timestamp) return date.toDate();
+    if (isTimestamp(date)) return date.toDate(); // Uso seguro de toDate()
     const parsed = new Date(date);
     return isValid(parsed) ? parsed : null;
 }
+// -----------------------------------------------------------------------------
 
 const getUserName = (user?: User | null): string => {
     if (!user) return 'N/A';
+    // Casting seguro para evitar errores si la propiedad no está en la interfaz base
     return (user as any).name || (user as any).nombres || 'Usuario';
 }
 
 const getUserInitials = (name?: string): string => {
     if (!name) return 'U';
-    return name.split(' ').map(n => n[0]).join('').toUpperCase();
+    return name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
 }
 
 
@@ -96,11 +103,13 @@ export default function TasksPage() {
           return query(collection(firestore, 'tasks'), where('asignadoA', '==', userId));
         }
 
-        return null; // No query if not admin and no user ID
+        return null; 
     },
-    [firestore, isAdmin, isAuthLoading, userId] // Use stable userId instead of authUser object
+    [firestore, isAdmin, isAuthLoading, userId] 
   );
-  const { data: tasks, isLoading: isLoadingTasks } = useCollection<Task>(tasksQuery, { disabled: !tasksQuery });
+  
+  // Añadimos manejo seguro para cuando tasksQuery es null
+  const { data: tasks, isLoading: isLoadingTasks } = useCollection<Task>(tasksQuery);
 
   const usersCollectionRef = useMemoFirebase(
     () => (firestore ? collection(firestore, 'users') : null),
@@ -127,7 +136,6 @@ export default function TasksPage() {
       tags: [],
       recurrente: false,
       fechaVencimiento: Timestamp.fromDate(newTaskData.fechaVencimiento),
-      // Mapea 'titulo' a 'titulo' y 'asignadoA' a 'asignadoA', que ya están en newTaskData
       titulo: newTaskData.titulo,
       asignadoA: newTaskData.asignadoA
     };
@@ -193,6 +201,7 @@ export default function TasksPage() {
                 {tasks && tasks.map((task) => {
                    const user = getUser(task.asignadoA);
                    const area = getArea(task.area);
+                   // Uso de la función segura convertToDate
                    const fechaVencimiento = convertToDate(task.fechaVencimiento);
 
                    return (
@@ -219,7 +228,7 @@ export default function TasksPage() {
                        <TableCell className="hidden lg:table-cell">
                           <div className="flex items-center gap-2">
                              <Avatar className="h-8 w-8">
-                                <AvatarImage src={user?.avatarUrl} />
+                                <AvatarImage src={(user as any)?.avatarUrl} />
                                <AvatarFallback>
                                   {getUserInitials(getUserName(user))}
                                </AvatarFallback>
@@ -245,8 +254,8 @@ export default function TasksPage() {
                                   Eliminar
                                 </DropdownMenuItem>
                              </DropdownMenuContent>
-                            </DropdownMenu>
-                        </TableCell>
+                           </DropdownMenu>
+                       </TableCell>
                      </TableRow>
                    );
                 })}
