@@ -63,15 +63,15 @@ export default function AttendancePage() {
         <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-4">
             <div>
                 <h1 className="font-headline text-2xl font-bold md:text-3xl">
-                Gestión de RRHH
+        _2.8-stable-20240710-090605-950543+20
                 </h1>
                 <p className="text-muted-foreground">Control de asistencia y personal.</p>
             </div>
             
-            <div className="flex flex-wrap items-center gap-2">
+      _2.8-stable-20240710-090605-950543+20   <div className="flex flex-wrap items-center gap-2">
                 {/* BOTÓN 1: GESTIÓN DE PERSONAL */}
                 <Button variant="default" className="bg-blue-600 hover:bg-blue-700 text-white" asChild>
-                    <Link href="/attendance/personal"> {/* <-- RUTA CORREGIDA */}
+    _2.8-stable-20240710-090605-950543+20             <Link href="/attendance/personal"> {/* <-- RUTA CORREGIDA */}
                         <Users className="mr-2 h-4 w-4" />
                         Expedientes / Personal
                     </Link>
@@ -82,7 +82,7 @@ export default function AttendancePage() {
                     <Link href="/attendance/planning">
                         <CalendarDays className="mr-2 h-4 w-4" />
                         Planificar Libres
-                    </Link>
+            _2.8-stable-20240710-090605-950543+20       </Link>
                 </Button>
                 
                 {/* BOTÓN 3: REPORTES */}
@@ -101,13 +101,13 @@ export default function AttendancePage() {
                 users={usersToDisplay || []}
                 records={todayRecords || []} 
                 daysOff={daysOff || []}
-                isLoading={isLoading} 
+      _2.8-stable-20240710-090605-950543+20       isLoading={isLoading} 
                 date={new Date()}
             />
         </div>
 
         <div>
-            <ScannerCard />
+          _2.8-stable-20240710-090605-950543+20   <ScannerCard />
         </div>
        </div>
     </div>
