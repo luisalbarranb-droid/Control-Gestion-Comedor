@@ -4,7 +4,7 @@ import { Toaster } from '@/components/ui/toaster';
 import { Providers } from './providers';
 
 export const metadata: Metadata = {
-  title: 'Sistema Comedor - Gestión Inteligente',
+  title: 'Comedor Control - Gestión Inteligente',
   description: 'Sistema de gestión para comedor industrial',
 };
 
