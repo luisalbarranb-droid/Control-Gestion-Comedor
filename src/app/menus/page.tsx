@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { useCallback, useMemo, useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, ArrowRight, FileSpreadsheet, Plus, Settings } from 'lucide-react';
 import { Calendar } from '@/components/ui/calendar';
@@ -54,9 +54,14 @@ export default function MenusPage() {
 	const firestore = useFirestore();
 
 	const [currentWeek, setCurrentWeek] = useState(startOfWeek(new Date(), { weekStartsOn: 1 }));
-	const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
+	const [selectedDate, setSelectedDate] = useState<Date | undefined>();
 	const [dialogOpen, setDialogOpen] = useState(false);
 	const [editingMenu, setEditingMenu] = useState<Menu | null>(null);
+
+	// **CORRECCIÓN CRÍTICA**: Inicializar la fecha en `useEffect` para evitar errores de hidratación.
+	useEffect(() => {
+		setSelectedDate(new Date());
+	}, []);
 
 	const start = startOfWeek(currentWeek, { weekStartsOn: 1 });
 	const end = endOfWeek(currentWeek, { weekStartsOn: 1 });

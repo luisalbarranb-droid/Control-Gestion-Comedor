@@ -45,13 +45,7 @@ function convertToDate(date: any): Date | null {
 export default function AttendanceReportsPage() {
     const { toast } = useToast();
     const firestore = useFirestore();
-    const { user: authUser, isUserLoading: isAuthLoading } = useUser();
-
-    const userDocRef = useMemoFirebase(() => {
-        if (!firestore || !authUser) return null;
-        return doc(firestore, 'users', authUser.uid);
-    }, [firestore, authUser]);
-    const { data: currentUser, isLoading: isProfileLoading } = useDoc<User>(userDocRef);
+    const { user: authUser, profile: currentUser, isUserLoading: isAuthLoading } = useUser();
 
     const role = currentUser?.role;
     const isAdmin = role === 'admin' || role === 'superadmin';
@@ -63,12 +57,12 @@ export default function AttendanceReportsPage() {
     });
 
     const usersQuery = useMemoFirebase(
-        () => (firestore ? collection(firestore, 'users') : null),
-        [firestore]
+        () => (firestore && isAdmin ? collection(firestore, 'users') : null),
+        [firestore, isAdmin]
     );
-    const { data: allUsers, isLoading: isLoadingUsers } = useCollection<User>(usersQuery, { disabled: !isAdmin && !currentUser });
+    const { data: allUsers, isLoading: isLoadingUsers } = useCollection<User>(usersQuery);
 
-    const users = isAdmin ? allUsers : (currentUser ? [currentUser] : []);
+    const users: User[] = isAdmin ? (allUsers ?? []) : (currentUser ? [currentUser] : []);
 
     const recordsQuery = useMemoFirebase(() => {
         if (!firestore || !authUser || !date?.from) return null;
@@ -83,7 +77,7 @@ export default function AttendanceReportsPage() {
             where('checkIn', '<=', to)
         );
 
-        if (!isAdmin) {
+        if (!isAdmin && authUser) {
              baseQuery = query(baseQuery, where('userId', '==', authUser.uid));
         }
 
@@ -92,22 +86,24 @@ export default function AttendanceReportsPage() {
     const { data: filteredRecords, isLoading: isLoadingRecords } = useCollection<AttendanceRecord>(recordsQuery);
 
     const getUser = (userId: string) => users?.find((u) => u.id === userId);
-    const getUserName = (user: User) => (user as any).name || (user as any).nombre || 'Empleado';
+    const getUserName = (user: User) => (user as any).name || (user as any).nombres || 'Empleado';
     const getUserInitials = (name: string) => name ? name.split(' ').map((n) => n[0]).join('').substring(0,2) : '';
     
     const consolidatedData = useMemo(() => {
         if (!users || !filteredRecords) return [];
 
         const userStats: Record<string, ConsolidatedRecord> = users.reduce((acc, user) => {
-            acc[user.id] = {
-                userId: user.id,
-                userName: getUserName(user),
-                attendedDays: 0,
-                absentDays: 0,
-                freeDays: 0,
-                justifiedRestDays: 0,
-                totalHours: 0,
-            };
+            if (user?.id) {
+              acc[user.id] = {
+                  userId: user.id,
+                  userName: getUserName(user),
+                  attendedDays: 0,
+                  absentDays: 0,
+                  freeDays: 0,
+                  justifiedRestDays: 0,
+                  totalHours: 0,
+              };
+            }
             return acc;
         }, {} as Record<string, ConsolidatedRecord>);
 
@@ -304,7 +300,7 @@ export default function AttendanceReportsPage() {
         </Table>
     )
 
-    const isLoading = isAuthLoading || isProfileLoading || isLoadingRecords || isLoadingUsers;
+    const isLoading = isAuthLoading || isLoadingRecords || isLoadingUsers;
 
     if (isAuthLoading) { 
         return <div className="flex items-center justify-center h-screen">Cargando...</div>;
@@ -447,3 +443,5 @@ export default function AttendanceReportsPage() {
         </div>
     );
 }
+
+    

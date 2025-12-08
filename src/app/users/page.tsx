@@ -32,6 +32,8 @@ import { useToast } from '@/hooks/use-toast';
 import { useCollection, useFirestore, useMemoFirebase, addDocumentNonBlocking } from '@/firebase';
 import { collection, serverTimestamp } from 'firebase/firestore';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import type { User } from '@/lib/types';
+
 
 // --- COMPONENTE PRINCIPAL ---
 export default function UsersManagementPage() {
@@ -41,33 +43,35 @@ export default function UsersManagementPage() {
   // Estado para el buscador y el modal
   const [searchTerm, setSearchTerm] = useState('');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
 
   // Estados del formulario
   const [newName, setNewName] = useState('');
   const [newEmail, setNewEmail] = useState('');
-  const [newRole, setNewRole] = useState('user');
+  const [newRole, setNewRole] = useState('comun');
 
   // 1. Obtener usuarios reales de Firebase
   const usersCollectionRef = useMemoFirebase(
     () => (firestore ? collection(firestore, 'users') : null),
     [firestore]
   );
-  const { data: users, isLoading: isLoadingUsers } = useCollection(usersCollectionRef);
+  const { data: users, isLoading: isLoadingUsers } = useCollection<User>(usersCollectionRef);
 
   // 2. Función para crear el usuario
   const handleCreateUser = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!firestore) return;
-    setIsLoading(true);
+    setIsSaving(true);
 
     try {
       const newUser = {
-        nombre: newName,
+        name: newName,
         email: newEmail,
-        role: newRole, // 'admin' o 'user'
-        status: 'active',
-        createdAt: serverTimestamp(),
+        role: newRole,
+        isActive: true,
+        creationDate: serverTimestamp(),
+        lastAccess: serverTimestamp(),
+        createdBy: 'system' // Placeholder
       };
 
       await addDocumentNonBlocking(collection(firestore, 'users'), newUser);
@@ -80,7 +84,7 @@ export default function UsersManagementPage() {
       // Limpiar y cerrar
       setNewName('');
       setNewEmail('');
-      setNewRole('user');
+      setNewRole('comun');
       setIsDialogOpen(false);
     } catch (error) {
       console.error("Error creando usuario:", error);
@@ -90,15 +94,17 @@ export default function UsersManagementPage() {
         variant: "destructive"
       });
     } finally {
-      setIsLoading(false);
+      setIsSaving(false);
     }
   };
 
   // Filtrar usuarios por búsqueda
-  const filteredUsers = users?.filter((user: any) => 
-    (user.nombre?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
+  const filteredUsers = users?.filter((user) => 
+    (user.name?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
     (user.email?.toLowerCase() || '').includes(searchTerm.toLowerCase())
   ) || [];
+
+  const getUserInitials = (name?: string) => name ? name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase() : 'U';
 
   return (
     <div className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
@@ -144,12 +150,12 @@ export default function UsersManagementPage() {
               </div>
               <div className="grid gap-2">
                 <Label htmlFor="role">Rol / Cargo</Label>
-                <Select onValueChange={setNewRole} defaultValue="user" value={newRole}>
+                <Select onValueChange={setNewRole} defaultValue="comun" value={newRole}>
                   <SelectTrigger>
                     <SelectValue placeholder="Selecciona un rol" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="user">Personal (Básico)</SelectItem>
+                    <SelectItem value="comun">Personal (Común)</SelectItem>
                     <SelectItem value="admin">Administrador</SelectItem>
                     <SelectItem value="superadmin">Super Admin</SelectItem>
                   </SelectContent>
@@ -157,8 +163,8 @@ export default function UsersManagementPage() {
               </div>
               <DialogFooter>
                 <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)}>Cancelar</Button>
-                <Button type="submit" disabled={isLoading}>
-                    {isLoading ? "Guardando..." : "Guardar Usuario"}
+                <Button type="submit" disabled={isSaving}>
+                    {isSaving ? "Guardando..." : "Guardar Usuario"}
                 </Button>
               </DialogFooter>
             </form>
@@ -195,29 +201,29 @@ export default function UsersManagementPage() {
                 ) : filteredUsers.length === 0 ? (
                     <tr><td colSpan={4} className="p-8 text-center text-gray-500">No se encontraron usuarios.</td></tr>
                 ) : (
-                    filteredUsers.map((user: any) => (
+                    filteredUsers.map((user) => (
                         <tr key={user.id} className="hover:bg-gray-50">
                         <td className="p-4">
                             <div className="flex items-center gap-3">
                                 <Avatar className="h-9 w-9">
                                     <AvatarFallback className="bg-blue-100 text-blue-700 font-bold">
-                                        {user.nombre ? user.nombre.substring(0, 2).toUpperCase() : 'US'}
+                                        {getUserInitials(user.name)}
                                     </AvatarFallback>
                                 </Avatar>
                                 <div>
-                                    <p className="font-medium text-gray-900">{user.nombre || "Sin Nombre"}</p>
+                                    <p className="font-medium text-gray-900">{user.name || "Sin Nombre"}</p>
                                     <p className="text-xs text-gray-500">{user.email}</p>
                                 </div>
                             </div>
                         </td>
                         <td className="p-4">
-                            <Badge variant="outline" className={user.role === 'admin' ? 'bg-purple-50 text-purple-700 border-purple-200' : 'bg-gray-100 text-gray-700'}>
-                                {user.role === 'admin' ? 'Administrador' : 'Personal'}
+                            <Badge variant="outline" className={user.role === 'admin' || user.role === 'superadmin' ? 'bg-purple-50 text-purple-700 border-purple-200 capitalize' : 'bg-gray-100 text-gray-700 capitalize'}>
+                                {user.role || 'Sin Rol'}
                             </Badge>
                         </td>
                         <td className="p-4">
                             <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-700">
-                                Activo
+                                {user.isActive ? 'Activo' : 'Inactivo'}
                             </span>
                         </td>
                         <td className="p-4 text-right">
@@ -235,3 +241,5 @@ export default function UsersManagementPage() {
     </div>
   );
 }
+
+    

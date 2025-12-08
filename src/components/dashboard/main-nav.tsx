@@ -20,6 +20,7 @@ const navItems = [
   { href: '/', label: 'Dashboard', icon: <Home className="h-5 w-5" /> },
   { href: '/tasks', label: 'Tareas', icon: <ClipboardList className="h-5 w-5" /> },
   { href: '/attendance/personal', label: 'Gestión de RRHH', icon: <Users className="h-5 w-5" /> },
+  { href: '/attendance/dashboard', label: 'Asistencia Diaria', icon: <ClipboardCheck className="h-5 w-5" /> },
   { href: '/menus', label: 'Menus', icon: <BookOpen className="h-5 w-5" /> },
   { href: '/daily-closing', label: 'Cierres Diarios', icon: <ClipboardCheck className="h-5 w-5" /> },
   { href: '/inventory', label: 'Inventario', icon: <Archive className="h-5 w-5" /> },

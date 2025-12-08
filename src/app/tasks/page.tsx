@@ -35,7 +35,7 @@ import { format } from 'date-fns';
 import { CreateTaskForm } from '@/components/tasks/create-task-form';
 import { TaskDetails } from '@/components/tasks/task-details';
 import { useCollection, useFirestore, useMemoFirebase, useUser, addDocumentNonBlocking, updateDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase';
-import { collection, doc, serverTimestamp, query, where } from 'firebase/firestore';
+import { collection, doc, serverTimestamp, query, where, Timestamp } from 'firebase/firestore';
 
 export const dynamic = 'force-dynamic';
 
@@ -64,11 +64,15 @@ export default function TasksPage() {
   const tasksQuery = useMemoFirebase(
     () => {
         if (!firestore || !authUser) return null;
-        return isAdmin
-            ? collection(firestore, 'tasks')
-            : query(collection(firestore, 'tasks'), where('asignadoA', '==', authUser.uid));
+        // Solo ejecutar la consulta si tenemos el perfil del usuario para saber el rol
+        if (!isAuthLoading && currentUser) {
+            return isAdmin
+                ? collection(firestore, 'tasks')
+                : query(collection(firestore, 'tasks'), where('asignadoA', '==', authUser.uid));
+        }
+        return null; // Esperar a que el perfil del usuario cargue
     },
-    [firestore, authUser, isAdmin]
+    [firestore, authUser, isAdmin, isAuthLoading, currentUser]
   );
   const { data: tasks, isLoading: isLoadingTasks } = useCollection<Task>(tasksQuery);
 
@@ -102,6 +106,7 @@ export default function TasksPage() {
       comentarios: [],
       tags: [],
       recurrente: false,
+      fechaVencimiento: Timestamp.fromDate(newTaskData.fechaVencimiento as Date)
     };
     
     addDocumentNonBlocking(docRef, fullyNewTask);
@@ -237,3 +242,5 @@ export default function TasksPage() {
     </div>
   );
 }
+
+    
