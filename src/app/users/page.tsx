@@ -50,14 +50,12 @@ export default function UsersManagementPage() {
   const [newEmail, setNewEmail] = useState('');
   const [newRole, setNewRole] = useState('comun');
 
-  // 1. Obtener usuarios reales de Firebase
   const usersCollectionRef = useMemoFirebase(
     () => (firestore ? collection(firestore, 'users') : null),
     [firestore]
   );
   const { data: users, isLoading: isLoadingUsers } = useCollection<User>(usersCollectionRef);
 
-  // 2. Función para crear el usuario
   const handleCreateUser = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!firestore) return;
@@ -74,14 +72,13 @@ export default function UsersManagementPage() {
         createdBy: 'system' // Placeholder
       };
 
-      await addDocumentNonBlocking(collection(firestore, 'users'), newUser);
+      addDocumentNonBlocking(collection(firestore, 'users'), newUser);
 
       toast({
         title: "Usuario Creado",
         description: `${newName} ha sido añadido al sistema correctamente.`,
       });
 
-      // Limpiar y cerrar
       setNewName('');
       setNewEmail('');
       setNewRole('comun');
@@ -98,7 +95,6 @@ export default function UsersManagementPage() {
     }
   };
 
-  // Filtrar usuarios por búsqueda
   const filteredUsers = users?.filter((user) => 
     (user.name?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
     (user.email?.toLowerCase() || '').includes(searchTerm.toLowerCase())
@@ -109,14 +105,12 @@ export default function UsersManagementPage() {
   return (
     <div className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
       
-      {/* Encabezado */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
           <h1 className="font-headline text-2xl font-bold md:text-3xl">Gestión de Usuarios</h1>
           <p className="text-gray-500">Administra los usuarios, roles y permisos del sistema.</p>
         </div>
         
-        {/* BOTÓN MANUAL PARA ABRIR EL MODAL */}
         <Button 
             className="bg-blue-600 hover:bg-blue-700 text-white gap-2"
             onClick={() => setIsDialogOpen(true)}
@@ -124,7 +118,6 @@ export default function UsersManagementPage() {
           <Plus className="h-4 w-4" /> Nuevo Usuario
         </Button>
 
-        {/* VENTANA MODAL (DIALOG) */}
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogContent className="sm:max-w-[425px]">
             <DialogHeader>
@@ -172,7 +165,6 @@ export default function UsersManagementPage() {
         </Dialog>
       </div>
 
-      {/* Buscador */}
       <div className="flex items-center bg-white p-2 rounded-lg border shadow-sm max-w-md">
         <Search className="h-4 w-4 text-gray-500 ml-2" />
         <Input 
@@ -183,7 +175,6 @@ export default function UsersManagementPage() {
         />
       </div>
 
-      {/* Tabla de Usuarios */}
       <div className="bg-white border rounded-xl shadow-sm overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-sm text-left">
@@ -241,5 +232,3 @@ export default function UsersManagementPage() {
     </div>
   );
 }
-
-    

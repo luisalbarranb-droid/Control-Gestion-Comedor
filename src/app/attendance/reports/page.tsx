@@ -57,12 +57,18 @@ export default function AttendanceReportsPage() {
     });
 
     const usersQuery = useMemoFirebase(
-        () => (firestore && isAdmin ? collection(firestore, 'users') : null),
-        [firestore, isAdmin]
+        () => (firestore ? collection(firestore, 'users') : null),
+        [firestore]
     );
     const { data: allUsers, isLoading: isLoadingUsers } = useCollection<User>(usersQuery);
 
-    const users: User[] = isAdmin ? (allUsers ?? []) : (currentUser ? [currentUser] : []);
+    const users: User[] = useMemo(() => {
+      if (isAuthLoading || isLoadingUsers) return [];
+      if (isAdmin && allUsers) return allUsers;
+      if (!isAdmin && currentUser) return [currentUser];
+      return [];
+    }, [isAdmin, allUsers, currentUser, isAuthLoading, isLoadingUsers]);
+
 
     const recordsQuery = useMemoFirebase(() => {
         if (!firestore || !authUser || !date?.from) return null;

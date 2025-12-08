@@ -82,17 +82,25 @@ export default function TasksPage() {
 
   const role = currentUser?.role;
   const isAdmin = role === 'admin' || role === 'superadmin';
+  const userId = authUser?.uid;
 
   const tasksQuery = useMemoFirebase(
     () => {
-        if (!firestore || !authUser || isAuthLoading) return null; // Wait until auth is resolved
-        return isAdmin
-            ? query(collection(firestore, 'tasks'))
-            : query(collection(firestore, 'tasks'), where('asignadoA', '==', authUser.uid));
+        if (!firestore || isAuthLoading) return null;
+        
+        if (isAdmin) {
+          return query(collection(firestore, 'tasks'));
+        }
+        
+        if (userId) {
+          return query(collection(firestore, 'tasks'), where('asignadoA', '==', userId));
+        }
+
+        return null; // No query if not admin and no user ID
     },
-    [firestore, authUser, isAdmin, isAuthLoading]
+    [firestore, isAdmin, isAuthLoading, userId] // Use stable userId instead of authUser object
   );
-  const { data: tasks, isLoading: isLoadingTasks } = useCollection<Task>(tasksQuery);
+  const { data: tasks, isLoading: isLoadingTasks } = useCollection<Task>(tasksQuery, { disabled: !tasksQuery });
 
   const usersCollectionRef = useMemoFirebase(
     () => (firestore ? collection(firestore, 'users') : null),
@@ -240,7 +248,7 @@ export default function TasksPage() {
                      </TableRow>
                    );
                 })}
-                 {!tasks || tasks.length === 0 && (
+                 {!isLoading && (!tasks || tasks.length === 0) && (
                      <TableRow>
                          <TableCell colSpan={6} className="text-center h-24">No se encontraron tareas.</TableCell>
                      </TableRow>
