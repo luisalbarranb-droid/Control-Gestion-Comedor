@@ -4,6 +4,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { format } from 'date-fns';
+import { es } from 'date-fns/locale';
 import { Calendar as CalendarIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -34,23 +35,25 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Calendar } from '@/components/ui/calendar';
 import { cn } from '@/lib/utils';
 import { areas } from '@/lib/placeholder-data';
-import type { User } from '@/lib/types';
+import type { User, TaskPeriodicity } from '@/lib/types';
+import { Textarea } from '../ui/textarea';
 
-// Esquema actualizado con periodicidad
 const taskSchema = z.object({
-  titulo: z.string().min(1, 'El título es requerido'),
-  area: z.string().min(1, 'El área es requerida'),
+  titulo: z.string().min(3, 'El título debe tener al menos 3 caracteres.'),
+  descripcion: z.string().optional(),
+  area: z.string().min(1, 'El área es requerida.'),
   prioridad: z.enum(['baja', 'media', 'alta', 'urgente']),
   periodicidad: z.enum(['diaria', 'semanal', 'quincenal', 'mensual', 'unica']),
-  asignadoA: z.string().min(1, 'Debes asignar un responsable'),
+  asignadoA: z.string().min(1, 'Debes asignar un responsable.'),
   fechaVencimiento: z.date({
-    required_error: 'La fecha de vencimiento es requerida',
+    required_error: 'La fecha de vencimiento es requerida.',
   }),
-  descripcion: z.string().optional(),
 });
 
+export type TaskFormValues = z.infer<typeof taskSchema>;
+
 interface CreateTaskFormProps {
-  onTaskCreate: (data: any) => void;
+  onTaskCreate: (data: TaskFormValues) => void;
   users: User[];
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
@@ -62,25 +65,26 @@ export function CreateTaskForm({
   isOpen,
   onOpenChange,
 }: CreateTaskFormProps) {
-  const form = useForm<z.infer<typeof taskSchema>>({
+  const form = useForm<TaskFormValues>({
     resolver: zodResolver(taskSchema),
     defaultValues: {
       titulo: '',
-      area: '',
+      descripcion: '',
+      area: undefined,
       prioridad: 'media',
       periodicidad: 'unica',
-      asignadoA: '',
-      descripcion: '',
+      asignadoA: undefined,
+      fechaVencimiento: new Date(),
     },
   });
 
-  const handleSubmit = (values: z.infer<typeof taskSchema>) => {
+  const handleSubmit = (values: TaskFormValues) => {
     onTaskCreate(values);
     form.reset();
     onOpenChange(false);
   };
 
-  const getUserName = (user: any) => user.name || user.nombre || 'Usuario';
+  const getUserName = (user: any) => user.name || user.nombres || 'Usuario';
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
@@ -201,7 +205,7 @@ export function CreateTaskForm({
                             )}
                           >
                             {field.value ? (
-                              format(field.value, "PPP")
+                              format(field.value, "PPP", { locale: es })
                             ) : (
                               <span>Selecciona una fecha</span>
                             )}
@@ -265,7 +269,7 @@ export function CreateTaskForm({
                 <FormItem>
                   <FormLabel>Descripción (Opcional)</FormLabel>
                   <FormControl>
-                    <Input placeholder="Añade detalles adicionales..." {...field} />
+                    <Textarea placeholder="Añade detalles adicionales..." {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>

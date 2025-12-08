@@ -32,7 +32,7 @@ import { areas } from '@/lib/placeholder-data';
 import type { Task, TaskPriority, TaskStatus, User } from '@/lib/types';
 import { cn } from '@/lib/utils';
 import { format, isValid } from 'date-fns';
-import { CreateTaskForm } from '@/components/tasks/create-task-form';
+import { CreateTaskForm, TaskFormValues } from '@/components/tasks/create-task-form';
 import { TaskDetails } from '@/components/tasks/task-details';
 import { useCollection, useFirestore, useMemoFirebase, useUser, addDocumentNonBlocking, updateDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase';
 import { collection, doc, serverTimestamp, query, where, Timestamp } from 'firebase/firestore';
@@ -111,7 +111,7 @@ export default function TasksPage() {
   const getArea = (areaId: string) => areas.find((a) => a.id === areaId);
   const getUser = (userId: string) => users?.find((u) => u.id === userId);
 
-  const handleTaskCreate = (newTaskData: Omit<Task, 'id' | 'creadoPor' | 'fechaCreacion' | 'estado' | 'checklist' | 'comentarios' | 'tags' | 'recurrente' | 'evidencias'>) => {
+  const handleTaskCreate = (newTaskData: TaskFormValues) => {
     if (!firestore || !currentUser?.id) return;
     
     const collectionRef = collection(firestore, 'tasks');
@@ -121,13 +121,15 @@ export default function TasksPage() {
       creadoPor: currentUser.id,
       fechaCreacion: serverTimestamp(),
       estado: 'pendiente' as TaskStatus,
-      periodicidad: newTaskData.periodicidad || 'unica',
       checklist: [],
       evidencias: [],
       comentarios: [],
       tags: [],
       recurrente: false,
-      fechaVencimiento: Timestamp.fromDate(newTaskData.fechaVencimiento as Date)
+      fechaVencimiento: Timestamp.fromDate(newTaskData.fechaVencimiento),
+      // Mapea 'titulo' a 'titulo' y 'asignadoA' a 'asignadoA', que ya están en newTaskData
+      titulo: newTaskData.titulo,
+      asignadoA: newTaskData.asignadoA
     };
     
     addDocumentNonBlocking(collectionRef, fullyNewTask);
