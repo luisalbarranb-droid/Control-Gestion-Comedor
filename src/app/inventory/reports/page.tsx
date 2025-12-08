@@ -10,7 +10,6 @@ import {
   SidebarHeader,
   SidebarInset,
 } from '@/components/ui/sidebar';
-import { Header } from '@/components/dashboard/header';
 import { MainNav } from '@/components/dashboard/main-nav';
 import { SquareCheck, Download, AlertCircle, Package, DollarSign, TrendingUp, BarChart } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -110,126 +109,114 @@ export default function InventoryReportsPage() {
 
   return (
     <div className="min-h-screen w-full">
-      <Sidebar>
-        <SidebarHeader className="p-4 justify-center flex items-center gap-2">
-          <SquareCheck className="size-8 text-primary" />
-          <h1 className="font-headline text-2xl font-bold">Comedor</h1>
-        </SidebarHeader>
-        <SidebarContent>
-          <MainNav />
-        </SidebarContent>
-      </Sidebar>
-      <SidebarInset>
-        <Header />
-        <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-            <h1 className="font-headline text-2xl font-bold md:text-3xl">
-              Reportes de Inventario
-            </h1>
-            <div className="flex items-center gap-2">
-              <Button onClick={handleExport}>
-                <Download className="mr-2 h-4 w-4" />
-                Exportar a Excel
-              </Button>
-               <Button asChild variant="outline">
-                <Link href="/inventory">Volver</Link>
-              </Button>
-            </div>
+      <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+          <h1 className="font-headline text-2xl font-bold md:text-3xl">
+            Reportes de Inventario
+          </h1>
+          <div className="flex items-center gap-2">
+            <Button onClick={handleExport}>
+              <Download className="mr-2 h-4 w-4" />
+              Exportar a Excel
+            </Button>
+              <Button asChild variant="outline">
+              <Link href="/inventory">Volver</Link>
+            </Button>
           </div>
+        </div>
 
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-            {KPI_CARDS.map(kpi => (
-              <Card key={kpi.title}>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">{kpi.title}</CardTitle>
-                  <kpi.icon className={cn("h-4 w-4 text-muted-foreground", kpi.className)} />
-                </CardHeader>
-                <CardContent>
-                  <div className={cn("text-2xl font-bold", kpi.className)}>{kpi.value}</div>
-                </CardContent>
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+          {KPI_CARDS.map(kpi => (
+            <Card key={kpi.title}>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">{kpi.title}</CardTitle>
+                <kpi.icon className={cn("h-4 w-4 text-muted-foreground", kpi.className)} />
+              </CardHeader>
+              <CardContent>
+                <div className={cn("text-2xl font-bold", kpi.className)}>{kpi.value}</div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-8">
+          <div className="lg:col-span-2">
+              <Card>
+                  <CardHeader>
+                      <CardTitle>Estado Actual del Inventario</CardTitle>
+                      <CardDescription>Un resumen detallado de todos los artículos en stock.</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                  <Table>
+                      <TableHeader>
+                      <TableRow>
+                          <TableHead>Artículo</TableHead>
+                          <TableHead>Categoría</TableHead>
+                          <TableHead className="text-right">Cantidad</TableHead>
+                          <TableHead className="text-right">Stock Mínimo</TableHead>
+                          <TableHead className="text-right">Valor Total</TableHead>
+                          <TableHead>Estado</TableHead>
+                      </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                      {items.map(item => {
+                          const isLowStock = item.cantidad <= item.stockMinimo;
+                          const itemValue = item.cantidad * (item.costoUnitario || 0);
+                          return (
+                          <TableRow key={item.id}>
+                              <TableCell className="font-medium">{item.nombre}</TableCell>
+                              <TableCell>
+                              <Badge variant="outline">{getCategoryName(item.categoriaId)}</Badge>
+                              </TableCell>
+                              <TableCell className={cn("text-right font-mono", isLowStock && "text-red-500")}>
+                              {item.cantidad} {item.unidad}
+                              </TableCell>
+                              <TableCell className="text-right font-mono">{item.stockMinimo}</TableCell>
+                              <TableCell className="text-right font-mono">${itemValue.toFixed(2)}</TableCell>
+                              <TableCell>
+                              <Badge variant={isLowStock ? 'destructive' : 'secondary'}>
+                                  {isLowStock ? 'Bajo Stock' : 'OK'}
+                              </Badge>
+                              </TableCell>
+                          </TableRow>
+                          );
+                      })}
+                      </TableBody>
+                  </Table>
+                  </CardContent>
               </Card>
-            ))}
           </div>
-
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-8">
-            <div className="lg:col-span-2">
+          <div>
                 <Card>
-                    <CardHeader>
-                        <CardTitle>Estado Actual del Inventario</CardTitle>
-                        <CardDescription>Un resumen detallado de todos los artículos en stock.</CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                    <Table>
-                        <TableHeader>
-                        <TableRow>
-                            <TableHead>Artículo</TableHead>
-                            <TableHead>Categoría</TableHead>
-                            <TableHead className="text-right">Cantidad</TableHead>
-                            <TableHead className="text-right">Stock Mínimo</TableHead>
-                            <TableHead className="text-right">Valor Total</TableHead>
-                            <TableHead>Estado</TableHead>
-                        </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                        {items.map(item => {
-                            const isLowStock = item.cantidad <= item.stockMinimo;
-                            const itemValue = item.cantidad * (item.costoUnitario || 0);
-                            return (
-                            <TableRow key={item.id}>
-                                <TableCell className="font-medium">{item.nombre}</TableCell>
-                                <TableCell>
-                                <Badge variant="outline">{getCategoryName(item.categoriaId)}</Badge>
-                                </TableCell>
-                                <TableCell className={cn("text-right font-mono", isLowStock && "text-red-500")}>
-                                {item.cantidad} {item.unidad}
-                                </TableCell>
-                                <TableCell className="text-right font-mono">{item.stockMinimo}</TableCell>
-                                <TableCell className="text-right font-mono">${itemValue.toFixed(2)}</TableCell>
-                                <TableCell>
-                                <Badge variant={isLowStock ? 'destructive' : 'secondary'}>
-                                    {isLowStock ? 'Bajo Stock' : 'OK'}
-                                </Badge>
-                                </TableCell>
-                            </TableRow>
-                            );
-                        })}
-                        </TableBody>
-                    </Table>
-                    </CardContent>
-                </Card>
-            </div>
-            <div>
-                 <Card>
-                    <CardHeader>
-                        <CardTitle className="flex items-center gap-2">
-                            <BarChart className="h-5 w-5" />
-                            Top 10 Artículos con Mayor Rotación
-                        </CardTitle>
-                        <CardDescription>Artículos con más salidas en el período actual.</CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                        <Table>
-                            <TableHeader>
-                                <TableRow>
-                                    <TableHead>Artículo</TableHead>
-                                    <TableHead className="text-right">Unidades</TableHead>
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {top10Rotation.map((item, index) => (
-                                    <TableRow key={index}>
-                                        <TableCell className="font-medium">{item.name}</TableCell>
-                                        <TableCell className="text-right font-mono">{item.quantity} <span className="text-muted-foreground uppercase">{item.unit}</span></TableCell>
-                                    </TableRow>
-                                ))}
-                            </TableBody>
-                        </Table>
-                    </CardContent>
-                </Card>
-            </div>
+                  <CardHeader>
+                      <CardTitle className="flex items-center gap-2">
+                          <BarChart className="h-5 w-5" />
+                          Top 10 Artículos con Mayor Rotación
+                      </CardTitle>
+                      <CardDescription>Artículos con más salidas en el período actual.</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                      <Table>
+                          <TableHeader>
+                              <TableRow>
+                                  <TableHead>Artículo</TableHead>
+                                  <TableHead className="text-right">Unidades</TableHead>
+                              </TableRow>
+                          </TableHeader>
+                          <TableBody>
+                              {top10Rotation.map((item, index) => (
+                                  <TableRow key={index}>
+                                      <TableCell className="font-medium">{item.name}</TableCell>
+                                      <TableCell className="text-right font-mono">{item.quantity} <span className="text-muted-foreground uppercase">{item.unit}</span></TableCell>
+                                  </TableRow>
+                              ))}
+                          </TableBody>
+                      </Table>
+                  </CardContent>
+              </Card>
           </div>
-        </main>
-      </SidebarInset>
+        </div>
+      </main>
     </div>
   );
 }

@@ -13,7 +13,6 @@ import {
   SidebarHeader,
   SidebarInset,
 } from '@/components/ui/sidebar';
-import { Header } from '@/components/dashboard/header';
 import { MainNav } from '@/components/dashboard/main-nav';
 import { SquareCheck, AlertTriangle, ArrowUp, ArrowDown, Minus, Download } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -279,21 +278,9 @@ function ReportContent() {
 export default function DailyClosingReportPage() {
   return (
     <div className="min-h-screen w-full">
-      <Sidebar>
-        <SidebarHeader className="p-4 justify-center flex items-center gap-2">
-          <SquareCheck className="size-8 text-primary" />
-          <h1 className="font-headline text-2xl font-bold">Comedor</h1>
-        </SidebarHeader>
-        <SidebarContent>
-          <MainNav />
-        </SidebarContent>
-      </Sidebar>
-      <SidebarInset>
-        <Header />
-        <Suspense fallback={<div className="flex items-center justify-center h-full"><p>Cargando reporte...</p></div>}>
-          <ReportContent />
-        </Suspense>
-      </SidebarInset>
+      <Suspense fallback={<div className="flex items-center justify-center h-full"><p>Cargando reporte...</p></div>}>
+        <ReportContent />
+      </Suspense>
     </div>
   );
 }
