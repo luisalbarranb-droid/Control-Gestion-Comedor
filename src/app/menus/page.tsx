@@ -12,7 +12,7 @@ import {
 	TableHeader,
 	TableRow,
 } from '@/components/ui/table';
-import { format, startOfWeek, endOfWeek, addWeeks, subWeeks, isSameDay, isToday, differenceInDays, addDays } from 'date-fns';
+import { format, startOfWeek, endOfWeek, addWeeks, subWeeks, isSameDay, isToday, differenceInDays, addDays, isValid } from 'date-fns';
 import { es } from 'date-fns/locale';
 import {
 	collection,
@@ -26,10 +26,8 @@ import {
     getDocs,
     DocumentData,
 } from 'firebase/firestore';
-import { useCollection, useFirestore, useUser } from '@/firebase';
+import { useCollection, useFirestore, useUser, useMemoFirebase } from '@/firebase';
 import Link from 'next/link';
-// El error 2307 se debe a que este componente no existe o no se exporta.
-// Lo mantenemos, pero si el error persiste, debe verificar la ruta:
 import MenuDialog from '@/components/menu/menu-dialog';
 import {
 	DropdownMenu,
@@ -40,34 +38,16 @@ import {
 	DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Edit, MoreVertical, Trash } from 'lucide-react';
-
-// Tipos necesarios
 import type { Menu, User } from '@/lib/types';
 
-// --- FUNCIONES CRÍTICAS PARA MANEJO DE TIMESTAMP Y DATOS ---
-/**
- * Función auxiliar para comprobar si el objeto es un Timestamp de Firebase.
- */
-function isTimestamp(value: any): value is Timestamp {
-    return value && typeof value === 'object' && value.toDate && typeof value.toDate === 'function';
-}
 
-/**
- * Convierte Date | Timestamp a Date de JavaScript.
- */
 function convertToDate(date: Date | Timestamp | undefined): Date | undefined {
     if (!date) return undefined;
-    return isTimestamp(date) ? date.toDate() : date;
+    if (date instanceof Timestamp) return date.toDate();
+    if (date instanceof Date && isValid(date)) return date;
+    const parsedDate = new Date(date);
+    return isValid(parsedDate) ? parsedDate : undefined;
 }
-
-/**
- * Función auxiliar para asegurar que los objetos WithId de Firestore sean tratados como el tipo base T.
- */
-function isTypedDocument<T>(doc: any): doc is T {
-    return doc && doc.id !== undefined;
-}
-// -------------------------------------------------
-
 
 export default function MenusPage() {
 	const { user: authUser, profile: currentUser } = useUser();
@@ -81,7 +61,7 @@ export default function MenusPage() {
 	const start = startOfWeek(currentWeek, { weekStartsOn: 1 });
 	const end = endOfWeek(currentWeek, { weekStartsOn: 1 });
 
-	const menuQuery = useMemo(() => {
+	const menuQuery = useMemoFirebase(() => {
 		if (!firestore) return null;
 		return query(
 			collection(firestore, 'menus'),
@@ -91,15 +71,13 @@ export default function MenusPage() {
 		);
 	}, [firestore, start, end]);
 
-    // Usamos el casting seguro y comprobación de null
 	const { data: menus, isLoading } = useCollection<Menu>(menuQuery);
 
-	const usersQuery = useMemo(() => {
+	const usersQuery = useMemoFirebase(() => {
 		if (!firestore) return null;
 		return query(collection(firestore, 'users'), orderBy('name', 'asc'));
 	}, [firestore]);
 
-    // Usamos el casting seguro y comprobación de null
 	const { data: users, isLoading: isLoadingUsers } = useCollection<User>(usersQuery);
 
 	const handleNextWeek = useCallback(() => {
@@ -129,7 +107,7 @@ export default function MenusPage() {
 	);
 
 	const handleCopyWeek = useCallback(async () => {
-		if (!firestore || !window.confirm('¿Estás seguro de copiar los menús de esta semana a la siguiente?'))
+		if (!firestore || !menus || menus.length === 0 || !window.confirm('¿Estás seguro de copiar los menús de esta semana a la siguiente?'))
 			return;
 
 		const batch = writeBatch(firestore);
@@ -137,38 +115,33 @@ export default function MenusPage() {
 		const nextWeekEnd = endOfWeek(nextWeekStart, { weekStartsOn: 1 });
 
 		try {
-			// Eliminar menús existentes en la próxima semana
 			const nextWeekQuery = query(
 				collection(firestore, 'menus'),
 				where('date', '>=', nextWeekStart),
 				where('date', '<=', nextWeekEnd),
 			);
 			
-			const existingDocs = await getDocs(firestore, nextWeekQuery as any); 
-			existingDocs.forEach(doc => {
+			const existingDocsSnapshot = await getDocs(nextWeekQuery);
+			existingDocsSnapshot.forEach(doc => {
 				batch.delete(doc.ref);
 			});
 
-			// Copiar menús de la semana actual
-			if (menus) { 
-                menus.forEach(menu => {
-                    // CORRECCIÓN DE TIPADO DE FECHA
-                    const oldDate = convertToDate(menu.date as Date | Timestamp);
-                    
-                    if (!oldDate) return; 
+			menus.forEach(menu => {
+				const oldDate = convertToDate(menu.date);
+				if (!oldDate) return;
 
-                    const daysDifference = differenceInDays(oldDate, start); 
-                    const newDate = addDays(nextWeekStart, daysDifference); 
+				const daysDifference = differenceInDays(oldDate, start);
+				const newDate = addDays(nextWeekStart, daysDifference);
 
-                    const newMenuRef = doc(collection(firestore, 'menus'));
-                    batch.set(newMenuRef, {
-                        ...menu,
-                        date: newDate,
-                        createdBy: authUser?.uid,
-                        createdAt: new Date(),
-                    });
-                });
-            }
+				const newMenuRef = doc(collection(firestore, 'menus'));
+				const { id, ...menuData } = menu; 
+				batch.set(newMenuRef, {
+					...menuData,
+					date: Timestamp.fromDate(newDate),
+					createdBy: authUser?.uid,
+					createdAt: Timestamp.now(),
+				});
+			});
 
 			await batch.commit();
 			console.log('Menús copiados exitosamente a la próxima semana');
@@ -194,8 +167,7 @@ export default function MenusPage() {
 
 		return weekDays.map(day => {
 			const dailyMenus = menus.filter(menu => {
-				// CORRECCIÓN DE TIPADO DE FECHA
-				const menuDate = convertToDate(menu.date as Date | Timestamp);
+				const menuDate = convertToDate(menu.date);
 				return menuDate ? isSameDay(menuDate, day) : false;
 			});
 
@@ -212,8 +184,8 @@ export default function MenusPage() {
 	}, [menusByDay, selectedDate]);
 
 
-	// Función auxiliar para formatear la hora (asumiendo que time es un string 'HH:mm')
 	const formatTime = (time: string) => {
+		if (!time || !time.includes(':')) return time;
 		try {
 			const [hour, minute] = time.split(':').map(Number);
 			const date = new Date();
@@ -225,25 +197,18 @@ export default function MenusPage() {
 		}
 	};
 
-	// Función para obtener el nombre del usuario
-	const getUserName = (uid: string) => {
-        if (!users) return 'Desconocido'; 
-
-		const user = users.find(u => u.uid === uid);
-		// Los errores 2339 (Propiedad 'uid' no existe) se corrigen con el casting seguro
-		return user && isTypedDocument<User>(user) ? user.name : 'Desconocido';
+	const getUserName = (uid?: string) => {
+        if (!users || !uid) return 'Desconocido';
+		const user = users.find(u => u.id === uid);
+		return user ? (user.name || (user as any).nombres) : 'Desconocido';
 	};
-    
-    // Si la carga inicial de menús falla, mostramos un estado vacío o cargando
-    const finalMenus = menus || [];
-
 
 	return (
 		<div className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
 			<div className="flex items-center justify-between">
 				<h1 className="font-headline text-2xl font-bold md:text-3xl">Planificación de Menús</h1>
 				<div className="flex gap-2">
-					<Button variant="outline" onClick={handleCopyWeek} disabled={!menus}> {/* Deshabilitar si menus es null */}
+					<Button variant="outline" onClick={handleCopyWeek} disabled={!menus || menus.length === 0}>
 						Copiar Menús a Próxima Semana
 					</Button>
 					<Button onClick={() => setDialogOpen(true)} className="bg-blue-600 hover:bg-blue-700">
@@ -253,7 +218,6 @@ export default function MenusPage() {
 			</div>
 			
 			<div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
-				{/* Columna de Calendario y Navegación */}
 				<div className="lg:col-span-1 space-y-4">
 					<div className="flex justify-between items-center bg-white p-4 rounded-xl shadow-lg border">
 						<Button onClick={handlePrevWeek} variant="ghost" size="icon">
@@ -276,17 +240,15 @@ export default function MenusPage() {
 						locale={es}
 						className="rounded-xl border shadow-lg bg-white"
 						modifiers={{
-							// Usamos menusByDay para asegurar que no haya error de null
-							menu: menusByDay.flatMap(d => (d.menus.length > 0 ? d.date : [])), 
+							menu: menusByDay.filter(d => d.menus.length > 0).map(d => d.date),
 						}}
 						modifiersStyles={{
-							menu: { fontWeight: 'bold', color: 'green' },
-							today: { border: '2px solid #3B82F6' },
+							menu: { fontWeight: 'bold', color: 'var(--color-primary)' },
+							today: { border: '2px solid hsl(var(--primary))' },
 						}}
 					/>
 				</div>
 
-				{/* Columna de Detalles del Día Seleccionado */}
 				<div className="lg:col-span-3 bg-white p-6 rounded-xl shadow-lg border">
 					<h2 className="text-xl font-bold text-gray-800 mb-4 flex items-center justify-between">
 						<span>
@@ -321,40 +283,39 @@ export default function MenusPage() {
 									</TableCell>
 								</TableRow>
 							)}
-							{!isLoading &&
-								selectedDayData?.menus.map(menu => (
-									<TableRow key={menu.id}>
-										<TableCell className="font-semibold text-gray-800">
-											{formatTime((menu as any).time)}
-										</TableCell>
-										<TableCell>{(menu as any).name}</TableCell>
-										<TableCell className="text-sm text-gray-600">
-											{(menu as any).ingredients?.join(', ') || 'N/A'}
-										</TableCell>
-										<TableCell className="text-sm text-gray-500">
-											{getUserName((menu as any).createdBy)}
-										</TableCell>
-										<TableCell className="text-right">
-											<DropdownMenu>
-												<DropdownMenuTrigger asChild>
-													<Button variant="ghost" className="h-8 w-8 p-0">
-														<MoreVertical className="h-4 w-4" />
-													</Button>
-												</DropdownMenuTrigger>
-												<DropdownMenuContent align="end">
-													<DropdownMenuLabel>Acciones de Menú</DropdownMenuLabel>
-													<DropdownMenuSeparator />
-													<DropdownMenuItem onClick={() => handleEdit(menu)}>
-														<Edit className="mr-2 h-4 w-4" /> Editar
-													</DropdownMenuItem>
-													<DropdownMenuItem onClick={() => handleDelete(menu)}>
-														<Trash className="mr-2 h-4 w-4" /> Eliminar
-													</DropdownMenuItem>
-												</DropdownMenuContent>
-											</DropdownMenu>
-										</TableCell>
-									</TableRow>
-								))}
+							{!isLoading && selectedDayData?.menus.map(menu => (
+								<TableRow key={menu.id}>
+									<TableCell className="font-semibold text-gray-800">
+										{formatTime((menu as any).time)}
+									</TableCell>
+									<TableCell>{(menu as any).name || 'Menú sin nombre'}</TableCell>
+									<TableCell className="text-sm text-gray-600">
+										{(menu.items?.[0]?.ingredients?.map(i => i.inventoryItemId).join(', ')) || 'N/A'}
+									</TableCell>
+									<TableCell className="text-sm text-gray-500">
+										{getUserName((menu as any).createdBy)}
+									</TableCell>
+									<TableCell className="text-right">
+										<DropdownMenu>
+											<DropdownMenuTrigger asChild>
+												<Button variant="ghost" className="h-8 w-8 p-0">
+													<MoreVertical className="h-4 w-4" />
+												</Button>
+											</DropdownMenuTrigger>
+											<DropdownMenuContent align="end">
+												<DropdownMenuLabel>Acciones de Menú</DropdownMenuLabel>
+												<DropdownMenuSeparator />
+												<DropdownMenuItem onClick={() => handleEdit(menu)}>
+													<Edit className="mr-2 h-4 w-4" /> Editar
+												</DropdownMenuItem>
+												<DropdownMenuItem onClick={() => handleDelete(menu)} className="text-destructive">
+													<Trash className="mr-2 h-4 w-4" /> Eliminar
+												</DropdownMenuItem>
+											</DropdownMenuContent>
+										</DropdownMenu>
+									</TableCell>
+								</TableRow>
+							))}
 						</TableBody>
 					</Table>
 				</div>

@@ -16,18 +16,30 @@ import Link from 'next/link';
 import { ArrowLeft, Edit } from 'lucide-react';
 import type { User } from '@/lib/types';
 import { format } from 'date-fns';
+import { Timestamp } from 'firebase/firestore';
 
-type DetailItemProps = {
-  label: string;
-  value?: string | number | null;
-};
+function convertToDate(date: Date | Timestamp | undefined | string): Date | undefined {
+  if (!date) return undefined;
+  if (date instanceof Timestamp) return date.toDate();
+  if (date instanceof Date) return date;
+  try {
+    const parsedDate = new Date(date);
+    if (isNaN(parsedDate.getTime())) return undefined;
+    return parsedDate;
+  } catch (e) {
+    return undefined;
+  }
+}
 
-const DetailItem = ({ label, value }: DetailItemProps) => (
+const DetailItem = ({ label, value }: { label: string; value?: string | number | null; }) => (
   <div className="flex justify-between py-2 border-b">
     <dt className="text-sm text-muted-foreground">{label}</dt>
     <dd className="text-sm font-medium">{value || 'N/A'}</dd>
   </div>
 );
+
+const getUserName = (user: User) => (user as any).name || (user as any).nombres || 'Usuario';
+const getUserInitials = (name: string) => name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
 
 export default function EmployeeDetailsPage({ params }: { params: { employeeId: string } }) {
   const firestore = useFirestore();
@@ -48,8 +60,10 @@ export default function EmployeeDetailsPage({ params }: { params: { employeeId: 
     return notFound();
   }
 
-  const creationDate = user.creationDate ? (user.creationDate as any).toDate() : null;
-  const contractEndDate = user.contractEndDate ? (user.contractEndDate as any).toDate() : null;
+  const name = getUserName(user);
+  const initials = getUserInitials(name);
+  const creationDate = convertToDate(user.creationDate);
+  const contractEndDate = convertToDate(user.contractEndDate);
 
   return (
     <div className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
@@ -65,10 +79,10 @@ export default function EmployeeDetailsPage({ params }: { params: { employeeId: 
       <Card className="w-full max-w-4xl mx-auto">
         <CardHeader className="text-center">
           <Avatar className="w-24 h-24 mx-auto mb-4 border-4 border-primary">
-            <AvatarImage src={user.avatarUrl} alt={user.name} />
-            <AvatarFallback className="text-3xl">{user.name?.split(' ').map(n => n[0]).join('')}</AvatarFallback>
+            <AvatarImage src={user.avatarUrl} alt={name} />
+            <AvatarFallback className="text-3xl">{initials}</AvatarFallback>
           </Avatar>
-          <CardTitle className="text-3xl">{user.name}</CardTitle>
+          <CardTitle className="text-3xl">{name}</CardTitle>
           <CardDescription className="text-lg capitalize">{user.role}</CardDescription>
         </CardHeader>
         <CardContent>

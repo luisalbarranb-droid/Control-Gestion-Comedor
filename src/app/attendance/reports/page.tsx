@@ -3,33 +3,15 @@
 import { useState, useMemo } from 'react';
 import { UserCheck, UserX, Clock, Download, Calendar as CalendarIcon, MoreHorizontal, Check, X, ShieldAlert, FileClock, ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import {
-  Card,
-  CardHeader,
-  CardTitle,
-  CardContent,
-  CardDescription,
-} from '@/components/ui/card';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
+import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/components/ui/card';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import type { AttendanceRecord, AttendanceStatus, LeaveType, ConsolidatedRecord, User } from '@/lib/types';
 import { cn } from '@/lib/utils';
-import { format, differenceInHours, startOfMonth, endOfMonth } from 'date-fns';
+import { format, differenceInHours, startOfMonth, endOfMonth, isValid } from 'date-fns';
 import { es } from 'date-fns/locale';
 import * as XLSX from 'xlsx';
 import { saveAs } from 'file-saver';
@@ -39,9 +21,7 @@ import { DateRange } from 'react-day-picker';
 import { Calendar } from '@/components/ui/calendar';
 import Link from 'next/link';
 import { useCollection, useDoc, useFirestore, useMemoFirebase, useUser, updateDocumentNonBlocking } from '@/firebase';
-import { collection, query, where, doc } from 'firebase/firestore';
-
-export const dynamic = 'force-dynamic';
+import { collection, query, where, doc, Timestamp } from 'firebase/firestore';
 
 const statusConfig: Record<AttendanceStatus, { label: string, className: string, icon: React.ElementType }> = {
     presente: { label: 'Presente', className: 'bg-green-100 text-green-800', icon: UserCheck },
@@ -54,6 +34,14 @@ const statusConfig: Record<AttendanceStatus, { label: string, className: string,
     'dia-libre': { label: 'Día Libre', className: 'bg-sky-100 text-sky-800', icon: CalendarIcon },
 };
 
+function convertToDate(date: any): Date | null {
+    if (!date) return null;
+    if (date instanceof Date) return date;
+    if (date instanceof Timestamp) return date.toDate();
+    const parsed = new Date(date);
+    return isValid(parsed) ? parsed : null;
+}
+
 export default function AttendanceReportsPage() {
     const { toast } = useToast();
     const firestore = useFirestore();
@@ -65,7 +53,7 @@ export default function AttendanceReportsPage() {
     }, [firestore, authUser]);
     const { data: currentUser, isLoading: isProfileLoading } = useDoc<User>(userDocRef);
 
-    const role = (currentUser as any)?.role || (currentUser as any)?.rol;
+    const role = currentUser?.role;
     const isAdmin = role === 'admin' || role === 'superadmin';
 
     const [activeTab, setActiveTab] = useState('general');
@@ -74,13 +62,13 @@ export default function AttendanceReportsPage() {
         to: endOfMonth(new Date()),
     });
 
-    const usersCollectionRef = useMemoFirebase(
-        () => (firestore && isAdmin ? collection(firestore, 'users') : null),
-        [firestore, isAdmin]
+    const usersQuery = useMemoFirebase(
+        () => (firestore ? collection(firestore, 'users') : null),
+        [firestore]
     );
-    const { data: usersData, isLoading: isLoadingUsers } = useCollection<User>(usersCollectionRef);
-    
-    const users = isAdmin ? usersData : (currentUser ? [currentUser] : []);
+    const { data: allUsers, isLoading: isLoadingUsers } = useCollection<User>(usersQuery, { disabled: !isAdmin && !currentUser });
+
+    const users = isAdmin ? allUsers : (currentUser ? [currentUser] : []);
 
     const recordsQuery = useMemoFirebase(() => {
         if (!firestore || !authUser || !date?.from) return null;
@@ -104,24 +92,22 @@ export default function AttendanceReportsPage() {
     const { data: filteredRecords, isLoading: isLoadingRecords } = useCollection<AttendanceRecord>(recordsQuery);
 
     const getUser = (userId: string) => users?.find((u) => u.id === userId);
-    const getUserName = (user: any) => user?.name || user?.nombre || 'Empleado';
-    const getUserInitials = (name: string) => name ? name.split(' ').map((n) => n[0]).join('') : '';
+    const getUserName = (user: User) => (user as any).name || (user as any).nombre || 'Empleado';
+    const getUserInitials = (name: string) => name ? name.split(' ').map((n) => n[0]).join('').substring(0,2) : '';
     
     const consolidatedData = useMemo(() => {
         if (!users || !filteredRecords) return [];
 
-        const userStats: Record<string, ConsolidatedRecord> = users.reduce((acc, user: any) => {
-            if (user) {
-              acc[user.id] = {
-                  userId: user.id,
-                  userName: getUserName(user),
-                  attendedDays: 0,
-                  absentDays: 0,
-                  freeDays: 0,
-                  justifiedRestDays: 0,
-                  totalHours: 0,
-              };
-            }
+        const userStats: Record<string, ConsolidatedRecord> = users.reduce((acc, user) => {
+            acc[user.id] = {
+                userId: user.id,
+                userName: getUserName(user),
+                attendedDays: 0,
+                absentDays: 0,
+                freeDays: 0,
+                justifiedRestDays: 0,
+                totalHours: 0,
+            };
             return acc;
         }, {} as Record<string, ConsolidatedRecord>);
 
@@ -129,10 +115,8 @@ export default function AttendanceReportsPage() {
             const userStat = userStats[record.userId];
             if (!userStat) return;
             
-            const rCheckIn = record.checkIn as any;
-            const rCheckOut = record.checkOut as any;
-            const checkInDate = rCheckIn?.toDate ? rCheckIn.toDate() : new Date(rCheckIn);
-            const checkOutDate = rCheckOut?.toDate ? rCheckOut.toDate() : rCheckOut ? new Date(rCheckOut) : null;
+            const checkInDate = convertToDate(record.checkIn);
+            const checkOutDate = convertToDate(record.checkOut);
 
             switch (record.status) {
                 case 'presente':
@@ -162,7 +146,6 @@ export default function AttendanceReportsPage() {
     const absenceRecords = filteredRecords?.filter(r => r.status === 'ausente' || r.status === 'justificado' || r.status === 'no-justificado' || r.status === 'vacaciones') || [];
     const tardyRecords = filteredRecords?.filter(r => r.status === 'retardo') || [];
 
-    // AQUÍ ESTÁN LAS DEFINICIONES QUE FALTABAN O SE BORRARON
     const totalAbsences = absenceRecords.length;
     const totalTardies = tardyRecords.length;
     const totalAttendances = filteredRecords?.filter(r => r.status === 'presente' || r.status === 'retardo').length || 0;
@@ -192,13 +175,13 @@ export default function AttendanceReportsPage() {
         const baseMapping = (record: AttendanceRecord) => {
             const user = getUser(record.userId);
             const statusInfo = statusConfig[record.status];
-            const checkInDate = (record.checkIn as any).toDate ? (record.checkIn as any).toDate() : new Date(record.checkIn as any);
-            const checkOutDate = (record.checkOut as any)?.toDate ? (record.checkOut as any).toDate() : record.checkOut ? new Date(record.checkOut as any) : null;
+            const checkInDate = convertToDate(record.checkIn);
+            const checkOutDate = convertToDate(record.checkOut);
             return {
-                'Empleado': getUserName(user),
-                'Cédula': (user as any)?.cedula || 'N/A',
-                'Fecha': format(checkInDate, 'dd/MM/yyyy'),
-                'Hora Entrada': record.status !== 'ausente' ? format(checkInDate, 'HH:mm:ss') : 'N/A',
+                'Empleado': user ? getUserName(user) : 'N/A',
+                'Cédula': user?.cedula || 'N/A',
+                'Fecha': checkInDate ? format(checkInDate, 'dd/MM/yyyy') : 'N/A',
+                'Hora Entrada': checkInDate && record.status !== 'ausente' ? format(checkInDate, 'HH:mm:ss') : 'N/A',
                 'Hora Salida': checkOutDate ? format(checkOutDate, 'HH:mm:ss') : 'N/A',
                 'Estado': statusInfo.label,
             };
@@ -259,14 +242,11 @@ export default function AttendanceReportsPage() {
             <TableBody>
             {recordsToRender.map(record => {
                 const user = getUser(record.userId);
-                const statusInfo = statusConfig[record.status];
                 if (!user) return null;
 
-                const rCheckIn = record.checkIn as any;
-                const rCheckOut = record.checkOut as any;
-                const checkInDate = rCheckIn?.toDate ? rCheckIn.toDate() : new Date(rCheckIn);
-                const checkOutDate = rCheckOut?.toDate ? rCheckOut.toDate() : rCheckOut ? new Date(rCheckOut) : null;
-
+                const statusInfo = statusConfig[record.status];
+                const checkInDate = convertToDate(record.checkIn);
+                const checkOutDate = convertToDate(record.checkOut);
                 const userName = getUserName(user);
 
                 return (
@@ -274,15 +254,15 @@ export default function AttendanceReportsPage() {
                     <TableCell>
                         <div className="flex items-center gap-3">
                             <Avatar className="h-9 w-9">
-                                <AvatarImage src={(user as any)?.avatarUrl} alt={userName} />
+                                <AvatarImage src={user.avatarUrl} alt={userName} />
                                 <AvatarFallback>{getUserInitials(userName)}</AvatarFallback>
                             </Avatar>
                             <div className="font-medium">{userName}</div>
                         </div>
                     </TableCell>
-                    <TableCell>{format(checkInDate, 'dd/MM/yyyy')}</TableCell>
+                    <TableCell>{checkInDate ? format(checkInDate, 'dd/MM/yyyy') : 'N/A'}</TableCell>
                     <TableCell className="font-mono">
-                        {record.status !== 'ausente' ? format(checkInDate, 'HH:mm:ss') : 'N/A'}
+                        {checkInDate && record.status !== 'ausente' ? format(checkInDate, 'HH:mm:ss') : 'N/A'}
                     </TableCell>
                     <TableCell className="font-mono">
                         {checkOutDate ? format(checkOutDate, 'HH:mm:ss') : '--:--'}
@@ -324,7 +304,7 @@ export default function AttendanceReportsPage() {
         </Table>
     )
 
-    const isLoading = isAuthLoading || isProfileLoading || isLoadingRecords || (isAdmin && isLoadingUsers);
+    const isLoading = isAuthLoading || isProfileLoading || isLoadingRecords || isLoadingUsers;
 
     if (isAuthLoading) { 
         return <div className="flex items-center justify-center h-screen">Cargando...</div>;
@@ -335,8 +315,8 @@ export default function AttendanceReportsPage() {
             <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
                 <div>
                     <Button variant="ghost" className="mb-2 pl-0 hover:bg-transparent hover:text-blue-600" asChild>
-                        <Link href="/attendance" className="flex items-center gap-2">
-                            <ArrowLeft className="h-4 w-4" /> Volver a Asistencia
+                        <Link href="/attendance/personal" className="flex items-center gap-2">
+                            <ArrowLeft className="h-4 w-4" /> Volver a Personal
                         </Link>
                     </Button>
                     <h1 className="font-headline text-2xl font-bold md:text-3xl">
@@ -358,7 +338,7 @@ export default function AttendanceReportsPage() {
                             <Calendar initialFocus mode="range" defaultMonth={date?.from} selected={date} onSelect={setDate} numberOfMonths={2} locale={es} />
                         </PopoverContent>
                     </Popover>
-                    {isAdmin && (<Button onClick={handleExport}>
+                    {isAdmin && (<Button onClick={handleExport} disabled={isLoading}>
                         <Download className="mr-2 h-4 w-4" />
                         Exportar a Excel
                     </Button>)}
@@ -444,7 +424,7 @@ export default function AttendanceReportsPage() {
                                                 <TableCell>
                                                     <div className="flex items-center gap-3">
                                                         <Avatar className="h-9 w-9">
-                                                            <AvatarImage src={(getUser(data.userId) as any)?.avatarUrl} alt={data.userName} />
+                                                            <AvatarImage src={getUser(data.userId)?.avatarUrl} alt={data.userName} />
                                                             <AvatarFallback>{getUserInitials(data.userName)}</AvatarFallback>
                                                         </Avatar>
                                                         <div className="font-medium">{data.userName}</div>
