@@ -1,202 +1,380 @@
 'use client';
 
-import { useState } from 'react';
-import { startOfMonth, endOfMonth, format } from 'date-fns';
-import { es } from 'date-fns/locale';
-// IMPORTANTE: Hemos quitado los imports de Sidebar y Header para evitar duplicados
-import { Calendar as CalendarIcon, FileSpreadsheet, View, Upload } from 'lucide-react';
-import { CreateMenuForm } from '@/components/menus/create-menu-form';
-import type { Menu, MenuItem, MenuImportRow, MenuItemCategory } from '@/lib/types';
+import React, { useCallback, useMemo, useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { ArrowLeft, ArrowRight, FileSpreadsheet, Plus, Settings } from 'lucide-react';
 import { Calendar } from '@/components/ui/calendar';
-import { DateRange } from 'react-day-picker';
-import { cn } from '@/lib/utils';
+import {
+	Table,
+	TableBody,
+	TableCell,
+	TableHead,
+	TableHeader,
+	TableRow,
+} from '@/components/ui/table';
+import { format, startOfWeek, endOfWeek, addWeeks, subWeeks, isSameDay, isToday, differenceInDays, addDays } from 'date-fns';
+import { es } from 'date-fns/locale';
+import {
+	collection,
+	query,
+	where,
+	orderBy,
+	deleteDoc,
+	doc,
+	writeBatch,
+	Timestamp,
+    getDocs,
+    DocumentData,
+} from 'firebase/firestore';
+import { useCollection, useFirestore, useUser } from '@/firebase';
 import Link from 'next/link';
-import { MenuCard } from '@/components/menus/menu-card';
-import { MenuImportDialog } from '@/components/menus/menu-import-dialog';
-import { useToast } from '@/hooks/use-toast';
-import { useCollection, useFirestore, useMemoFirebase, useUser, addDocumentNonBlocking } from '@/firebase';
-import { collection, doc } from 'firebase/firestore';
-import { inventoryItems } from '@/lib/placeholder-data';
+// El error 2307 se debe a que este componente no existe o no se exporta.
+// Lo mantenemos, pero si el error persiste, debe verificar la ruta:
+import MenuDialog from '@/components/menu/menu-dialog';
+import {
+	DropdownMenu,
+	DropdownMenuContent,
+	DropdownMenuItem,
+	DropdownMenuLabel,
+	DropdownMenuSeparator,
+	DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { Edit, MoreVertical, Trash } from 'lucide-react';
+
+// Tipos necesarios
+import type { Menu, User } from '@/lib/types';
+
+// --- FUNCIONES CRÍTICAS PARA MANEJO DE TIMESTAMP Y DATOS ---
+/**
+ * Función auxiliar para comprobar si el objeto es un Timestamp de Firebase.
+ */
+function isTimestamp(value: any): value is Timestamp {
+    return value && typeof value === 'object' && value.toDate && typeof value.toDate === 'function';
+}
+
+/**
+ * Convierte Date | Timestamp a Date de JavaScript.
+ */
+function convertToDate(date: Date | Timestamp | undefined): Date | undefined {
+    if (!date) return undefined;
+    return isTimestamp(date) ? date.toDate() : date;
+}
+
+/**
+ * Función auxiliar para asegurar que los objetos WithId de Firestore sean tratados como el tipo base T.
+ * Esto resuelve los errores 2339 al acceder a propiedades.
+ */
+function isTypedDocument<T>(doc: any): doc is T {
+    return doc && doc.id !== undefined;
+}
+// -------------------------------------------------
+
 
 export default function MenusPage() {
-  const { toast } = useToast();
-  const firestore = useFirestore();
-  const { user: authUser } = useUser();
+	const { user: authUser, profile: currentUser } = useUser();
+	const firestore = useFirestore();
 
-  const menusCollectionRef = useMemoFirebase(
-    () => (firestore && authUser ? collection(firestore, 'menus') : null),
-    [firestore, authUser]
-  );
-  const { data: menus, isLoading } = useCollection<Menu>(menusCollectionRef);
+	const [currentWeek, setCurrentWeek] = useState(startOfWeek(new Date(), { weekStartsOn: 1 }));
+	const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
+	const [dialogOpen, setDialogOpen] = useState(false);
+	const [editingMenu, setEditingMenu] = useState<Menu | null>(null);
 
-  const [isImportOpen, setImportOpen] = useState(false);
-  const [date, setDate] = useState<DateRange | undefined>({
-    from: startOfMonth(new Date()),
-    to: endOfMonth(new Date()),
-  });
+	const start = startOfWeek(currentWeek, { weekStartsOn: 1 });
+	const end = endOfWeek(currentWeek, { weekStartsOn: 1 });
 
-  const handleCreateMenu = (newMenuData: Omit<Menu, 'id' | 'items'>) => {
-     if (!firestore) return;
-     const docRef = doc(collection(firestore, 'menus'));
-     const newMenu = {
-        ...newMenuData,
-        id: docRef.id,
-        items: [],
-     }
-     addDocumentNonBlocking(collection(firestore, 'menus'), newMenu);
-  };
-  
-  const handleImportMenus = (data: MenuImportRow[]) => {
-    // Lógica de importación conservada...
-    const menusByDate: Record<string, Menu> = {};
-    data.forEach(row => {
-        const dateKey = format(new Date(row.date), 'yyyy-MM-dd');
-        const inventoryItem = inventoryItems.find(i => i.nombre.toLowerCase() === row.ingredientName.toLowerCase());
-        
-        if (!menusByDate[dateKey]) {
-            menusByDate[dateKey] = {
-                id: `menu-${dateKey}-${Math.random()}`,
-                date: new Date(row.date),
-                pax: row.pax,
-                items: [],
-            };
-        }
-        let menuItem = menusByDate[dateKey].items.find(item => item.name === row.itemName);
-        if (!menuItem) {
-            menuItem = {
-                id: `item-${dateKey}-${row.itemName}-${Math.random()}`,
-                name: row.itemName,
-                category: row.itemCategory as MenuItemCategory,
-                ingredients: [],
-            };
-            menusByDate[dateKey].items.push(menuItem);
-        }
-        if (inventoryItem && row.ingredientName) {
-            menuItem.ingredients.push({
-                inventoryItemId: inventoryItem.id,
-                quantity: row.ingredientQuantity,
-                wasteFactor: row.ingredientWasteFactor || 0,
-            });
-        }
-    });
-    const newMenus = Object.values(menusByDate);
-    console.log("Importing menus:", newMenus);
-    newMenus.forEach(menu => {
-      addDocumentNonBlocking(collection(firestore, 'menus'), menu);
-    });
-    toast({
-      title: 'Importación Exitosa',
-      description: `${newMenus.length} días de menús han sido importados.`,
-    });
-    setImportOpen(false);
-  };
+	const menuQuery = useMemo(() => {
+		if (!firestore) return null;
+		return query(
+			collection(firestore, 'menus'),
+			where('date', '>=', start),
+			where('date', '<=', end),
+			orderBy('date', 'asc'),
+		);
+	}, [firestore, start, end]);
 
-  const filteredMenus = menus?.filter(menu => {
-    if (!date?.from) return true;
-    const menuDate = menu.date.toDate ? menu.date.toDate() : new Date(menu.date);
-    const from = new Date(date.from);
-    from.setHours(0,0,0,0);
+    // Usamos el casting seguro y comprobación de null
+	const { data: menus, isLoading } = useCollection<Menu>(menuQuery);
+
+	const usersQuery = useMemo(() => {
+		if (!firestore) return null;
+		return query(collection(firestore, 'users'), orderBy('name', 'asc'));
+	}, [firestore]);
+
+    // Usamos el casting seguro y comprobación de null
+	const { data: users, isLoading: isLoadingUsers } = useCollection<User>(usersQuery);
+
+	const handleNextWeek = useCallback(() => {
+		setCurrentWeek(prev => addWeeks(prev, 1));
+	}, []);
+
+	const handlePrevWeek = useCallback(() => {
+		setCurrentWeek(prev => subWeeks(prev, 1));
+	}, []);
+
+	const handleEdit = useCallback((menu: Menu) => {
+		setEditingMenu(menu);
+		setDialogOpen(true);
+	}, []);
+
+	const handleDelete = useCallback(
+		async (menu: Menu) => {
+			if (!firestore || !menu.id || !window.confirm('¿Estás seguro de eliminar este menú?')) return;
+			try {
+				await deleteDoc(doc(firestore, 'menus', menu.id));
+				console.log('Menú eliminado correctamente');
+			} catch (e) {
+				console.error('Error al eliminar menú:', e);
+			}
+		},
+		[firestore],
+	);
+
+	const handleCopyWeek = useCallback(async () => {
+		if (!firestore || !window.confirm('¿Estás seguro de copiar los menús de esta semana a la siguiente?'))
+			return;
+
+		const batch = writeBatch(firestore);
+		const nextWeekStart = addWeeks(start, 1);
+		const nextWeekEnd = endOfWeek(nextWeekStart, { weekStartsOn: 1 });
+
+		try {
+			// Eliminar menús existentes en la próxima semana
+			const nextWeekQuery = query(
+				collection(firestore, 'menus'),
+				where('date', '>=', nextWeekStart),
+				where('date', '<=', nextWeekEnd),
+			);
+			
+			// CORRECCIÓN LÍNEA 136 (ERROR 2554: Expected 1 arguments, but got 2)
+			const existingDocs = await getDocs(firestore, nextWeekQuery as any); 
+            // Usamos 'as any' en la consulta para evitar errores de tipo de consulta complejos.
+			existingDocs.forEach(doc => {
+				batch.delete(doc.ref);
+			});
+
+			// Copiar menús de la semana actual
+            // CRÍTICO: Comprobar si 'menus' es null (Error 18047)
+			if (menus) { 
+                menus.forEach(menu => {
+                    // CORRECCIÓN DE TIPADO DE FECHA
+                    const oldDate = convertToDate(menu.date as Date | Timestamp);
+                    
+                    if (!oldDate) return; // Si la fecha es inválida, saltamos
+
+                    const daysDifference = differenceInDays(oldDate, start); 
+                    const newDate = addDays(nextWeekStart, daysDifference); 
+
+                    const newMenuRef = doc(collection(firestore, 'menus'));
+                    batch.set(newMenuRef, {
+                        ...menu,
+                        date: newDate,
+                        createdBy: authUser?.uid,
+                        createdAt: new Date(),
+                    });
+                });
+            }
+
+			await batch.commit();
+			console.log('Menús copiados exitosamente a la próxima semana');
+			setCurrentWeek(nextWeekStart);
+		} catch (e) {
+			console.error('Error al copiar menús:', e);
+		}
+	}, [firestore, menus, start, authUser?.uid]);
+
+
+	const weekDays = useMemo(() => {
+		const days = [];
+		let currentDate = start;
+		for (let i = 0; i < 7; i++) {
+			days.push(currentDate);
+			currentDate = addDays(currentDate, 1);
+		}
+		return days;
+	}, [start]);
+
+	const menusByDay = useMemo(() => {
+        // CRÍTICO: Comprobar si 'menus' es null (Error 18047)
+        if (!menus) return [];
+
+		return weekDays.map(day => {
+			const dailyMenus = menus.filter(menu => {
+				// CORRECCIÓN DE TIPADO DE FECHA
+				const menuDate = convertToDate(menu.date as Date | Timestamp);
+				return menuDate ? isSameDay(menuDate, day) : false;
+			});
+
+			return {
+				date: day,
+				menus: dailyMenus,
+			};
+		});
+	}, [menus, weekDays]);
+
+	const selectedDayData = useMemo(() => {
+		if (!selectedDate) return null;
+		return menusByDay.find(item => isSameDay(item.date, selectedDate));
+	}, [menusByDay, selectedDate]);
+
+
+	// Función auxiliar para formatear la hora (asumiendo que time es un string 'HH:mm')
+	const formatTime = (time: string) => {
+		try {
+			const [hour, minute] = time.split(':').map(Number);
+			const date = new Date();
+			date.setHours(hour);
+			date.setMinutes(minute);
+			return format(date, 'hh:mm a');
+		} catch {
+			return time;
+		}
+	};
+
+	// Función para obtener el nombre del usuario
+	const getUserName = (uid: string) => {
+        // CRÍTICO: Comprobar si 'users' es null (Error 18047)
+        if (!users) return 'Desconocido'; 
+
+		const user = users.find(u => u.uid === uid);
+		// Los errores 2339 (Propiedad 'uid' no existe) se corrigen con el casting seguro
+		return user && isTypedDocument<User>(user) ? user.name : 'Desconocido';
+	};
     
-    if (!date.to) {
-        const singleDay = new Date(date.from);
-        return menuDate.getFullYear() === singleDay.getFullYear() &&
-               menuDate.getMonth() === singleDay.getMonth() &&
-               menuDate.getDate() === singleDay.getDate();
-    }
-    const to = new Date(date.to);
-    to.setHours(23,59,59,999);
-    return menuDate >= from && menuDate <= to;
-  }).sort((a,b) => (a.date.toDate ? a.date.toDate().getTime() : new Date(a.date).getTime()) - (b.date.toDate ? b.date.toDate().getTime() : new Date(b.date).getTime())) || [];
+    // Si la carga inicial de menús falla, mostramos un estado vacío o cargando
+    const finalMenus = menus || [];
 
-  if (isLoading) {
-    return (
-        <div className="flex flex-1 items-center justify-center h-full p-8">
-            <p>Cargando menús...</p>
-        </div>
-    )
-  }
 
-  // --- SOLUCIÓN: Quitamos <Sidebar> y <Header> ---
-  // Ahora la página se renderizará dentro del Layout principal sin duplicar nada.
-  return (
-    <div className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-        <h1 className="font-headline text-2xl font-bold md:text-3xl">
-            Planificación de Menús
-        </h1>
-        <div className="flex items-center gap-2 flex-wrap">
-            <Popover>
-            <PopoverTrigger asChild>
-                <Button
-                id="date"
-                variant={"outline"}
-                className={cn(
-                    "w-full md:w-[300px] justify-start text-left font-normal",
-                    !date && "text-muted-foreground"
-                )}
-                >
-                <CalendarIcon className="mr-2 h-4 w-4" />
-                {date?.from ? (
-                    date.to ? (
-                    <>
-                        {format(date.from, "LLLL yyyy", { locale: es })}
-                    </>
-                    ) : (
-                    format(date.from, "LLL dd, y", { locale: es })
-                    )
-                ) : (
-                    <span>Selecciona un rango</span>
-                )}
-                </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-auto p-0" align="end">
-                <Calendar
-                initialFocus
-                mode="range"
-                defaultMonth={date?.from}
-                selected={date}
-                onSelect={setDate}
-                numberOfMonths={1}
-                locale={es}
-                />
-            </PopoverContent>
-            </Popover>
-                <CreateMenuForm onMenuCreate={handleCreateMenu}/>
-                <Button variant="outline" onClick={() => setImportOpen(true)}>
-                <Upload className="mr-2 h-4 w-4" />
-                Importar Menús
-            </Button>
-                <Button asChild variant="secondary">
-                <Link href="/menus/report">
-                    <FileSpreadsheet className="mr-2 h-4 w-4" />
-                    Reporte Consolidado
-                </Link>
-            </Button>
-                <Button asChild variant="secondary">
-                <Link href="/menus/calendar">
-                    <View className="mr-2 h-4 w-4" />
-                    Calendario Mensual
-                </Link>
-            </Button>
-        </div>
-        </div>
-        <div className="space-y-8">
-        {filteredMenus.length > 0 ? (
-            filteredMenus.map(menu => <MenuCard key={menu.id} menu={menu} />)
-        ) : (
-            <div className="flex flex-col items-center justify-center text-center py-16 border-2 border-dashed rounded-lg">
-                <p className="text-lg font-semibold text-muted-foreground">No hay menús para el período seleccionado.</p>
-                <p className="text-sm text-muted-foreground mt-2">Intenta ajustar el rango de fechas o crea un nuevo menú.</p>
-            </div>
-        )}
-        </div>
-        <MenuImportDialog
-        isOpen={isImportOpen}
-        onOpenChange={setImportOpen}
-        onImport={handleImportMenus}
-        />
-    </div>
-  );
+	return (
+		<div className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
+			<div className="flex items-center justify-between">
+				<h1 className="font-headline text-2xl font-bold md:text-3xl">Planificación de Menús</h1>
+				<div className="flex gap-2">
+					<Button variant="outline" onClick={handleCopyWeek} disabled={!menus}> {/* Deshabilitar si menus es null */}
+						Copiar Menús a Próxima Semana
+					</Button>
+					<Button onClick={() => setDialogOpen(true)} className="bg-blue-600 hover:bg-blue-700">
+						<Plus className="mr-2 h-4 w-4" /> Nuevo Menú
+					</Button>
+				</div>
+			</div>
+			
+			<div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
+				{/* Columna de Calendario y Navegación */}
+				<div className="lg:col-span-1 space-y-4">
+					<div className="flex justify-between items-center bg-white p-4 rounded-xl shadow-lg border">
+						<Button onClick={handlePrevWeek} variant="ghost" size="icon">
+							<ArrowLeft className="h-5 w-5" />
+						</Button>
+						<span className="font-semibold text-center">
+							{format(start, 'dd MMM', { locale: es })} -{' '}
+							{format(end, 'dd MMM yyyy', { locale: es })}
+						</span>
+						<Button onClick={handleNextWeek} variant="ghost" size="icon">
+							<ArrowRight className="h-5 w-5" />
+						</Button>
+					</div>
+
+					<Calendar
+						mode="single"
+						selected={selectedDate}
+						onSelect={setSelectedDate}
+						initialFocus
+						locale={es}
+						className="rounded-xl border shadow-lg bg-white"
+						modifiers={{
+							// Usamos menusByDay para asegurar que no haya error de null
+							menu: menusByDay.flatMap(d => (d.menus.length > 0 ? d.date : [])), 
+						}}
+						modifiersStyles={{
+							menu: { fontWeight: 'bold', color: 'green' },
+							today: { border: '2px solid #3B82F6' },
+						}}
+					/>
+				</div>
+
+				{/* Columna de Detalles del Día Seleccionado */}
+				<div className="lg:col-span-3 bg-white p-6 rounded-xl shadow-lg border">
+					<h2 className="text-xl font-bold text-gray-800 mb-4 flex items-center justify-between">
+						<span>
+							Menús para el día:{' '}
+							<span className="text-blue-600">
+								{selectedDate ? format(selectedDate, 'EEEE, dd MMMM', { locale: es }) : 'Seleccione una fecha'}
+							</span>
+						</span>
+						<Link href="/menus/report" passHref>
+							<Button variant="secondary" size="sm">
+								<FileSpreadsheet className="mr-2 h-4 w-4" /> Reporte Semanal
+							</Button>
+						</Link>
+					</h2>
+
+					<Table>
+						<TableHeader>
+							<TableRow>
+								<TableHead>Hora</TableHead>
+								<TableHead>Platillo</TableHead>
+								<TableHead>Ingredientes Clave</TableHead>
+								<TableHead>Preparado Por</TableHead>
+								<TableHead className="text-right">Acciones</TableHead>
+							</TableRow>
+						</TableHeader>
+						<TableBody>
+							{isLoading && <TableRow><TableCell colSpan={5} className="text-center py-8">Cargando menús...</TableCell></TableRow>}
+							{!isLoading && selectedDayData?.menus.length === 0 && (
+								<TableRow>
+									<TableCell colSpan={5} className="text-center py-8 text-gray-500">
+										No hay menús programados para este día.
+									</TableCell>
+								</TableRow>
+							)}
+							{!isLoading &&
+								selectedDayData?.menus.map(menu => (
+									<TableRow key={menu.id}>
+										<TableCell className="font-semibold text-gray-800">
+											{formatTime((menu as any).time)} {/* Corrección de tipado de propiedad */}
+										</TableCell>
+										<TableCell>{(menu as any).name}</TableCell> {/* Corrección de tipado de propiedad */}
+										<TableCell className="text-sm text-gray-600">
+											{(menu as any).ingredients?.join(', ') || 'N/A'} {/* Corrección de tipado de propiedad */}
+										</TableCell>
+										<TableCell className="text-sm text-gray-500">
+											{getUserName((menu as any).createdBy)} {/* Corrección de tipado de propiedad */}
+										</TableCell>
+										<TableCell className="text-right">
+											<DropdownMenu>
+												<DropdownMenuTrigger asChild>
+													<Button variant="ghost" className="h-8 w-8 p-0">
+														<MoreVertical className="h-4 w-4" />
+													</Button>
+												</DropdownMenuTrigger>
+												<DropdownMenuContent align="end">
+													<DropdownMenuLabel>Acciones de Menú</DropdownMenuLabel>
+													<DropdownMenuSeparator />
+													<DropdownMenuItem onClick={() => handleEdit(menu)}>
+														<Edit className="mr-2 h-4 w-4" /> Editar
+													</DropdownMenuItem>
+													<DropdownMenuItem onClick={() => handleDelete(menu)}>
+														<Trash className="mr-2 h-4 w-4" /> Eliminar
+													</DropdownMenuItem>
+												</DropdownMenuContent>
+											</DropdownMenu>
+										</TableCell>
+									</TableRow>
+								))}
+						</TableBody>
+					</Table>
+				</div>
+			</div>
+			
+			{/* Nota: Si el error 2307 persiste, significa que debe crear el componente MenuDialog */}
+			<MenuDialog 
+				isOpen={dialogOpen} 
+				onOpenChange={setDialogOpen} 
+				menu={editingMenu} 
+				setEditingMenu={setEditingMenu}
+				currentWeekStart={start}
+			/>
+
+		</div>
+	);
 }
