@@ -7,14 +7,7 @@ import { es } from 'date-fns/locale';
 import * as XLSX from 'xlsx';
 import { saveAs } from 'file-saver';
 import { useToast } from '@/hooks/use-toast';
-import {
-  Sidebar,
-  SidebarContent,
-  SidebarHeader,
-  SidebarInset,
-} from '@/components/ui/sidebar';
-import { MainNav } from '@/components/dashboard/main-nav';
-import { SquareCheck, AlertTriangle, ArrowUp, ArrowDown, Minus, Download } from 'lucide-react';
+import { AlertTriangle, ArrowUp, ArrowDown, Minus, Download } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -277,10 +270,8 @@ function ReportContent() {
 
 export default function DailyClosingReportPage() {
   return (
-    <div className="min-h-screen w-full">
       <Suspense fallback={<div className="flex items-center justify-center h-full"><p>Cargando reporte...</p></div>}>
         <ReportContent />
       </Suspense>
-    </div>
   );
 }

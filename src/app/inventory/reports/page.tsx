@@ -4,14 +4,7 @@ import { useState } from 'react';
 import * as XLSX from 'xlsx';
 import { saveAs } from 'file-saver';
 import { format } from 'date-fns';
-import {
-  Sidebar,
-  SidebarContent,
-  SidebarHeader,
-  SidebarInset,
-} from '@/components/ui/sidebar';
-import { MainNav } from '@/components/dashboard/main-nav';
-import { SquareCheck, Download, AlertCircle, Package, DollarSign, TrendingUp, BarChart } from 'lucide-react';
+import { Download, AlertCircle, Package, DollarSign, BarChart } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -108,7 +101,6 @@ export default function InventoryReportsPage() {
   ];
 
   return (
-    <div className="min-h-screen w-full">
       <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <h1 className="font-headline text-2xl font-bold md:text-3xl">
@@ -217,6 +209,5 @@ export default function InventoryReportsPage() {
           </div>
         </div>
       </main>
-    </div>
   );
 }

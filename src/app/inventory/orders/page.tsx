@@ -1,13 +1,6 @@
 'use client';
 
 import { useState } from 'react';
-import {
-  Sidebar,
-  SidebarContent,
-  SidebarHeader,
-  SidebarInset,
-} from '@/components/ui/sidebar';
-import { MainNav } from '@/components/dashboard/main-nav';
 import { SquareCheck, PlusCircle } from 'lucide-react';
 import {
   Table,
@@ -68,7 +61,6 @@ export default function InventoryOrdersPage() {
   };
 
   return (
-    <div className="min-h-screen w-full">
       <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
         <div className="flex items-center justify-between">
             <h1 className="font-headline text-2xl font-bold md:text-3xl">
@@ -115,14 +107,13 @@ export default function InventoryOrdersPage() {
             </Table>
           </CardContent>
         </Card>
+      
+        <OrderForm 
+          isOpen={isFormOpen}
+          onOpenChange={setFormOpen}
+          onSave={handleCreateOrder}
+          inventoryItems={inventoryItems}
+        />
       </main>
-
-      <OrderForm 
-        isOpen={isFormOpen}
-        onOpenChange={setFormOpen}
-        onSave={handleCreateOrder}
-        inventoryItems={inventoryItems}
-      />
-    </div>
   );
 }
