@@ -1,6 +1,6 @@
 'use client';
 
-import { createContext, useContext, ReactNode } from 'react';
+import React, { createContext, useContext, ReactNode } from 'react';
 import { FirebaseApp } from 'firebase/app';
 import { Auth } from 'firebase/auth';
 import { Firestore } from 'firebase/firestore';
@@ -50,7 +50,7 @@ export const useFirestore = (): Firestore => {
   return useFirebase().firestore;
 };
 
-export const useMemoFirebase = <T>(
+export const useMemoFirebase = <T,>(
   factory: () => T,
   deps: React.DependencyList | undefined
 ) => {

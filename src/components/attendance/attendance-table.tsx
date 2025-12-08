@@ -1,6 +1,6 @@
-
 'use client';
 
+import React from 'react';
 import {
   Table,
   TableBody,
@@ -13,138 +13,144 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import type { AttendanceRecord, DayOff, User } from '@/lib/types';
-import { cn } from '@/lib/utils';
-import { format, getDay } from 'date-fns';
+import { format, differenceInMinutes } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { UserCheck, UserX, Clock, CalendarDays, CalendarOff, ShieldAlert } from 'lucide-react';
-import { useEffect, useState } from 'react';
-import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
-import { collection } from 'firebase/firestore';
-
-
-const statusConfig: Record<string, { label: string; className: string; icon: React.ElementType }> = {
-    presente: { label: 'Presente', className: 'bg-green-100 text-green-800', icon: UserCheck },
-    ausente: { label: 'Ausente', className: 'bg-red-100 text-red-800', icon: UserX },
-    retardo: { label: 'Retardo', className: 'bg-yellow-100 text-yellow-800', icon: Clock },
-    'fuera-de-horario': { label: 'Fuera de Horario', className: 'bg-gray-100 text-gray-800', icon: Clock },
-    'justificado': { label: 'Justificado', className: 'bg-blue-100 text-blue-800', icon: ShieldAlert },
-    'no-justificado': { label: 'No Justificado', className: 'bg-orange-100 text-orange-800', icon: UserX },
-    'vacaciones': { label: 'Vacaciones', className: 'bg-purple-100 text-purple-800', icon: CalendarDays },
-    'dia-libre': { label: 'Día Libre', className: 'bg-sky-100 text-sky-800', icon: CalendarOff },
-};
+import { UserCheck, Clock, UserX, CalendarOff, ShieldAlert } from 'lucide-react';
 
 interface AttendanceTableProps {
-    users: User[];
-    records: AttendanceRecord[];
-    daysOff: DayOff[];
-    isLoading: boolean;
-    date: Date;
+  users: User[];
+  records: AttendanceRecord[];
+  daysOff: DayOff[];
+  isLoading: boolean;
+  date: Date;
 }
 
-export function AttendanceTable({ users, records, daysOff, isLoading, date }: AttendanceTableProps) {
+// --- IMPORTANTE: export default ---
+export default function AttendanceTable({ users, records, daysOff, isLoading, date }: AttendanceTableProps) {
+  
+  const getUserInitials = (name: string | undefined) => 
+    name ? name.split(' ').map((n) => n[0]).join('').substring(0, 2) : 'US';
+
+  const getStatusDetails = (status: string | undefined, isDayOff: boolean) => {
+    if (isDayOff) return { label: 'Día Libre', className: 'bg-blue-100 text-blue-700', icon: CalendarOff };
     
-    const getUserInitials = (name: string | undefined) => name ? name.split(' ').map((n) => n[0]).join('') : '';
-    const dayOfWeek = (getDay(date) + 6) % 7; // Monday is 0, Sunday is 6
-
-
-    if (isLoading) {
-        return (
-             <Card>
-                <CardHeader>
-                    <CardTitle>Asistencia del Día</CardTitle>
-                    <CardDescription>
-                        Cargando registros...
-                    </CardDescription>
-                </CardHeader>
-                <CardContent className="p-0">
-                    <div className="h-64 flex items-center justify-center text-muted-foreground">
-                        Cargando datos de asistencia...
-                    </div>
-                </CardContent>
-            </Card>
-        );
+    switch (status) {
+      case 'presente': return { label: 'Presente', className: 'bg-green-100 text-green-700', icon: UserCheck };
+      case 'retardo': return { label: 'Retardo', className: 'bg-yellow-100 text-yellow-700', icon: Clock };
+      case 'ausente': return { label: 'Ausente', className: 'bg-red-100 text-red-700', icon: UserX };
+      case 'justificado': return { label: 'Justificado', className: 'bg-purple-100 text-purple-700', icon: ShieldAlert };
+      default: return { label: 'Pendiente', className: 'bg-gray-100 text-gray-500', icon: Clock };
     }
+  };
+
+  const calculateHours = (checkIn: any, checkOut: any) => {
+    if (!checkIn || !checkOut) return '--';
     
-    return (
+    const start = checkIn.toDate ? checkIn.toDate() : new Date(checkIn);
+    const end = checkOut.toDate ? checkOut.toDate() : new Date(checkOut);
+    
+    const totalMinutes = differenceInMinutes(end, start);
+    const hours = Math.floor(totalMinutes / 60);
+    const mins = totalMinutes % 60;
+    
+    if (totalMinutes < 0) return '0h 0m';
+    
+    return `${hours}h ${mins}m`;
+  };
+
+  if (isLoading) {
+      return (
         <Card>
-            <CardHeader>
-                <CardTitle>Asistencia del Día</CardTitle>
-                <CardDescription>
-                    Registro de entradas y salidas del personal para el {format(date, 'dd MMMM, yyyy', { locale: es })}.
-                </CardDescription>
-            </CardHeader>
-            <CardContent className="p-0">
-            <Table>
-                <TableHeader>
-                <TableRow>
-                    <TableHead>Empleado</TableHead>
-                    <TableHead>Hora Entrada</TableHead>
-                    <TableHead>Hora Salida</TableHead>
-                    <TableHead>Estado</TableHead>
-                </TableRow>
-                </TableHeader>
-                <TableBody>
-                {users && users.map(user => {
-                    if (!user) return null;
-                    const record = records?.find(r => r.userId === user.id);
-                    const userDayOff = daysOff?.find(d => d.userId === user.id);
-                    const isSunday = dayOfWeek === 6;
-                    
-                    let statusKey: keyof typeof statusConfig = 'ausente';
-
-                    if (isSunday || (userDayOff && userDayOff.dayOff === dayOfWeek)) {
-                        statusKey = 'dia-libre';
-                    } else if (record) {
-                        statusKey = record.status;
-                    }
-
-                    const config = statusConfig[statusKey];
-                    const checkIn = record?.checkIn?.toDate ? record.checkIn.toDate() : record?.checkIn ? new Date(record.checkIn as any) : null;
-                    const checkOut = record?.checkOut?.toDate ? record.checkOut.toDate() : record?.checkOut ? new Date(record.checkOut as any) : null;
-                    
-
-                    return (
-                        <TableRow key={user.id}>
-                            <TableCell>
-                                <div className="flex items-center gap-3">
-                                <Avatar className="h-9 w-9">
-                                    <AvatarImage src={user.avatarUrl} alt={user.nombre} />
-                                    <AvatarFallback>
-                                    {getUserInitials(user.nombre)}
-                                    </AvatarFallback>
-                                </Avatar>
-                                <div className="font-medium">{user.nombre}</div>
-                                </div>
-                            </TableCell>
-                            <TableCell className="font-mono">
-                                {checkIn ? format(checkIn, 'HH:mm:ss') : '--:--'}
-                            </TableCell>
-                                <TableCell className="font-mono">
-                                {checkOut ? format(checkOut, 'HH:mm:ss') : '--:--'}
-                            </TableCell>
-                            <TableCell>
-                                {config ? (
-                                    <Badge variant="secondary" className={cn(config.className, 'capitalize')}>
-                                        <config.icon className="w-3 h-3 mr-1.5" />
-                                        {config.label}
-                                    </Badge>
-                                ) : (
-                                    <Badge>
-                                        {statusKey}
-                                    </Badge>
-                                )}
-                            </TableCell>
-                        </TableRow>
-                    )
-                })}
-                {(!users || users.length === 0) && (
-                     <TableRow>
-                        <TableCell colSpan={4} className="text-center h-24">No hay usuarios para mostrar.</TableCell>
-                    </TableRow>
-                )}
-                </TableBody>
-            </Table>
+            <CardHeader><CardTitle>Asistencia del Día</CardTitle></CardHeader>
+            <CardContent className="h-40 flex items-center justify-center text-muted-foreground">
+                Cargando datos...
             </CardContent>
         </Card>
-    );
+      );
+  }
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Asistencia del Día</CardTitle>
+        <CardDescription>
+          Registro del {format(date, "dd 'de' MMMM, yyyy", { locale: es })}.
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="p-0">
+        <div className="overflow-x-auto">
+            <Table>
+            <TableHeader>
+                <TableRow>
+                <TableHead>Empleado</TableHead>
+                <TableHead>Entrada</TableHead>
+                <TableHead>Salida</TableHead>
+                <TableHead className="font-bold text-blue-700">Total Horas</TableHead>
+                <TableHead>Estado</TableHead>
+                </TableRow>
+            </TableHeader>
+            <TableBody>
+                {users && users.map((user) => {
+                const record = records?.find((r) => r.userId === user.id);
+                
+                const todayIso = format(date, 'yyyy-MM-dd');
+                const isDayOff = daysOff?.some((d) => d.userId === user.id && d.date === todayIso);
+                
+                const checkInDate = (record?.checkIn as any)?.toDate 
+                    ? (record?.checkIn as any).toDate() 
+                    : (record?.checkIn ? new Date(record.checkIn as any) : null);
+
+                const checkOutDate = (record?.checkOut as any)?.toDate 
+                    ? (record?.checkOut as any).toDate() 
+                    : (record?.checkOut ? new Date(record.checkOut as any) : null);
+                
+                const status = getStatusDetails(record?.status, !!isDayOff);
+                const totalHours = calculateHours(checkInDate, checkOutDate);
+                
+                const userName = (user as any).nombre || (user as any).name || 'Usuario';
+
+                return (
+                    <TableRow key={user.id}>
+                    <TableCell>
+                        <div className="flex items-center gap-3">
+                        <Avatar className="h-8 w-8">
+                            <AvatarImage src={(user as any).avatarUrl} />
+                            <AvatarFallback>{getUserInitials(userName)}</AvatarFallback>
+                        </Avatar>
+                        <div className="font-medium">{userName}</div>
+                        </div>
+                    </TableCell>
+                    <TableCell className="font-mono text-xs">
+                        {checkInDate ? format(checkInDate, 'HH:mm:ss') : '--:--'}
+                    </TableCell>
+                    <TableCell className="font-mono text-xs">
+                        {checkOutDate ? format(checkOutDate, 'HH:mm:ss') : '--:--'}
+                    </TableCell>
+                    
+                    <TableCell className="font-mono text-xs font-bold text-blue-600">
+                        {totalHours}
+                    </TableCell>
+                    
+                    <TableCell>
+                        <Badge variant="secondary" className={`flex w-fit items-center gap-1 ${status.className}`}>
+                            <status.icon className="h-3 w-3" />
+                            {status.label}
+                        </Badge>
+                    </TableCell>
+                    </TableRow>
+                );
+                })}
+                {(!users || users.length === 0) && (
+                    <TableRow>
+                        <TableCell colSpan={5} className="text-center h-24 text-muted-foreground">
+                            No hay usuarios registrados.
+                        </TableCell>
+                    </TableRow>
+                )}
+            </TableBody>
+            </Table>
+        </div>
+      </CardContent>
+    </Card>
+  );
 }

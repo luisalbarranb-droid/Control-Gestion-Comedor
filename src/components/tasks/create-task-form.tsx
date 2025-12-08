@@ -1,10 +1,10 @@
 'use client';
 
-import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { PlusCircle } from 'lucide-react';
+import { format } from 'date-fns';
+import { Calendar as CalendarIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -13,7 +13,6 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from '@/components/ui/dialog';
 import {
   Form,
@@ -24,7 +23,6 @@ import {
   FormMessage,
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
 import {
   Select,
   SelectContent,
@@ -32,94 +30,75 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { DatePicker } from '@/components/ui/datepicker';
-import { useToast } from '@/hooks/use-toast';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Calendar } from '@/components/ui/calendar';
+import { cn } from '@/lib/utils';
 import { areas } from '@/lib/placeholder-data';
-import type { Task, TaskPriority, AreaId, TaskPeriodicity, User } from '@/lib/types';
+import type { User } from '@/lib/types';
 
-type CreateTaskFormProps = {
-  isOpen: boolean;
-  onOpenChange: (isOpen: boolean) => void;
-  onTaskCreate: (task: Omit<Task, 'id' | 'creadoPor' | 'fechaCreacion' | 'estado' | 'checklist' | 'comentarios' | 'tags' | 'recurrente' | 'evidencias'>) => void;
+// Esquema actualizado con periodicidad
+const taskSchema = z.object({
+  titulo: z.string().min(1, 'El título es requerido'),
+  area: z.string().min(1, 'El área es requerida'),
+  prioridad: z.enum(['baja', 'media', 'alta', 'urgente']),
+  periodicidad: z.enum(['diaria', 'semanal', 'quincenal', 'mensual', 'eventual']), // Nuevo campo
+  asignadoA: z.string().min(1, 'Debes asignar un responsable'),
+  fechaVencimiento: z.date({
+    required_error: 'La fecha de vencimiento es requerida',
+  }),
+  descripcion: z.string().optional(),
+});
+
+interface CreateTaskFormProps {
+  onTaskCreate: (data: any) => void;
   users: User[];
-};
+  isOpen: boolean;
+  onOpenChange: (open: boolean) => void;
+}
 
-export function CreateTaskForm({ onTaskCreate, users, isOpen, onOpenChange }: CreateTaskFormProps) {
-  const priorities: TaskPriority[] = ['baja', 'media', 'alta', 'urgente'];
-  const periodicities: TaskPeriodicity[] = ['unica', 'diaria', 'semanal', 'quincenal', 'mensual'];
-
-  const formSchema = z.object({
-    titulo: z.string().min(3, 'El título debe tener al menos 3 caracteres.'),
-    descripcion: z.string().optional(),
-    area: z.string({ required_error: 'Debes seleccionar un área.' }),
-    asignadoA: z.string({ required_error: 'Debes asignar la tarea a un usuario.' }),
-    prioridad: z.string({ required_error: 'Debes seleccionar una prioridad.' }),
-    periodicidad: z.string({ required_error: 'Debes seleccionar una periodicidad.' }),
-    fechaVencimiento: z.date({ required_error: 'Debes seleccionar una fecha de vencimiento.' }),
-    tiempoEstimado: z.coerce.number().int().positive('El tiempo debe ser un número positivo.').optional(),
-  });
-
-  type FormValues = z.infer<typeof formSchema>;
-  
-  const { toast } = useToast();
-
-  const form = useForm<FormValues>({
-    resolver: zodResolver(formSchema),
+export function CreateTaskForm({
+  onTaskCreate,
+  users,
+  isOpen,
+  onOpenChange,
+}: CreateTaskFormProps) {
+  const form = useForm<z.infer<typeof taskSchema>>({
+    resolver: zodResolver(taskSchema),
     defaultValues: {
       titulo: '',
+      area: '',
+      prioridad: 'media',
+      periodicidad: 'eventual', // Valor por defecto
+      asignadoA: '',
       descripcion: '',
-      tiempoEstimado: undefined,
-      area: undefined,
-      asignadoA: undefined,
-      prioridad: undefined,
-      fechaVencimiento: undefined,
-      periodicidad: 'unica',
     },
   });
 
-  const handleOpenChange = (open: boolean) => {
-    onOpenChange(open);
-    if (!open) {
-      form.reset();
-    }
-  };
-  
-  function onSubmit(values: FormValues) {
-    const taskData = {
-        ...values,
-        prioridad: values.prioridad as TaskPriority,
-        periodicidad: values.periodicidad as TaskPeriodicity,
-        area: values.area as AreaId,
-        tiempoEstimado: values.tiempoEstimado || 0,
-        descripcion: values.descripcion || '',
-    };
-    onTaskCreate(taskData);
-    
-    toast({
-      title: 'Tarea Creada',
-      description: 'La nueva tarea ha sido añadida a la lista.',
+  const handleSubmit = (values: z.infer<typeof taskSchema>) => {
+    onTaskCreate(values);
+    form.reset({
+      titulo: '',
+      area: '',
+      prioridad: 'media',
+      periodicidad: 'eventual',
+      asignadoA: '',
+      descripcion: '',
     });
-    
-    handleOpenChange(false);
-  }
+  };
+
+  const getUserName = (user: any) => user.name || user.nombre || 'Usuario';
 
   return (
-    <Dialog open={isOpen} onOpenChange={handleOpenChange}>
-      <DialogTrigger asChild>
-        <Button>
-          <PlusCircle className="mr-2 h-4 w-4" />
-          Crear Tarea
-        </Button>
-      </DialogTrigger>
-      <DialogContent className="sm:max-w-xl">
+    <Dialog open={isOpen} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
           <DialogTitle>Crear Nueva Tarea</DialogTitle>
           <DialogDescription>
-            Completa los detalles de la nueva tarea.
+            Asigna una nueva tarea a un miembro del equipo.
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="grid gap-4 py-4 max-h-[70vh] overflow-y-auto pr-6">
+          <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
             <FormField
               control={form.control}
               name="titulo"
@@ -127,41 +106,32 @@ export function CreateTaskForm({ onTaskCreate, users, isOpen, onOpenChange }: Cr
                 <FormItem>
                   <FormLabel>Título</FormLabel>
                   <FormControl>
-                    <Input placeholder="Ej: Limpiar el comedor" {...field} />
+                    <Input placeholder="Ej: Limpieza de neveras" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
-            <FormField
-              control={form.control}
-              name="descripcion"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Descripción</FormLabel>
-                  <FormControl>
-                    <Textarea placeholder="Añade una descripción detallada de la tarea..." {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            
+            {/* Fila 1: Área y Prioridad */}
+            <div className="grid grid-cols-2 gap-4">
               <FormField
                 control={form.control}
                 name="area"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Área</FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value}>
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
                       <FormControl>
                         <SelectTrigger>
-                          <SelectValue placeholder="Selecciona un área" />
+                          <SelectValue placeholder="Selecciona área" />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        {areas.map(area => (
-                          <SelectItem key={area.id} value={area.id}>{area.nombre}</SelectItem>
+                        {areas.map((area) => (
+                          <SelectItem key={area.id} value={area.id}>
+                            {area.nombre}
+                          </SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
@@ -169,100 +139,138 @@ export function CreateTaskForm({ onTaskCreate, users, isOpen, onOpenChange }: Cr
                   </FormItem>
                 )}
               />
-              <FormField
-                control={form.control}
-                name="asignadoA"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Asignado a</FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Selecciona un usuario" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {users.map(user => (
-                          <SelectItem key={user.id} value={user.id}>{user.name}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+
               <FormField
                 control={form.control}
                 name="prioridad"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Prioridad</FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value}>
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
                       <FormControl>
                         <SelectTrigger>
-                          <SelectValue placeholder="Selecciona una prioridad" />
+                          <SelectValue placeholder="Selecciona prioridad" />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        {priorities.map(p => (
-                          <SelectItem key={p} value={p} className="capitalize">{p}</SelectItem>
-                        ))}
+                        <SelectItem value="baja">Baja</SelectItem>
+                        <SelectItem value="media">Media</SelectItem>
+                        <SelectItem value="alta">Alta</SelectItem>
+                        <SelectItem value="urgente">Urgente</SelectItem>
                       </SelectContent>
                     </Select>
                     <FormMessage />
                   </FormItem>
                 )}
               />
+            </div>
+
+            {/* Fila 2: Periodicidad y Fecha */}
+            <div className="grid grid-cols-2 gap-4">
               <FormField
                 control={form.control}
                 name="periodicidad"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Periodicidad</FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value}>
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
                       <FormControl>
                         <SelectTrigger>
-                          <SelectValue placeholder="Selecciona una periodicidad" />
+                          <SelectValue placeholder="Frecuencia" />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        {periodicities.map(p => (
-                          <SelectItem key={p} value={p} className="capitalize">{p === 'unica' ? 'Única Vez' : p}</SelectItem>
-                        ))}
+                        <SelectItem value="eventual">Eventual (Única vez)</SelectItem>
+                        <SelectItem value="diaria">Diaria</SelectItem>
+                        <SelectItem value="semanal">Semanal</SelectItem>
+                        <SelectItem value="quincenal">Quincenal</SelectItem>
+                        <SelectItem value="mensual">Mensual</SelectItem>
                       </SelectContent>
                     </Select>
                     <FormMessage />
                   </FormItem>
                 )}
               />
+
               <FormField
                 control={form.control}
                 name="fechaVencimiento"
                 render={({ field }) => (
                   <FormItem className="flex flex-col">
                     <FormLabel>Fecha de Vencimiento</FormLabel>
-                    <DatePicker date={field.value} setDate={field.onChange} />
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <FormControl>
+                          <Button
+                            variant={"outline"}
+                            className={cn(
+                              "w-full pl-3 text-left font-normal",
+                              !field.value && "text-muted-foreground"
+                            )}
+                          >
+                            {field.value ? (
+                              format(field.value, "PPP")
+                            ) : (
+                              <span>Selecciona una fecha</span>
+                            )}
+                            <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                          </Button>
+                        </FormControl>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0" align="start">
+                        <Calendar
+                          mode="single"
+                          selected={field.value}
+                          onSelect={field.onChange}
+                          disabled={(date) =>
+                            date < new Date()
+                          }
+                          initialFocus
+                        />
+                      </PopoverContent>
+                    </Popover>
                     <FormMessage />
                   </FormItem>
                 )}
               />
             </div>
+
             <FormField
               control={form.control}
-              name="tiempoEstimado"
+              name="asignadoA"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Tiempo Estimado (minutos)</FormLabel>
-                  <FormControl>
-                    <Input type="number" placeholder="Ej: 60" {...field} value={field.value ?? ''} />
-                  </FormControl>
+                  <FormLabel>Asignado a</FormLabel>
+                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecciona responsable" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {users.length > 0 ? (
+                        users.map((user) => (
+                          <SelectItem key={user.id} value={user.id}>
+                            {getUserName(user)}
+                          </SelectItem>
+                        ))
+                      ) : (
+                        <SelectItem value="no-users" disabled>
+                          No hay usuarios disponibles
+                        </SelectItem>
+                      )}
+                    </SelectContent>
+                  </Select>
                   <FormMessage />
                 </FormItem>
               )}
             />
-            <DialogFooter className='pt-4'>
-              <Button type="button" variant="outline" onClick={() => handleOpenChange(false)}>Cancelar</Button>
-              <Button type="submit">Guardar Tarea</Button>
+
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+                Cancelar
+              </Button>
+              <Button type="submit">Crear Tarea</Button>
             </DialogFooter>
           </form>
         </Form>

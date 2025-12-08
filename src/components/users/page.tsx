@@ -33,14 +33,13 @@ import { useCollection, useFirestore, useMemoFirebase, addDocumentNonBlocking } 
 import { collection, serverTimestamp } from 'firebase/firestore';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 
-// --- COMPONENTE PRINCIPAL ---
 export default function UsersManagementPage() {
   const { toast } = useToast();
   const firestore = useFirestore();
   
   // Estado para el buscador y el modal
   const [searchTerm, setSearchTerm] = useState('');
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isDialogOpen, setIsDialogOpen] = useState(false); // Controla si la ventana está abierta
   const [isLoading, setIsLoading] = useState(false);
 
   // Estados del formulario
@@ -65,7 +64,7 @@ export default function UsersManagementPage() {
       const newUser = {
         nombre: newName,
         email: newEmail,
-        role: newRole, // 'admin' o 'user'
+        role: newRole,
         status: 'active',
         createdAt: serverTimestamp(),
       };
@@ -74,7 +73,7 @@ export default function UsersManagementPage() {
 
       toast({
         title: "Usuario Creado",
-        description: `${newName} ha sido añadido al sistema correctamente.`,
+        description: `${newName} ha sido añadido al sistema.`,
       });
 
       // Limpiar y cerrar
@@ -94,7 +93,7 @@ export default function UsersManagementPage() {
     }
   };
 
-  // Filtrar usuarios por búsqueda
+  // Filtrar usuarios
   const filteredUsers = users?.filter((user: any) => 
     (user.nombre?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
     (user.email?.toLowerCase() || '').includes(searchTerm.toLowerCase())
@@ -110,21 +109,24 @@ export default function UsersManagementPage() {
           <p className="text-gray-500">Administra los usuarios, roles y permisos del sistema.</p>
         </div>
         
-        {/* BOTÓN MANUAL PARA ABRIR EL MODAL */}
+        {/* BOTÓN INDEPENDIENTE (Sin DialogTrigger) */}
         <Button 
-            className="bg-blue-600 hover:bg-blue-700 text-white gap-2"
-            onClick={() => setIsDialogOpen(true)}
+            className="bg-blue-600 hover:bg-blue-700 text-white gap-2 cursor-pointer z-50"
+            onClick={() => {
+                console.log("Abriendo ventana..."); 
+                setIsDialogOpen(true);
+            }} 
         >
           <Plus className="h-4 w-4" /> Nuevo Usuario
         </Button>
 
-        {/* VENTANA MODAL (DIALOG) */}
+        {/* VENTANA OCULTA (Se muestra cuando isDialogOpen es true) */}
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogContent className="sm:max-w-[425px]">
             <DialogHeader>
               <DialogTitle>Agregar Nuevo Usuario</DialogTitle>
               <DialogDescription>
-                Ingresa los datos del nuevo empleado. Se guardará en la base de datos.
+                Ingresa los datos del nuevo empleado.
               </DialogDescription>
             </DialogHeader>
             <form onSubmit={handleCreateUser} className="grid gap-4 py-4">

@@ -1,16 +1,7 @@
-
 'use client';
 
 import { useState, useMemo } from 'react';
-import {
-  Sidebar,
-  SidebarContent,
-  SidebarHeader,
-  SidebarInset,
-} from '@/components/ui/sidebar';
-import { Header } from '@/components/dashboard/header';
-import { MainNav } from '@/components/dashboard/main-nav';
-import { SquareCheck, UserCheck, UserX, Clock, Download, Calendar as CalendarIcon, MoreHorizontal, Check, X, ShieldAlert, FileClock } from 'lucide-react';
+import { UserCheck, UserX, Clock, Download, Calendar as CalendarIcon, MoreHorizontal, Check, X, ShieldAlert, FileClock, ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -50,7 +41,6 @@ import Link from 'next/link';
 import { useCollection, useDoc, useFirestore, useMemoFirebase, useUser, updateDocumentNonBlocking } from '@/firebase';
 import { collection, query, where, doc } from 'firebase/firestore';
 
-
 export const dynamic = 'force-dynamic';
 
 const statusConfig: Record<AttendanceStatus, { label: string, className: string, icon: React.ElementType }> = {
@@ -64,7 +54,6 @@ const statusConfig: Record<AttendanceStatus, { label: string, className: string,
     'dia-libre': { label: 'Día Libre', className: 'bg-sky-100 text-sky-800', icon: CalendarIcon },
 };
 
-
 export default function AttendanceReportsPage() {
     const { toast } = useToast();
     const firestore = useFirestore();
@@ -76,8 +65,8 @@ export default function AttendanceReportsPage() {
     }, [firestore, authUser]);
     const { data: currentUser, isLoading: isProfileLoading } = useDoc<User>(userDocRef);
 
-    const rol = currentUser?.rol;
-    const isAdmin = rol === 'admin' || rol === 'superadmin';
+    const role = (currentUser as any)?.role || (currentUser as any)?.rol;
+    const isAdmin = role === 'admin' || role === 'superadmin';
 
     const [activeTab, setActiveTab] = useState('general');
     const [date, setDate] = useState<DateRange | undefined>({
@@ -85,17 +74,14 @@ export default function AttendanceReportsPage() {
         to: endOfMonth(new Date()),
     });
 
-    // --- Fetch Users ---
     const usersCollectionRef = useMemoFirebase(
         () => (firestore && isAdmin ? collection(firestore, 'users') : null),
         [firestore, isAdmin]
     );
     const { data: usersData, isLoading: isLoadingUsers } = useCollection<User>(usersCollectionRef);
     
-    // For non-admins, the user list is just the current user
     const users = isAdmin ? usersData : (currentUser ? [currentUser] : []);
 
-    // --- Fetch Attendance Records for date range ---
     const recordsQuery = useMemoFirebase(() => {
         if (!firestore || !authUser || !date?.from) return null;
         const from = new Date(date.from);
@@ -118,16 +104,17 @@ export default function AttendanceReportsPage() {
     const { data: filteredRecords, isLoading: isLoadingRecords } = useCollection<AttendanceRecord>(recordsQuery);
 
     const getUser = (userId: string) => users?.find((u) => u.id === userId);
+    const getUserName = (user: any) => user?.name || user?.nombre || 'Empleado';
     const getUserInitials = (name: string) => name ? name.split(' ').map((n) => n[0]).join('') : '';
     
     const consolidatedData = useMemo(() => {
         if (!users || !filteredRecords) return [];
 
-        const userStats: Record<string, ConsolidatedRecord> = users.reduce((acc, user) => {
+        const userStats: Record<string, ConsolidatedRecord> = users.reduce((acc, user: any) => {
             if (user) {
               acc[user.id] = {
                   userId: user.id,
-                  userName: user.nombre,
+                  userName: getUserName(user),
                   attendedDays: 0,
                   absentDays: 0,
                   freeDays: 0,
@@ -142,8 +129,10 @@ export default function AttendanceReportsPage() {
             const userStat = userStats[record.userId];
             if (!userStat) return;
             
-            const checkInDate = record.checkIn.toDate ? record.checkIn.toDate() : new Date(record.checkIn as any);
-            const checkOutDate = record.checkOut?.toDate ? record.checkOut.toDate() : record.checkOut ? new Date(record.checkOut as any) : null;
+            const rCheckIn = record.checkIn as any;
+            const rCheckOut = record.checkOut as any;
+            const checkInDate = rCheckIn?.toDate ? rCheckIn.toDate() : new Date(rCheckIn);
+            const checkOutDate = rCheckOut?.toDate ? rCheckOut.toDate() : rCheckOut ? new Date(rCheckOut) : null;
 
             switch (record.status) {
                 case 'presente':
@@ -173,6 +162,7 @@ export default function AttendanceReportsPage() {
     const absenceRecords = filteredRecords?.filter(r => r.status === 'ausente' || r.status === 'justificado' || r.status === 'no-justificado' || r.status === 'vacaciones') || [];
     const tardyRecords = filteredRecords?.filter(r => r.status === 'retardo') || [];
 
+    // AQUÍ ESTÁN LAS DEFINICIONES QUE FALTABAN O SE BORRARON
     const totalAbsences = absenceRecords.length;
     const totalTardies = tardyRecords.length;
     const totalAttendances = filteredRecords?.filter(r => r.status === 'presente' || r.status === 'retardo').length || 0;
@@ -202,11 +192,11 @@ export default function AttendanceReportsPage() {
         const baseMapping = (record: AttendanceRecord) => {
             const user = getUser(record.userId);
             const statusInfo = statusConfig[record.status];
-            const checkInDate = record.checkIn.toDate ? record.checkIn.toDate() : new Date(record.checkIn as any);
-            const checkOutDate = record.checkOut?.toDate ? record.checkOut.toDate() : record.checkOut ? new Date(record.checkOut as any) : null;
+            const checkInDate = (record.checkIn as any).toDate ? (record.checkIn as any).toDate() : new Date(record.checkIn as any);
+            const checkOutDate = (record.checkOut as any)?.toDate ? (record.checkOut as any).toDate() : record.checkOut ? new Date(record.checkOut as any) : null;
             return {
-                'Empleado': user?.nombre || 'N/A',
-                'Cédula': user?.cedula || 'N/A',
+                'Empleado': getUserName(user),
+                'Cédula': (user as any)?.cedula || 'N/A',
                 'Fecha': format(checkInDate, 'dd/MM/yyyy'),
                 'Hora Entrada': record.status !== 'ausente' ? format(checkInDate, 'HH:mm:ss') : 'N/A',
                 'Hora Salida': checkOutDate ? format(checkOutDate, 'HH:mm:ss') : 'N/A',
@@ -238,7 +228,6 @@ export default function AttendanceReportsPage() {
             sheetName = 'Consolidado Quincenal';
             fileName = `Reporte_Consolidado_Asistencia_${format(new Date(), 'yyyy-MM-dd')}.xlsx`;
         }
-
 
         const worksheet = XLSX.utils.json_to_sheet(dataToExport);
         const workbook = XLSX.utils.book_new();
@@ -273,23 +262,27 @@ export default function AttendanceReportsPage() {
                 const statusInfo = statusConfig[record.status];
                 if (!user) return null;
 
-                const checkInDate = record.checkIn.toDate ? record.checkIn.toDate() : new Date(record.checkIn as any);
-                const checkOutDate = record.checkOut?.toDate ? record.checkOut.toDate() : record.checkOut ? new Date(record.checkOut as any) : null;
+                const rCheckIn = record.checkIn as any;
+                const rCheckOut = record.checkOut as any;
+                const checkInDate = rCheckIn?.toDate ? rCheckIn.toDate() : new Date(rCheckIn);
+                const checkOutDate = rCheckOut?.toDate ? rCheckOut.toDate() : rCheckOut ? new Date(rCheckOut) : null;
+
+                const userName = getUserName(user);
 
                 return (
                 <TableRow key={record.id}>
                     <TableCell>
                         <div className="flex items-center gap-3">
                             <Avatar className="h-9 w-9">
-                                <AvatarImage src={user.avatarUrl} alt={user.nombre} />
-                                <AvatarFallback>{getUserInitials(user.nombre)}</AvatarFallback>
+                                <AvatarImage src={(user as any)?.avatarUrl} alt={userName} />
+                                <AvatarFallback>{getUserInitials(userName)}</AvatarFallback>
                             </Avatar>
-                            <div className="font-medium">{user.nombre}</div>
+                            <div className="font-medium">{userName}</div>
                         </div>
                     </TableCell>
                     <TableCell>{format(checkInDate, 'dd/MM/yyyy')}</TableCell>
                     <TableCell className="font-mono">
-                        {record.status !== 'ausente' && record.status !== 'justificado' && record.status !== 'no-justificado' && record.status !== 'vacaciones' ? format(checkInDate, 'HH:mm:ss') : 'N/A'}
+                        {record.status !== 'ausente' ? format(checkInDate, 'HH:mm:ss') : 'N/A'}
                     </TableCell>
                     <TableCell className="font-mono">
                         {checkOutDate ? format(checkOutDate, 'HH:mm:ss') : '--:--'}
@@ -333,151 +326,144 @@ export default function AttendanceReportsPage() {
 
     const isLoading = isAuthLoading || isProfileLoading || isLoadingRecords || (isAdmin && isLoadingUsers);
 
-    if (isAuthLoading) { // Still waiting for auth
+    if (isAuthLoading) { 
         return <div className="flex items-center justify-center h-screen">Cargando...</div>;
     }
 
     return (
-        <div className="min-h-screen w-full">
-            <Sidebar>
-                <SidebarHeader className="p-4 justify-center flex items-center gap-2">
-                <SquareCheck className="size-8 text-primary" />
-                <h1 className="font-headline text-2xl font-bold">Comedor</h1>
-                </SidebarHeader>
-                <SidebarContent>
-                <MainNav />
-                </SidebarContent>
-            </Sidebar>
-            <SidebarInset>
-                <Header />
-                <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
-                    <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-                        <h1 className="font-headline text-2xl font-bold md:text-3xl">
-                        Reportes de Asistencia
-                        </h1>
-                        <div className="flex items-center gap-2">
-                             <Popover>
-                                <PopoverTrigger asChild>
-                                    <Button id="date" variant={"outline"} className={cn("w-full md:w-[300px] justify-start text-left font-normal", !date && "text-muted-foreground")}>
-                                    <CalendarIcon className="mr-2 h-4 w-4" />
-                                    {date?.from ? ( date.to ? ( <> {format(date.from, "LLL dd, y", {locale: es})} - {format(date.to, "LLL dd, y", {locale: es})} </> ) : ( format(date.from, "LLL dd, y") ) ) : ( <span>Selecciona un rango</span> )}
-                                    </Button>
-                                </PopoverTrigger>
-                                <PopoverContent className="w-auto p-0" align="end">
-                                    <Calendar initialFocus mode="range" defaultMonth={date?.from} selected={date} onSelect={setDate} numberOfMonths={2} locale={es} />
-                                </PopoverContent>
-                            </Popover>
-                            {isAdmin && (<Button onClick={handleExport}>
-                                <Download className="mr-2 h-4 w-4" />
-                                Exportar a Excel
-                            </Button>)}
-                             <Button asChild variant="outline">
-                                <Link href="/attendance">Volver</Link>
+        <div className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
+            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                <div>
+                    <Button variant="ghost" className="mb-2 pl-0 hover:bg-transparent hover:text-blue-600" asChild>
+                        <Link href="/attendance" className="flex items-center gap-2">
+                            <ArrowLeft className="h-4 w-4" /> Volver a Asistencia
+                        </Link>
+                    </Button>
+                    <h1 className="font-headline text-2xl font-bold md:text-3xl">
+                    Reportes de Asistencia
+                    </h1>
+                    <p className="text-muted-foreground">
+                    Análisis de puntualidad y ausencias.
+                    </p>
+                </div>
+                <div className="flex items-center gap-2">
+                     <Popover>
+                        <PopoverTrigger asChild>
+                            <Button id="date" variant={"outline"} className={cn("w-full md:w-[300px] justify-start text-left font-normal", !date && "text-muted-foreground")}>
+                            <CalendarIcon className="mr-2 h-4 w-4" />
+                            {date?.from ? ( date.to ? ( <> {format(date.from, "LLL dd, y", {locale: es})} - {format(date.to, "LLL dd, y", {locale: es})} </> ) : ( format(date.from, "LLL dd, y") ) ) : ( <span>Selecciona un rango</span> )}
                             </Button>
-                        </div>
-                    </div>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0" align="end">
+                            <Calendar initialFocus mode="range" defaultMonth={date?.from} selected={date} onSelect={setDate} numberOfMonths={2} locale={es} />
+                        </PopoverContent>
+                    </Popover>
+                    {isAdmin && (<Button onClick={handleExport}>
+                        <Download className="mr-2 h-4 w-4" />
+                        Exportar a Excel
+                    </Button>)}
+                </div>
+            </div>
 
-                    <div className="grid gap-4 md:grid-cols-3">
-                        {kpiCards.map(kpi => (
-                            <Card key={kpi.title}>
-                                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                                <CardTitle className="text-sm font-medium">{kpi.title}</CardTitle>
-                                <kpi.icon className={cn("h-4 w-4 text-muted-foreground", kpi.className)} />
-                                </CardHeader>
-                                <CardContent>
-                                <div className={cn("text-2xl font-bold", kpi.className)}>{isLoading ? '...' : kpi.value}</div>
-                                </CardContent>
-                            </Card>
-                        ))}
-                    </div>
+            <div className="grid gap-4 md:grid-cols-3">
+                {kpiCards.map(kpi => (
+                    <Card key={kpi.title}>
+                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                        <CardTitle className="text-sm font-medium">{kpi.title}</CardTitle>
+                        <kpi.icon className={cn("h-4 w-4 text-muted-foreground", kpi.className)} />
+                        </CardHeader>
+                        <CardContent>
+                        <div className={cn("text-2xl font-bold", kpi.className)}>{isLoading ? '...' : kpi.value}</div>
+                        </CardContent>
+                    </Card>
+                ))}
+            </div>
 
-                    <Tabs value={activeTab} onValueChange={setActiveTab}>
-                        <TabsList className={cn("grid w-full", isAdmin ? "grid-cols-4" : "grid-cols-1")}>
-                            <TabsTrigger value="general">Historial General</TabsTrigger>
-                            {isAdmin && <TabsTrigger value="absences">Reporte de Ausencias</TabsTrigger>}
-                            {isAdmin && <TabsTrigger value="tardies">Reporte de Retardos</TabsTrigger>}
-                            {isAdmin && <TabsTrigger value="consolidated">Consolidado Quincenal</TabsTrigger>}
-                        </TabsList>
-                        <TabsContent value="general">
-                            <Card>
-                                <CardHeader>
-                                    <CardTitle>Historial de Asistencia</CardTitle>
-                                    <CardDescription>Detalle de todos los registros de asistencia para el período seleccionado.</CardDescription>
-                                </CardHeader>
-                                <CardContent>
-                                    {isLoading ? <p>Cargando registros...</p> : renderTable(filteredRecords || [], 'general-table')}
-                                </CardContent>
-                            </Card>
-                        </TabsContent>
-                         <TabsContent value="absences">
-                            <Card>
-                                <CardHeader>
-                                    <CardTitle>Reporte de Ausencias</CardTitle>
-                                    <CardDescription>Detalle de todos los empleados ausentes para el período seleccionado.</CardDescription>
-                                </CardHeader>
-                                <CardContent>
-                                    {isLoading ? <p>Cargando registros...</p> : renderTable(absenceRecords, 'absences-table', true)}
-                                </CardContent>
-                            </Card>
-                        </TabsContent>
-                         <TabsContent value="tardies">
-                            <Card>
-                                <CardHeader>
-                                    <CardTitle>Reporte de Retardos</CardTitle>
-                                    <CardDescription>Detalle de todos los empleados con retardo para el período seleccionado.</CardDescription>
-                                </CardHeader>
-                                <CardContent>
-                                    {isLoading ? <p>Cargando registros...</p> : renderTable(tardyRecords, 'tardies-table')}
-                                </CardContent>
-                            </Card>
-                        </TabsContent>
-                         <TabsContent value="consolidated">
-                            <Card>
-                                <CardHeader>
-                                    <CardTitle className="flex items-center gap-2"><FileClock />Reporte Consolidado Quincenal</CardTitle>
-                                    <CardDescription>Resumen de asistencia y horas trabajadas por empleado en el período seleccionado.</CardDescription>
-                                </CardHeader>
-                                <CardContent>
-                                    {isLoading ? <p>Cargando resumen...</p> : (
-                                        <Table>
-                                            <TableHeader>
-                                                <TableRow>
-                                                    <TableHead>Empleado</TableHead>
-                                                    <TableHead className="text-center">Días Asistidos</TableHead>
-                                                    <TableHead className="text-center">Días Ausente</TableHead>
-                                                    <TableHead className="text-center">Días Libres</TableHead>
-                                                    <TableHead className="text-center">Reposos</TableHead>
-                                                    <TableHead className="text-center">Total Horas</TableHead>
-                                                </TableRow>
-                                            </TableHeader>
-                                            <TableBody>
-                                                {consolidatedData.map(data => (
-                                                    <TableRow key={data.userId}>
-                                                        <TableCell>
-                                                            <div className="flex items-center gap-3">
-                                                                <Avatar className="h-9 w-9">
-                                                                    <AvatarImage src={getUser(data.userId)?.avatarUrl} alt={data.userName} />
-                                                                    <AvatarFallback>{getUserInitials(data.userName)}</AvatarFallback>
-                                                                </Avatar>
-                                                                <div className="font-medium">{data.userName}</div>
-                                                            </div>
-                                                        </TableCell>
-                                                        <TableCell className="text-center font-mono">{data.attendedDays}</TableCell>
-                                                        <TableCell className="text-center font-mono">{data.absentDays}</TableCell>
-                                                        <TableCell className="text-center font-mono">{data.freeDays}</TableCell>
-                                                        <TableCell className="text-center font-mono">{data.justifiedRestDays}</TableCell>
-                                                        <TableCell className="text-center font-mono">{data.totalHours.toFixed(1)}</TableCell>
-                                                    </TableRow>
-                                                ))}
-                                            </TableBody>
-                                        </Table>
-                                    )}
-                                </CardContent>
-                            </Card>
-                        </TabsContent>
-                    </Tabs>
-                </main>
-            </SidebarInset>
+            <Tabs value={activeTab} onValueChange={setActiveTab}>
+                <TabsList className={cn("grid w-full", isAdmin ? "grid-cols-4" : "grid-cols-1")}>
+                    <TabsTrigger value="general">Historial General</TabsTrigger>
+                    {isAdmin && <TabsTrigger value="absences">Reporte de Ausencias</TabsTrigger>}
+                    {isAdmin && <TabsTrigger value="tardies">Reporte de Retardos</TabsTrigger>}
+                    {isAdmin && <TabsTrigger value="consolidated">Consolidado Quincenal</TabsTrigger>}
+                </TabsList>
+                <TabsContent value="general">
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>Historial de Asistencia</CardTitle>
+                            <CardDescription>Detalle de todos los registros de asistencia.</CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                            {isLoading ? <p>Cargando registros...</p> : renderTable(filteredRecords || [], 'general-table')}
+                        </CardContent>
+                    </Card>
+                </TabsContent>
+                 <TabsContent value="absences">
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>Reporte de Ausencias</CardTitle>
+                            <CardDescription>Detalle de empleados ausentes.</CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                            {isLoading ? <p>Cargando registros...</p> : renderTable(absenceRecords, 'absences-table', true)}
+                        </CardContent>
+                    </Card>
+                </TabsContent>
+                 <TabsContent value="tardies">
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>Reporte de Retardos</CardTitle>
+                            <CardDescription>Detalle de retardos.</CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                            {isLoading ? <p>Cargando registros...</p> : renderTable(tardyRecords, 'tardies-table')}
+                        </CardContent>
+                    </Card>
+                </TabsContent>
+                 <TabsContent value="consolidated">
+                    <Card>
+                        <CardHeader>
+                            <CardTitle className="flex items-center gap-2"><FileClock />Reporte Consolidado Quincenal</CardTitle>
+                            <CardDescription>Resumen de asistencia y horas.</CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                            {isLoading ? <p>Cargando resumen...</p> : (
+                                <Table>
+                                    <TableHeader>
+                                        <TableRow>
+                                            <TableHead>Empleado</TableHead>
+                                            <TableHead className="text-center">Asistidos</TableHead>
+                                            <TableHead className="text-center">Ausencias</TableHead>
+                                            <TableHead className="text-center">Libres</TableHead>
+                                            <TableHead className="text-center">Reposos</TableHead>
+                                            <TableHead className="text-center">Horas</TableHead>
+                                        </TableRow>
+                                    </TableHeader>
+                                    <TableBody>
+                                        {consolidatedData.map(data => (
+                                            <TableRow key={data.userId}>
+                                                <TableCell>
+                                                    <div className="flex items-center gap-3">
+                                                        <Avatar className="h-9 w-9">
+                                                            <AvatarImage src={(getUser(data.userId) as any)?.avatarUrl} alt={data.userName} />
+                                                            <AvatarFallback>{getUserInitials(data.userName)}</AvatarFallback>
+                                                        </Avatar>
+                                                        <div className="font-medium">{data.userName}</div>
+                                                    </div>
+                                                </TableCell>
+                                                <TableCell className="text-center font-mono">{data.attendedDays}</TableCell>
+                                                <TableCell className="text-center font-mono">{data.absentDays}</TableCell>
+                                                <TableCell className="text-center font-mono">{data.freeDays}</TableCell>
+                                                <TableCell className="text-center font-mono">{data.justifiedRestDays}</TableCell>
+                                                <TableCell className="text-center font-mono">{data.totalHours.toFixed(1)}</TableCell>
+                                            </TableRow>
+                                        ))}
+                                    </TableBody>
+                                </Table>
+                            )}
+                        </CardContent>
+                    </Card>
+                </TabsContent>
+            </Tabs>
         </div>
     );
 }

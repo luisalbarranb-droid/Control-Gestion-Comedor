@@ -1,10 +1,10 @@
-
 'use client';
 
 import { useEffect, useMemo } from 'react';
 import { useForm, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
+import { format } from 'date-fns';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -30,10 +30,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { DatePicker } from '@/components/ui/datepicker';
 import { PlusCircle, Trash2 } from 'lucide-react';
-import type { InventoryItem, InventoryOrderItem } from '@/lib/types';
-import { Separator } from '../ui/separator';
+import type { InventoryItem } from '@/lib/types';
+import { Separator } from '@/components/ui/separator';
 
 const formSchema = z.object({
   proveedor: z.string().min(1, "El proveedor es obligatorio."),
@@ -42,7 +41,7 @@ const formSchema = z.object({
   estado: z.enum(['pendiente', 'completado', 'cancelado']),
   items: z.array(z.object({
     itemId: z.string({ required_error: 'Debes seleccionar un artículo.' }),
-    quantity: z.coerce.number().min(0.1, "La cantidad debe ser mayor a 0."),
+    quantity: z.coerce.number().min(1, "La cantidad debe ser mayor a 0."),
   })).min(1, "Debes añadir al menos un artículo."),
 });
 
@@ -51,7 +50,7 @@ type FormValues = z.infer<typeof formSchema>;
 interface OrderFormProps {
   isOpen: boolean;
   onOpenChange: (isOpen: boolean) => void;
-  onSave: (data: Omit<FormValues, 'items'> & { items: { itemId: string; quantity: number }[] }) => void;
+  onSave: (data: any) => void;
   inventoryItems: InventoryItem[];
 }
 
@@ -77,11 +76,10 @@ export function OrderForm({ isOpen, onOpenChange, onSave, inventoryItems }: Orde
   }, [inventoryItems]);
 
   useEffect(() => {
-    if (!isOpen) {
+    if (isOpen) {
       form.reset({
         proveedor: '',
         fechaPedido: new Date(),
-        fechaEntregaEstimada: undefined,
         estado: 'pendiente',
         items: [{ itemId: '', quantity: 1 }],
       });
@@ -97,6 +95,7 @@ export function OrderForm({ isOpen, onOpenChange, onSave, inventoryItems }: Orde
       })),
     };
     onSave(orderData);
+    onOpenChange(false);
   }
 
   return (
@@ -105,7 +104,7 @@ export function OrderForm({ isOpen, onOpenChange, onSave, inventoryItems }: Orde
         <DialogHeader>
           <DialogTitle>Crear Nuevo Pedido</DialogTitle>
           <DialogDescription>
-            Genera una nueva orden de compra para un proveedor.
+            Genera una nueva orden de compra.
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>
@@ -117,29 +116,38 @@ export function OrderForm({ isOpen, onOpenChange, onSave, inventoryItems }: Orde
                 render={({ field }) => (
                   <FormItem className="sm:col-span-1">
                     <FormLabel>Proveedor</FormLabel>
-                     <Select onValueChange={field.onChange} defaultValue={field.value}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Selecciona un proveedor" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {suppliers.map(supplier => (
-                          <SelectItem key={supplier} value={supplier}>{supplier}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    {suppliers.length > 0 ? (
+                         <Select onValueChange={field.onChange} value={field.value}>
+                         <FormControl>
+                           <SelectTrigger>
+                             <SelectValue placeholder="Selecciona..." />
+                           </SelectTrigger>
+                         </FormControl>
+                         <SelectContent>
+                           {suppliers.map((supplier, idx) => (
+                             <SelectItem key={idx} value={supplier}>{supplier}</SelectItem>
+                           ))}
+                           <SelectItem value="nuevo">+ Nuevo Proveedor</SelectItem>
+                         </SelectContent>
+                       </Select>
+                    ) : (
+                        <FormControl>
+                            <Input placeholder="Nombre del proveedor" {...field} />
+                        </FormControl>
+                    )}
                     <FormMessage />
                   </FormItem>
                 )}
               />
-               <FormField
+              <FormField
                 control={form.control}
                 name="fechaPedido"
                 render={({ field }) => (
                   <FormItem className="flex flex-col sm:col-span-1">
-                    <FormLabel>Fecha del Pedido</FormLabel>
-                    <DatePicker date={field.value} setDate={field.onChange} />
+                    <FormLabel>Fecha Pedido</FormLabel>
+                     <FormControl>
+                        <Input type="date" value={field.value ? format(field.value, 'yyyy-MM-dd') : ''} onChange={(e) => field.onChange(new Date(e.target.value))} />
+                     </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -149,8 +157,10 @@ export function OrderForm({ isOpen, onOpenChange, onSave, inventoryItems }: Orde
                 name="fechaEntregaEstimada"
                 render={({ field }) => (
                   <FormItem className="flex flex-col sm:col-span-1">
-                    <FormLabel>Fecha Entrega Estimada</FormLabel>
-                    <DatePicker date={field.value} setDate={field.onChange} />
+                    <FormLabel>Entrega Estimada</FormLabel>
+                    <FormControl>
+                        <Input type="date" value={field.value ? format(field.value, 'yyyy-MM-dd') : ''} onChange={(e) => field.onChange(new Date(e.target.value))} />
+                     </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -160,7 +170,7 @@ export function OrderForm({ isOpen, onOpenChange, onSave, inventoryItems }: Orde
             <Separator />
 
             <div>
-              <h3 className="text-lg font-medium mb-2">Artículos del Pedido</h3>
+              <h3 className="text-lg font-medium mb-2">Artículos</h3>
               <div className="space-y-4">
                 {fields.map((field, index) => (
                   <div key={field.id} className="flex items-end gap-2">
@@ -170,10 +180,10 @@ export function OrderForm({ isOpen, onOpenChange, onSave, inventoryItems }: Orde
                       render={({ field }) => (
                         <FormItem className="flex-1">
                           <FormLabel className={index !== 0 ? "sr-only" : ""}>Artículo</FormLabel>
-                          <Select onValueChange={field.onChange} defaultValue={field.value}>
+                          <Select onValueChange={field.onChange} value={field.value}>
                             <FormControl>
                               <SelectTrigger>
-                                <SelectValue placeholder="Selecciona un artículo" />
+                                <SelectValue placeholder="Selecciona..." />
                               </SelectTrigger>
                             </FormControl>
                             <SelectContent>
@@ -193,11 +203,10 @@ export function OrderForm({ isOpen, onOpenChange, onSave, inventoryItems }: Orde
                       name={`items.${index}.quantity`}
                       render={({ field }) => (
                         <FormItem className="w-24">
-                          <FormLabel className={index !== 0 ? "sr-only" : ""}>Cantidad</FormLabel>
+                          <FormLabel className={index !== 0 ? "sr-only" : ""}>Cant.</FormLabel>
                           <FormControl>
-                            <Input type="number" placeholder="0" {...field} />
+                            <Input type="number" min="1" {...field} />
                           </FormControl>
-                           <FormMessage />
                         </FormItem>
                       )}
                     />
@@ -207,13 +216,7 @@ export function OrderForm({ isOpen, onOpenChange, onSave, inventoryItems }: Orde
                   </div>
                 ))}
               </div>
-               <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                className="mt-4"
-                onClick={() => append({ itemId: '', quantity: 1 })}
-              >
+               <Button type="button" variant="outline" size="sm" className="mt-4" onClick={() => append({ itemId: '', quantity: 1 })}>
                 <PlusCircle className="mr-2 h-4 w-4" />
                 Añadir Artículo
               </Button>
@@ -221,7 +224,7 @@ export function OrderForm({ isOpen, onOpenChange, onSave, inventoryItems }: Orde
 
             <DialogFooter className="pt-4">
               <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
-              <Button type="submit">Guardar Pedido</Button>
+              <Button type="submit">Guardar</Button>
             </DialogFooter>
           </form>
         </Form>

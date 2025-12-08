@@ -1,135 +1,136 @@
-
 'use client';
 
-import { useState, useEffect } from 'react';
-import { startOfWeek, addDays, format, getDay } from 'date-fns';
+import { useState, useMemo } from 'react';
+import { startOfWeek, addDays, format, getDay, isSunday } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Button } from '@/components/ui/button';
-import type { User, DayOff, DayOfWeek } from '@/lib/types';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Badge } from '@/components/ui/badge';
+import { CheckCircle2, AlertCircle } from 'lucide-react';
+import type { User, DayOff } from '@/lib/types';
 import { cn } from '@/lib/utils';
 
 interface PlanningTableProps {
   week: Date;
   users: User[];
-  initialDaysOff: DayOff[];
-  onSave: (daysOff: Omit<DayOff, 'id'>[]) => void;
+  daysOff: DayOff[]; // Recibimos los días libres ya cargados
+  onToggleDay: (userId: string, dateIso: string, currentStatus: boolean) => void;
 }
 
-export function PlanningTable({ week, users, initialDaysOff, onSave }: PlanningTableProps) {
-  const [daysOffMap, setDaysOffMap] = useState<Record<string, DayOfWeek | undefined>>({});
-
+export function PlanningTable({ week, users, daysOff, onToggleDay }: PlanningTableProps) {
+  
   const weekStartDate = startOfWeek(week, { weekStartsOn: 1 });
-  const weekStartDateString = format(weekStartDate, 'yyyy-MM-dd');
 
-  useEffect(() => {
-    const weeklyData = initialDaysOff.filter(d => d.weekStartDate === weekStartDateString);
-    const initialMap = weeklyData.reduce((acc, curr) => {
-      acc[curr.userId] = curr.dayOff;
-      return acc;
-    }, {} as Record<string, DayOfWeek | undefined>);
-    setDaysOffMap(initialMap);
-  }, [week, initialDaysOff, weekStartDateString]);
-
-  const handleDayClick = (userId: string, dayIndex: number) => {
-    // Sunday is day 0 from getDay, but we consider it day 6 for our 0-6 week starting Monday
-    if (dayIndex === 0) return; // Cannot change Sunday
-
-    const adjustedDayIndex = (dayIndex === 0 ? 6 : dayIndex - 1) as DayOfWeek;
-
-    setDaysOffMap(prev => {
-      const newMap = { ...prev };
-      if (newMap[userId] === adjustedDayIndex) {
-        // Deselect if clicking the same day
-        delete newMap[userId];
-      } else {
-        // Select new day
-        newMap[userId] = adjustedDayIndex;
-      }
-      return newMap;
-    });
-  };
-
-  const handleSave = () => {
-    const newDaysOff: Omit<DayOff, 'id'>[] = Object.entries(daysOffMap)
-      .filter(([, dayOff]) => dayOff !== undefined)
-      .map(([userId, dayOff]) => ({
-        userId,
-        weekStartDate: weekStartDateString,
-        dayOff: dayOff as DayOfWeek,
-      }));
-    
-    onSave(newDaysOff);
-  };
-
-  const weekdays = Array.from({ length: 7 }).map((_, i) => {
-    const day = addDays(weekStartDate, i);
-    // getDay() returns 0 for Sunday, 1 for Monday... We want Sunday to be at the end.
-    const dayIndex = getDay(day);
-    return { 
+  // Generar columnas (Lunes a Domingo)
+  const weekdays = useMemo(() => {
+    return Array.from({ length: 7 }).map((_, i) => {
+      const day = addDays(weekStartDate, i);
+      return { 
         date: day, 
-        name: format(day, 'eee', { locale: es }), 
-        dayNumber: format(day, 'd'),
-        isSunday: dayIndex === 0
-    };
-  });
+        isoDate: format(day, 'yyyy-MM-dd'),
+        name: format(day, 'EEEE', { locale: es }), 
+        dayNumber: format(day, 'dd'),
+        isSunday: isSunday(day)
+      };
+    });
+  }, [weekStartDate]);
 
-  const getUserInitials = (name: string) => name ? name.split(' ').map((n) => n[0]).join('') : '';
+  // Verificar si un día está marcado
+  const isDayChecked = (userId: string, dateIso: string) => {
+      return daysOff.some(d => d.userId === userId && d.date === dateIso);
+  };
+
+  // Contar días libres (Domingo + Marcados)
+  const getDaysOffCount = (userId: string) => {
+      const manual = daysOff.filter(d => d.userId === userId).length;
+      return manual + 1; // +1 por el domingo
+  };
+
+  const getUserInitials = (name: string) => name ? name.split(' ').map((n) => n[0]).join('').substring(0, 2) : 'US';
 
   return (
-    <div>
+    <div className="border rounded-lg overflow-hidden">
         <Table>
             <TableHeader>
-                <TableRow>
-                    <TableHead className="w-[250px]">Empleado</TableHead>
+                <TableRow className="bg-gray-50">
+                    <TableHead className="w-[250px] sticky left-0 bg-gray-50 z-10 shadow-sm">Empleado</TableHead>
                     {weekdays.map(({ name, dayNumber, isSunday }) => (
-                        <TableHead key={name} className={cn("text-center", isSunday && "bg-muted/50")}>
-                            <div className="capitalize">{name}</div>
-                            <div className="text-xs text-muted-foreground">{dayNumber}</div>
+                        <TableHead key={name} className={cn("text-center border-l min-w-[100px]", isSunday && "bg-orange-50 text-orange-700")}>
+                            <div className="capitalize font-bold">{name}</div>
+                            <div className="text-xs font-normal opacity-70">{dayNumber}</div>
                         </TableHead>
                     ))}
                 </TableRow>
             </TableHeader>
             <TableBody>
                 {users.map(user => {
-                    const userDayOffIndex = daysOffMap[user.id];
+                    const count = getDaysOffCount(user.id);
+                    const isComplete = count === 2;
+                    const isOver = count > 2;
+
                     return (
-                        <TableRow key={user.id}>
-                            <TableCell>
-                                <div className="flex items-center gap-3">
-                                    <Avatar className="h-9 w-9">
-                                        <AvatarImage src={user.avatarUrl} alt={user.nombre} />
-                                        <AvatarFallback>{getUserInitials(user.nombre)}</AvatarFallback>
-                                    </Avatar>
-                                    <div className="font-medium">{user.nombre}</div>
+                        <TableRow key={user.id} className="hover:bg-gray-50 group">
+                            <TableCell className="sticky left-0 bg-white z-10 group-hover:bg-gray-50 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]">
+                                <div className="flex items-center justify-between gap-2">
+                                    <div className="flex items-center gap-3">
+                                        <Avatar className="h-8 w-8">
+                                            <AvatarImage src={(user as any).avatarUrl} />
+                                            <AvatarFallback className="bg-blue-100 text-blue-700 text-xs">
+                                                {getUserInitials((user as any).nombre || (user as any).name)}
+                                            </AvatarFallback>
+                                        </Avatar>
+                                        <div>
+                                            <div className="font-medium text-gray-900">{(user as any).nombre || (user as any).name || 'Usuario'}</div>
+                                            <div className="text-[10px] text-gray-500 capitalize">{(user as any).role === 'admin' ? 'Admin' : 'Personal'}</div>
+                                        </div>
+                                    </div>
+                                    
+                                    <Badge variant="outline" className={cn("whitespace-nowrap ml-2", 
+                                        isComplete ? "bg-green-50 text-green-700 border-green-200" : 
+                                        isOver ? "bg-red-50 text-red-700 border-red-200" : 
+                                        "bg-gray-100 text-gray-500"
+                                    )}>
+                                        {isComplete && <CheckCircle2 className="h-3 w-3 mr-1" />}
+                                        {isOver && <AlertCircle className="h-3 w-3 mr-1" />}
+                                        {count}/2
+                                    </Badge>
                                 </div>
                             </TableCell>
-                            {weekdays.map((day, index) => {
-                                // `index` here is 0-6 from Monday to Sunday
-                                const isSelected = userDayOffIndex === index;
+
+                            {weekdays.map((day) => {
+                                const checked = isDayChecked(user.id, day.isoDate);
+
+                                // CASO DOMINGO (Fijo)
+                                if (day.isSunday) {
+                                    return (
+                                        <TableCell key={day.isoDate} className="p-2 text-center border-l bg-orange-50/30">
+                                            <div className="flex flex-col items-center justify-center gap-1">
+                                                <Checkbox checked disabled className="data-[state=checked]:bg-orange-400 opacity-50" />
+                                                <span className="text-[9px] text-orange-600 font-bold uppercase">Fijo</span>
+                                            </div>
+                                        </TableCell>
+                                    );
+                                }
+
+                                // CASO DÍAS NORMALES (Clickeables)
                                 return (
-                                <TableCell 
-                                    key={day.name} 
-                                    className={cn(
-                                        "text-center p-2", 
-                                        day.isSunday ? 'bg-muted/50 font-bold text-primary cursor-not-allowed' : 'cursor-pointer hover:bg-accent',
-                                        isSelected && 'bg-primary/20 border-2 border-primary'
-                                    )}
-                                    onClick={() => handleDayClick(user.id, getDay(day.date))}
-                                >
-                                    {day.isSunday && <span>L</span>}
-                                    {isSelected && <span className="font-bold text-primary">L</span>}
-                                </TableCell>
-                            )})}
+                                    <TableCell key={day.isoDate} className={cn("p-2 text-center border-l transition-colors", checked && "bg-blue-50/50")}>
+                                        <div className="flex justify-center">
+                                            <Checkbox 
+                                                checked={checked} 
+                                                onCheckedChange={() => onToggleDay(user.id, day.isoDate, !!checked)}
+                                                className="h-5 w-5 data-[state=checked]:bg-blue-600"
+                                            />
+                                        </div>
+                                    </TableCell>
+                                );
+                            })}
                         </TableRow>
-                    )
+                    );
                 })}
             </TableBody>
         </Table>
-        <div className="mt-6 flex justify-end">
-            <Button onClick={handleSave}>Guardar Planificación</Button>
-        </div>
     </div>
   );
 }
