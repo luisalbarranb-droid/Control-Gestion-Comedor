@@ -13,14 +13,14 @@ export default function Page() {
         <h1 className="font-headline text-2xl font-bold md:text-3xl">
           Dashboard
         </h1>
-        <AIPrioritizer />
+        {/* <AIPrioritizer /> */}
       </div>
-      <OverviewCards />
-      <div className="grid gap-4 md:gap-8 lg:grid-cols-3">
+      {/* <OverviewCards /> */}
+      {/* <div className="grid gap-4 md:gap-8 lg:grid-cols-3">
         <TaskCharts />
         <TopPerformers />
-      </div>
-      <RecentTasks />
+      </div> */}
+      {/* <RecentTasks /> */}
     </main>
   );
 }
