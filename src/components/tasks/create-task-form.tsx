@@ -41,7 +41,7 @@ const taskSchema = z.object({
   titulo: z.string().min(1, 'El título es requerido'),
   area: z.string().min(1, 'El área es requerida'),
   prioridad: z.enum(['baja', 'media', 'alta', 'urgente']),
-  periodicidad: z.enum(['diaria', 'semanal', 'quincenal', 'mensual', 'eventual']), // Nuevo campo
+  periodicidad: z.enum(['diaria', 'semanal', 'quincenal', 'mensual', 'unica']),
   asignadoA: z.string().min(1, 'Debes asignar un responsable'),
   fechaVencimiento: z.date({
     required_error: 'La fecha de vencimiento es requerida',
@@ -68,7 +68,7 @@ export function CreateTaskForm({
       titulo: '',
       area: '',
       prioridad: 'media',
-      periodicidad: 'eventual', // Valor por defecto
+      periodicidad: 'unica',
       asignadoA: '',
       descripcion: '',
     },
@@ -76,14 +76,8 @@ export function CreateTaskForm({
 
   const handleSubmit = (values: z.infer<typeof taskSchema>) => {
     onTaskCreate(values);
-    form.reset({
-      titulo: '',
-      area: '',
-      prioridad: 'media',
-      periodicidad: 'eventual',
-      asignadoA: '',
-      descripcion: '',
-    });
+    form.reset();
+    onOpenChange(false);
   };
 
   const getUserName = (user: any) => user.name || user.nombre || 'Usuario';
@@ -113,7 +107,6 @@ export function CreateTaskForm({
               )}
             />
             
-            {/* Fila 1: Área y Prioridad */}
             <div className="grid grid-cols-2 gap-4">
               <FormField
                 control={form.control}
@@ -165,7 +158,6 @@ export function CreateTaskForm({
               />
             </div>
 
-            {/* Fila 2: Periodicidad y Fecha */}
             <div className="grid grid-cols-2 gap-4">
               <FormField
                 control={form.control}
@@ -180,7 +172,7 @@ export function CreateTaskForm({
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem value="eventual">Eventual (Única vez)</SelectItem>
+                        <SelectItem value="unica">Única vez</SelectItem>
                         <SelectItem value="diaria">Diaria</SelectItem>
                         <SelectItem value="semanal">Semanal</SelectItem>
                         <SelectItem value="quincenal">Quincenal</SelectItem>
@@ -223,7 +215,7 @@ export function CreateTaskForm({
                           selected={field.value}
                           onSelect={field.onChange}
                           disabled={(date) =>
-                            date < new Date()
+                            date < new Date(new Date().setHours(0,0,0,0))
                           }
                           initialFocus
                         />
@@ -261,6 +253,20 @@ export function CreateTaskForm({
                       )}
                     </SelectContent>
                   </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            
+            <FormField
+              control={form.control}
+              name="descripcion"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Descripción (Opcional)</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Añade detalles adicionales..." {...field} />
+                  </FormControl>
                   <FormMessage />
                 </FormItem>
               )}

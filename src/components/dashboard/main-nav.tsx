@@ -16,8 +16,6 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
-// Array de navegación estático.
-// CAMBIO: La ruta '/attendance' ahora se muestra como "Gestión de RRHH"
 const navItems = [
   { href: '/', label: 'Dashboard', icon: <Home className="h-5 w-5" /> },
   { href: '/tasks', label: 'Tareas', icon: <ClipboardList className="h-5 w-5" /> },
@@ -37,7 +35,6 @@ export function MainNav() {
   return (
     <nav className="flex flex-col gap-2 py-4">
       {navItems.map((item) => {
-        // Lógica para determinar si el botón está activo (color azul)
         const isActive = pathname === item.href || (item.href !== '/' && pathname.startsWith(item.href));
         return (
             <Link

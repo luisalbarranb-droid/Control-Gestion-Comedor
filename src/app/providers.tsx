@@ -6,8 +6,8 @@ import {
   SidebarContent,
   SidebarHeader,
   SidebarInset,
-  SidebarProvider,
 } from '@/components/ui/sidebar';
+import { SidebarProvider } from '@/components/ui/sidebar-provider';
 import { Header } from '@/components/dashboard/header';
 import { MainNav } from '@/components/dashboard/main-nav';
 import { SquareCheck } from 'lucide-react';
@@ -16,7 +16,7 @@ import { FirebaseErrorListener } from '@/components/FirebaseErrorListener';
 
 export function Providers({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const noSidebarRoutes = ['/login', '/signup']; // Agrega las rutas que no quieres que tengan sidebar
+  const noSidebarRoutes = ['/login', '/signup']; 
   const showSidebar = !noSidebarRoutes.includes(pathname);
 
   return (

@@ -22,13 +22,10 @@ import {
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useToast } from '@/hooks/use-toast';
-
-// Firebase imports
 import { 
   collection, 
   query, 
   where, 
-  getDocs, 
   writeBatch, 
   doc,
   orderBy 
@@ -40,100 +37,68 @@ export default function PlanningPage() {
   const firestore = useFirestore();
   const { toast } = useToast();
   
-  // Estado para la semana actual
   const [currentWeek, setCurrentWeek] = useState(startOfWeek(new Date(), { weekStartsOn: 1 }));
   const [isSaving, setIsSaving] = useState(false);
 
-  // 1. Calcular rango de la semana (Lunes a Domingo)
   const weekStart = startOfWeek(currentWeek, { weekStartsOn: 1 });
-  const weekStartStr = format(weekStart, 'yyyy-MM-dd'); // Clave para agrupar en Firebase
+  const weekStartStr = format(weekStart, 'yyyy-MM-dd');
 
-  // Generar los 7 días de la semana
   const weekDays = useMemo(() => {
-    const days = [];
-    for (let i = 0; i < 7; i++) {
-      days.push(addDays(weekStart, i));
-    }
-    return days;
+    return Array.from({ length: 7 }).map((_, i) => addDays(weekStart, i));
   }, [weekStart]);
 
-  // 2. Cargar Usuarios
-  const usersQuery = useMemoFirebase(() => {
-    if (!firestore) return null;
-    return query(collection(firestore, 'users'), orderBy('name', 'asc'));
-  }, [firestore]);
-  
+  const usersQuery = useMemoFirebase(
+    () => (firestore ? query(collection(firestore, 'users'), orderBy('name', 'asc')) : null),
+    [firestore]
+  );
   const { data: users, isLoading: isLoadingUsers } = useCollection<User>(usersQuery);
 
-  // 3. Cargar Días Libres Existentes para esta semana
-  const daysOffQuery = useMemoFirebase(() => {
-    if (!firestore) return null;
-    // IMPORTANTE: Filtramos por la cadena de texto de la semana para evitar problemas de Timestamp
-    return query(
-      collection(firestore, 'daysOff'), 
-      where('weekStartDate', '==', weekStartStr)
-    );
-  }, [firestore, weekStartStr]);
-
+  const daysOffQuery = useMemoFirebase(
+    () => (firestore ? query(collection(firestore, 'daysOff'), where('weekStartDate', '==', weekStartStr)) : null),
+    [firestore, weekStartStr]
+  );
   const { data: existingDaysOff, isLoading: isLoadingDaysOff } = useCollection<DayOff>(daysOffQuery);
 
-  // Estado local para manejar los cambios antes de guardar (Optimistic UI)
-  // Mapeamos: userId -> array de fechas (strings YYYY-MM-DD) seleccionadas
   const [selectedDays, setSelectedDays] = useState<Record<string, string[]>>({});
 
-  // Sincronizar estado local con datos de Firebase cuando cargan
   React.useEffect(() => {
     if (existingDaysOff) {
-      const initialSelection: Record<string, string[]> = {};
-      existingDaysOff.forEach(dayOff => {
-        if (!initialSelection[dayOff.userId]) {
-          initialSelection[dayOff.userId] = [];
+      const initialSelection = existingDaysOff.reduce((acc, dayOff) => {
+        if (!acc[dayOff.userId]) {
+          acc[dayOff.userId] = [];
         }
-        // Asumimos que dayOff.date es un string YYYY-MM-DD
-        initialSelection[dayOff.userId].push(dayOff.date);
-      });
+        acc[dayOff.userId].push(dayOff.date);
+        return acc;
+      }, {} as Record<string, string[]>);
       setSelectedDays(initialSelection);
     }
   }, [existingDaysOff]);
 
-  // Manejadores de Navegación
   const handlePrevWeek = () => setCurrentWeek(prev => subWeeks(prev, 1));
   const handleNextWeek = () => setCurrentWeek(prev => addWeeks(prev, 1));
 
-  // Manejador de Toggle (Clic en una celda)
   const toggleDay = (userId: string, dateStr: string) => {
     setSelectedDays(prev => {
       const currentDays = prev[userId] || [];
-      const isSelected = currentDays.includes(dateStr);
-      
-      let newDays;
-      if (isSelected) {
-        newDays = currentDays.filter(d => d !== dateStr);
-      } else {
-        newDays = [...currentDays, dateStr];
-      }
-      
+      const newDays = currentDays.includes(dateStr)
+        ? currentDays.filter(d => d !== dateStr)
+        : [...currentDays, dateStr];
       return { ...prev, [userId]: newDays };
     });
   };
 
-  // Guardar Cambios en Firebase
   const handleSave = async () => {
-    if (!firestore) return;
+    if (!firestore || !existingDaysOff) return;
     setIsSaving(true);
 
     try {
       const batch = writeBatch(firestore);
       
-      // 1. Eliminar todos los registros de esta semana (limpieza)
-      if (existingDaysOff) {
-        existingDaysOff.forEach(docSnap => {
-            const docRef = doc(firestore, 'daysOff', docSnap.id);
-            batch.delete(docRef);
-        });
-      }
+      existingDaysOff.forEach(dayOffDoc => {
+        const docRef = doc(firestore, 'daysOff', dayOffDoc.id);
+        batch.delete(docRef);
+      });
 
-      // 2. Crear los nuevos registros basados en el estado local
       Object.entries(selectedDays).forEach(([userId, dates]) => {
         const user = users?.find(u => u.id === userId);
         if (!user) return;
@@ -144,9 +109,9 @@ export default function PlanningPage() {
             id: newDocRef.id,
             userId: userId,
             userName: user.name || 'Sin Nombre',
-            date: dateStr, // Guardamos fecha como STRING YYYY-MM-DD
-            weekStartDate: weekStartStr, // Clave de agrupación
-            createdAt: new Date() // Metadata
+            date: dateStr,
+            weekStartDate: weekStartStr,
+            createdAt: new Date()
           });
         });
       });
@@ -170,7 +135,7 @@ export default function PlanningPage() {
     }
   };
 
-  const getUserInitials = (name: string) => name ? name.split(' ').map(n => n[0]).join('').substring(0, 2) : 'US';
+  const getUserInitials = (name: string | undefined) => name ? name.split(' ').map(n => n[0]).join('').substring(0, 2) : 'US';
   const getUserName = (user: User) => (user as any).name || (user as any).nombre || 'Usuario sin nombre';
 
 
@@ -246,6 +211,7 @@ export default function PlanningPage() {
                                     <TableCell className="font-medium">
                                         <div className="flex items-center gap-3">
                                             <Avatar className="h-8 w-8">
+                                                <AvatarImage src={(user as any).avatarUrl} alt={getUserName(user)} />
                                                 <AvatarFallback>{getUserInitials(getUserName(user))}</AvatarFallback>
                                             </Avatar>
                                             <div className="flex flex-col">
@@ -277,7 +243,7 @@ export default function PlanningPage() {
                                 </TableRow>
                             );
                         })}
-                        {(!users || users.length === 0) && (
+                        {(!users || users.length === 0) && !isLoadingUsers && (
                             <TableRow>
                                 <TableCell colSpan={8} className="h-24 text-center">
                                     No hay empleados registrados.

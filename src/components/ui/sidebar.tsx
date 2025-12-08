@@ -3,7 +3,6 @@
 import * as React from "react"
 import { cva, type VariantProps } from "class-variance-authority"
 import { cn } from "@/lib/utils"
-import { useIsMobile } from "@/hooks/use-mobile"
 
 // --- Context ---
 
@@ -22,15 +21,10 @@ function useSidebar() {
 }
 
 // --- Provider ---
+// NOTE: The provider logic is now in a separate client component `sidebar-provider.tsx`
+// This file now only contains the visual components.
+export { SidebarContext, useSidebar }
 
-function SidebarProvider({ children }: { children: React.ReactNode }) {
-  const isMobile = useIsMobile()
-  const value = React.useMemo(() => ({ isMobile }), [isMobile])
-
-  return (
-    <SidebarContext.Provider value={value}>{children}</SidebarContext.Provider>
-  )
-}
 
 // --- Components ---
 
@@ -114,6 +108,4 @@ export {
   SidebarContent,
   SidebarFooter,
   SidebarInset,
-  SidebarProvider,
-  useSidebar,
 }
