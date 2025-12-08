@@ -1,15 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { 
-  Users, 
-  Plus, 
-  Search,
-  MoreVertical,
-  Mail,
-  User as UserIcon,
-  ArrowLeft
-} from 'lucide-react';
+import { ArrowLeft, UserPlus, Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { Input } from '@/components/ui/input';
@@ -20,7 +12,7 @@ import { collection, query, orderBy } from 'firebase/firestore';
 import type { User } from '@/lib/types';
 
 
-export default function UsersManagementPage() {
+export default function PersonalManagementPage() {
     const [isFormOpen, setIsFormOpen] = useState(false);
     const [editingEmployee, setEditingEmployee] = useState<User | null>(null);
     const [searchTerm, setSearchTerm] = useState('');
@@ -56,6 +48,12 @@ export default function UsersManagementPage() {
     return (
         <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
             <div className="flex items-center gap-4">
+                <Button variant="outline" size="icon" className="h-7 w-7" asChild>
+                    <Link href="/attendance">
+                        <ArrowLeft className="h-4 w-4" />
+                        <span className="sr-only">Volver</span>
+                    </Link>
+                </Button>
                 <h1 className="text-xl font-semibold md:text-2xl">Gestión de Personal</h1>
             </div>
 
