@@ -95,12 +95,14 @@ export default function TasksPage() {
     () => {
         if (!firestore || isAuthLoading) return null;
         
+        const tasksCollection = collection(firestore, 'tasks');
+        
         if (isAdmin) {
-          return query(collection(firestore, 'tasks'));
+          return query(tasksCollection);
         }
         
         if (userId) {
-          return query(collection(firestore, 'tasks'), where('asignadoA', '==', userId));
+          return query(tasksCollection, where('asignadoA', '==', userId));
         }
 
         return null; 
@@ -274,3 +276,5 @@ export default function TasksPage() {
     </div>
   );
 }
+
+    

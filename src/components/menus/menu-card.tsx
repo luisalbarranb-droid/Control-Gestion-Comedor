@@ -20,8 +20,10 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
-import type { Menu, MenuItemCategory } from '@/lib/types';
+import type { Menu, MenuItemCategory, InventoryItem as TInventoryItem } from '@/lib/types';
 import { MenuItemCard } from './menu-item-card';
+import { useCollection, useFirestore, useUser, useMemoFirebase } from '@/firebase';
+import { collection } from 'firebase/firestore';
 
 interface MenuCardProps {
   menu: Menu;
@@ -41,6 +43,14 @@ export function MenuCard({ menu }: MenuCardProps) {
   const sortedItems = [...menu.items].sort((a, b) => categoryOrder.indexOf(a.category) - categoryOrder.indexOf(b.category));
   const menuDateObj = menu.date.toDate ? menu.date.toDate() : new Date(menu.date as any);
   const menuDate = format(menuDateObj, 'yyyy-MM-dd');
+  
+  const firestore = useFirestore();
+  const { user: authUser } = useUser();
+  const inventoryCollectionRef = useMemoFirebase(
+    () => (firestore && authUser ? collection(firestore, 'inventory') : null),
+    [firestore, authUser]
+  );
+  const { isLoading } = useCollection<TInventoryItem>(inventoryCollectionRef);
 
   return (
     <Card className="flex flex-col">
@@ -96,3 +106,5 @@ export function MenuCard({ menu }: MenuCardProps) {
     </Card>
   );
 }
+
+    

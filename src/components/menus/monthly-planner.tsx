@@ -17,7 +17,7 @@ export function MonthlyPlanner({ menus }: MonthlyPlannerProps) {
   const [currentDate, setCurrentDate] = useState(new Date());
 
   const menusByDate = menus.reduce((acc, menu) => {
-    const menuDate = menu.date.toDate ? menu.date.toDate() : new Date(menu.date);
+    const menuDate = menu.date.toDate ? menu.date.toDate() : new Date(menu.date as any);
     const dateKey = format(menuDate, 'yyyy-MM-dd');
     acc[dateKey] = menu;
     return acc;

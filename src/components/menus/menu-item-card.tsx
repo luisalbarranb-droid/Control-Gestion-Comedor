@@ -108,3 +108,5 @@ export function MenuItemCard({ menuItem, pax }: MenuItemCardProps) {
     </Card>
   );
 }
+
+    

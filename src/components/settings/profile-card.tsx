@@ -88,23 +88,25 @@ export function ProfileCard() {
         name: data.name,
     };
     
-    const userRef = doc(firestore, 'users', user.id);
-    updateDocumentNonBlocking(userRef, dataToUpdate);
+    if (user.id) {
+        const userRef = doc(firestore, 'users', user.id);
+        updateDocumentNonBlocking(userRef, dataToUpdate);
 
-    if (data.newPassword) {
-        // En una aplicación real, esto debería activar una función de Firebase Auth para reautenticar y actualizar la contraseña.
-        console.log('Password change requested. (Not implemented in prototype)');
+        if (data.newPassword) {
+            // En una aplicación real, esto debería activar una función de Firebase Auth para reautenticar y actualizar la contraseña.
+            console.log('Password change requested. (Not implemented in prototype)');
+            toast({
+              title: 'Cambio de Contraseña',
+              description: 'La funcionalidad de cambio de contraseña no está implementada en este prototipo.',
+              variant: 'destructive',
+            });
+        }
+
         toast({
-          title: 'Cambio de Contraseña',
-          description: 'La funcionalidad de cambio de contraseña no está implementada en este prototipo.',
-          variant: 'destructive',
+          title: 'Perfil Actualizado',
+          description: 'Tu información ha sido guardada correctamente.',
         });
     }
-
-    toast({
-      title: 'Perfil Actualizado',
-      description: 'Tu información ha sido guardada correctamente.',
-    });
   };
 
   if (isLoading) {
@@ -190,3 +192,5 @@ export function ProfileCard() {
     </Card>
   );
 }
+
+    

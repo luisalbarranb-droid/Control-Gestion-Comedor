@@ -16,7 +16,7 @@ import { cn } from '@/lib/utils';
 import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
 import { format } from 'date-fns';
 import { useCollection, useFirestore, useUser, useMemoFirebase } from '@/firebase';
-import { collection } from 'firebase/firestore';
+import { collection, query, orderBy, limit } from 'firebase/firestore';
 import { areas } from '@/lib/placeholder-data';
 import { Loader2 } from 'lucide-react';
 
@@ -47,19 +47,11 @@ export function RecentTasks() {
 
   const tasksQuery = useMemoFirebase(() => {
     if (!firestore) return null;
-    return collection(firestore, 'tasks');
+    return query(collection(firestore, 'tasks'), orderBy('fechaCreacion', 'desc'), limit(5));
   }, [firestore]);
 
   const { data: users, isLoading: isLoadingUsers } = useCollection<User>(usersQuery, { disabled: !user });
-  const { data: tasks, isLoading: isLoadingTasks } = useCollection<Task>(tasksQuery, { disabled: !user });
-
-  const recentTasks = tasks
-    ?.sort((a, b) => {
-        const dateA = a.fechaCreacion as any;
-        const dateB = b.fechaCreacion as any;
-        return (dateB?.toDate?.().getTime() || 0) - (dateA?.toDate?.().getTime() || 0);
-    })
-    .slice(0, 5) || [];
+  const { data: recentTasks, isLoading: isLoadingTasks } = useCollection<Task>(tasksQuery, { disabled: !user });
 
   const getUser = (userId: string) => users?.find(u => u.id === userId);
   const getArea = (areaId: string) => areas.find(a => a.id === areaId);
@@ -89,12 +81,12 @@ export function RecentTasks() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {recentTasks.length === 0 && (
+              {recentTasks && recentTasks.length === 0 && (
                 <TableRow>
                   <TableCell colSpan={5} className="text-center h-24">No hay tareas recientes.</TableCell>
                 </TableRow>
               )}
-              {recentTasks.map((task) => {
+              {recentTasks && recentTasks.map((task) => {
                   const user = getUser(task.asignadoA);
                   const area = getArea(task.area);
                   const fechaVencimientoObj = task.fechaVencimiento?.toDate ? task.fechaVencimiento.toDate() : new Date(task.fechaVencimiento as any);
@@ -137,3 +129,5 @@ export function RecentTasks() {
     </Card>
   );
 }
+
+    
