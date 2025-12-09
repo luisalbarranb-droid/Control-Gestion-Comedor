@@ -280,3 +280,10 @@ export interface DayOff {
   weekStartDate: string; // YYYY-MM-DD
   date: string; // YYYY-MM-DD
 }
+
+export interface WeeklyPlan {
+  id: string;
+  startDate: Date;
+  name: string;
+  menus: (Menu | null)[];
+}
