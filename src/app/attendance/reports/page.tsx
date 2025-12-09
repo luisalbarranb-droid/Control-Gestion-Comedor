@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { format, startOfMonth, endOfMonth, differenceInBusinessDays, differenceInHours } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { Button } from '@/components/ui/button';
@@ -29,10 +29,15 @@ function convertToDate(date: any): Date | null {
 
 export default function AttendanceReportPage() {
     const firestore = useFirestore();
-    const [dateRange, setDateRange] = useState<DateRange | undefined>({
-        from: startOfMonth(new Date()),
-        to: endOfMonth(new Date()),
-    });
+    const [dateRange, setDateRange] = useState<DateRange | undefined>();
+
+    // CRITICAL FIX: Initialize date state in useEffect to prevent hydration mismatch.
+    useEffect(() => {
+        setDateRange({
+            from: startOfMonth(new Date()),
+            to: endOfMonth(new Date()),
+        });
+    }, []);
 
     const usersQuery = useMemoFirebase(() => {
         if (!firestore) return null;
@@ -97,7 +102,7 @@ export default function AttendanceReportPage() {
         });
     }, [users, attendance, daysOff, dateRange]);
 
-    const isLoading = isLoadingUsers || isLoadingAttendance || isLoadingDaysOff;
+    const isLoading = isLoadingUsers || isLoadingAttendance || isLoadingDaysOff || !dateRange;
 
     return (
         <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">

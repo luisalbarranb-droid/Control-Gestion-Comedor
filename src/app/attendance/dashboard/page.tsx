@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useMemo } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { format, set, subDays } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { Button } from '@/components/ui/button';
@@ -42,12 +42,23 @@ const statusConfig = {
 
 export default function AttendanceDashboardPage() {
   const firestore = useFirestore();
-  const today = new Date();
-  const startOfToday = set(today, { hours: 0, minutes: 0, seconds: 0, milliseconds: 0 });
-  const endOfToday = set(today, { hours: 23, minutes: 59, seconds: 59, milliseconds: 999 });
+  const [currentDate, setCurrentDate] = useState<Date | undefined>();
+
+  // CRITICAL FIX: Initialize date state in useEffect to prevent hydration mismatch.
+  useEffect(() => {
+    setCurrentDate(new Date());
+  }, []);
+
+  const { startOfToday, endOfToday } = useMemo(() => {
+    if (!currentDate) return { startOfToday: null, endOfToday: null };
+    const start = set(currentDate, { hours: 0, minutes: 0, seconds: 0, milliseconds: 0 });
+    const end = set(currentDate, { hours: 23, minutes: 59, seconds: 59, milliseconds: 999 });
+    return { startOfToday: start, endOfToday: end };
+  }, [currentDate]);
+
 
   const attendanceQuery = useMemoFirebase(() => {
-    if (!firestore) return null;
+    if (!firestore || !startOfToday || !endOfToday) return null;
     return query(
       collection(firestore, 'attendance'),
       where('checkIn', '>=', Timestamp.fromDate(startOfToday)),
@@ -64,12 +75,15 @@ export default function AttendanceDashboardPage() {
   const { data: users, isLoading: isLoadingUsers } = useCollection<User>(usersQuery);
 
   const stats = useMemo(() => {
-    if (!attendanceRecords) return { present: 0, late: 0, absent: 0, recent: [] };
+    if (!attendanceRecords || !users) return { present: 0, late: 0, absent: 0, recent: [] };
     
+    const presentIds = new Set(attendanceRecords.filter(r => r.status === 'presente' || r.status === 'retardo').map(r => r.userId));
     const present = attendanceRecords.filter(r => r.status === 'presente').length;
     const late = attendanceRecords.filter(r => r.status === 'retardo').length;
-    // Absent calculation might need to be smarter (e.g., total users - present/late)
-    const absent = users ? users.length - (present + late) : 0;
+    
+    // An active user is one who should be working today (not on a day off, etc.)
+    // For simplicity, we consider all users active for now.
+    const absent = users.filter(u => u.isActive).length - presentIds.size;
 
     const recent = attendanceRecords
       .sort((a, b) => {
@@ -82,7 +96,7 @@ export default function AttendanceDashboardPage() {
     return { present, late, absent, recent };
   }, [attendanceRecords, users]);
 
-  const isLoading = isLoadingAttendance || isLoadingUsers;
+  const isLoading = isLoadingAttendance || isLoadingUsers || !currentDate;
 
   const getUser = (userId: string) => users?.find(u => u.id === userId);
   const getUserInitials = (name?: string) => name ? name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase() : 'U';
