@@ -64,8 +64,13 @@ export default function EmployeeDetailPage() {
     }, [firestore, employeeId]);
     const { data: employee, isLoading: isLoadingEmployee } = useDoc<User>(employeeDocRef);
 
-    const start = useMemo(() => currentMonth ? startOfMonth(currentMonth) : null, [currentMonth]);
-    const end = useMemo(() => currentMonth ? endOfMonth(currentMonth) : null, [currentMonth]);
+    const { start, end } = useMemo(() => {
+        if (!currentMonth) return { start: null, end: null };
+		const startDate = startOfMonth(currentMonth)
+		const endDate = endOfMonth(currentMonth)
+        return { start: startDate, end: endDate };
+	}, [currentMonth]);
+
 
     const attendanceQuery = useMemoFirebase(() => {
         if (!firestore || !employeeId || !start || !end) return null;

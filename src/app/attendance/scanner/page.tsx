@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
@@ -124,7 +123,7 @@ export default function ScannerPage() {
     };
     
     processScan();
-  }, [result, firestore, toast]);
+  }, [result, firestore, toast, lastResult]);
 
   const getUserInitials = (name?: string) => name ? name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase() : 'U';
 
