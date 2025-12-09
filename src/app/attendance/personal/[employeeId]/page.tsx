@@ -78,11 +78,13 @@ export default function EmployeeDetailPage() {
     
     const daysOffQuery = useMemoFirebase(() => {
         if (!firestore || !employeeId || !start || !end) return null;
+        const startStr = format(start, 'yyyy-MM-dd');
+        const endStr = format(end, 'yyyy-MM-dd');
         return query(
             collection(firestore, 'daysOff'),
             where('userId', '==', employeeId),
-            where('date', '>=', format(start, 'yyyy-MM-dd')),
-            where('date', '<=', format(end, 'yyyy-MM-dd'))
+            where('date', '>=', startStr),
+            where('date', '<=', endStr)
         );
     }, [firestore, employeeId, start, end]);
 
@@ -119,10 +121,10 @@ export default function EmployeeDetailPage() {
         'fuera-de-horario': 'bg-purple-200 text-purple-900 rounded-full',
     };
 
-    const isLoading = isLoadingEmployee || isLoadingAttendance || isLoadingDaysOff;
+    const isLoading = isLoadingEmployee || isLoadingAttendance || isLoadingDaysOff || !currentMonth;
     const getUserInitials = (name?: string) => name ? name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase() : 'U';
 
-    if (isLoading || !currentMonth) {
+    if (isLoading) {
         return <div className="flex h-screen w-full items-center justify-center">Cargando expediente...</div>;
     }
 

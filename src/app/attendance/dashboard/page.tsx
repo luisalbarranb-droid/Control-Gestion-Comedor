@@ -172,7 +172,7 @@ export default function AttendanceDashboardPage() {
                                     <TableCell>
                                         <div className="flex items-center gap-3">
                                             <Avatar>
-                                                <AvatarImage src={user?.avatarUrl} />
+                                                <AvatarImage src={(user as any)?.avatarUrl} />
                                                 <AvatarFallback>{getUserInitials(user?.name)}</AvatarFallback>
                                             </Avatar>
                                             <span>{user?.name || 'Desconocido'}</span>
