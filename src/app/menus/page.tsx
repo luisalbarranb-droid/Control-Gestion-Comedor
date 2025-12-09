@@ -2,7 +2,7 @@
 
 import React, { useCallback, useMemo, useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, ArrowRight, FileSpreadsheet, Plus, Settings } from 'lucide-react';
+import { ArrowLeft, ArrowRight, FileSpreadsheet, Plus, Settings, Calendar as CalendarIcon } from 'lucide-react';
 import { Calendar } from '@/components/ui/calendar';
 import {
 	Table,
@@ -214,6 +214,12 @@ export default function MenusPage() {
 			<div className="flex items-center justify-between">
 				<h1 className="font-headline text-2xl font-bold md:text-3xl">Planificación de Menús</h1>
 				<div className="flex gap-2">
+					<Button variant="outline" asChild>
+						<Link href="/menus/calendar">
+							<CalendarIcon className="mr-2 h-4 w-4" />
+							Vista Mensual
+						</Link>
+					</Button>
 					<Button variant="outline" onClick={handleCopyWeek} disabled={!menus || menus.length === 0}>
 						Copiar Menús a Próxima Semana
 					</Button>

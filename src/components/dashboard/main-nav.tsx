@@ -20,7 +20,7 @@ import { cn } from '@/lib/utils';
 const navItems = [
   { href: '/', label: 'Dashboard', icon: <Home className="h-5 w-5" /> },
   { href: '/tasks', label: 'Tareas', icon: <ClipboardList className="h-5 w-5" /> },
-  { href: '/menu-planner', label: 'Planificador de Menús', icon: <CalendarDays className="h-5 w-5" /> },
+  { href: '/menus', label: 'Planificación de Menús', icon: <BookOpen className="h-5 w-5" /> },
   { href: '/daily-closing', label: 'Cierres Diarios', icon: <ClipboardCheck className="h-5 w-5" /> },
   { href: '/inventory', label: 'Inventario', icon: <Archive className="h-5 w-5" /> },
   { href: '/attendance', label: 'Gestión de RRHH', icon: <Users className="h-5 w-5" /> },
