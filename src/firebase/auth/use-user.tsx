@@ -16,9 +16,26 @@ interface UseUserResult {
 export function useUser(): UseUserResult {
   const auth = useAuth();
   const firestore = useFirestore();
-  const [user, setUser] = useState<FirebaseAuthUser | null>(auth.currentUser);
-  const [isAuthLoading, setIsAuthLoading] = useState(true);
+  // Ensure the initial state for auth loading is true on both server and client
+  const [isAuthLoading, setIsAuthLoading] = useState(true); 
+  const [user, setUser] = useState<FirebaseAuthUser | null>(() => {
+    // Set initial user from auth, but keep loading true until effect runs
+    const currentUser = auth.currentUser;
+    // This part runs only on the client initially, but we want to wait for the onAuthStateChanged listener
+    // to confirm the auth state to prevent hydration issues.
+    return currentUser;
+  });
 
+
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
+      setUser(firebaseUser);
+      setIsAuthLoading(false);
+    });
+    // Cleanup subscription on unmount
+    return () => unsubscribe();
+  }, [auth]);
+  
   // Memoize the document reference
   const userDocRef = useMemoFirebase(() => {
     if (!firestore || !user) return null;
@@ -27,20 +44,13 @@ export function useUser(): UseUserResult {
 
   const { data: profile, isLoading: isProfileLoading } = useDoc<UserProfile>(userDocRef, { disabled: !user });
 
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
-      setUser(firebaseUser);
-      setIsAuthLoading(false);
-    });
-    return () => unsubscribe();
-  }, [auth]);
 
   const signOut = async () => {
     await auth.signOut();
-    // Reset state on sign-out
-    setUser(null);
+    // User state will be updated by onAuthStateChanged listener
   };
 
+  // The overall loading state depends on auth loading AND profile loading if a user is present
   const isUserLoading = isAuthLoading || (!!user && isProfileLoading);
 
   return { user, profile: profile || null, isUserLoading, signOut };
