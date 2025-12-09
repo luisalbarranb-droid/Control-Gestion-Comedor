@@ -64,8 +64,11 @@ export default function MenusPage() {
 		setSelectedDate(new Date());
 	}, []);
 
-	const start = startOfWeek(currentWeek, { weekStartsOn: 1 });
-	const end = endOfWeek(currentWeek, { weekStartsOn: 1 });
+	const { start, end } = useMemo(() => {
+		const start = startOfWeek(currentWeek, { weekStartsOn: 1 });
+		const end = endOfWeek(currentWeek, { weekStartsOn: 1 });
+		return { start, end };
+	}, [currentWeek]);
 
 	const menuQuery = useMemoFirebase(() => {
 		if (!firestore) return null;
