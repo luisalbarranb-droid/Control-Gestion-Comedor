@@ -1,5 +1,4 @@
 'use client';
-
 import { useState } from 'react';
 import { SquareCheck, PlusCircle } from 'lucide-react';
 import {
@@ -19,19 +18,16 @@ import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import { OrderForm } from '@/components/inventory/order-form';
 import { useToast } from '@/components/ui/toast';
-
 const statusVariant: Record<OrderStatus, string> = {
   pendiente: 'bg-yellow-100 text-yellow-800',
   completado: 'bg-green-100 text-green-800',
   cancelado: 'bg-red-100 text-red-800',
 };
-
 export default function InventoryOrdersPage() {
   const { toast } = useToast();
   const [orders, setOrders] = useState<InventoryOrder[]>(initialOrders);
   const [isFormOpen, setFormOpen] = useState(false);
-
-  const handleCreateOrder = (orderData: Omit<InventoryOrder, 'orderId' | 'creadoPor' | 'costoTotal'> & { items: Omit<InventoryOrderItem, 'nombre' | 'costo'>[] }) => {
+  const handleCreateOrder = (orderData: Omit<InventoryOrder, 'orderId' | 'creadoPor' | 'costoTotal'> & { items: Omit<InventoryOrderItem, 'nombre' | 'costo' | 'unit'>[] }) => {
     const newItems = orderData.items.map(item => {
         const fullItem = inventoryItems.find(i => i.id === item.itemId);
         return {
@@ -41,7 +37,6 @@ export default function InventoryOrdersPage() {
             unit: fullItem?.unidad || 'unidad'
         }
     });
-
     const costoTotal = newItems.reduce((acc, item) => acc + item.costo, 0);
     
     const newOrder: InventoryOrder = {
@@ -59,7 +54,6 @@ export default function InventoryOrdersPage() {
       description: `El pedido ${newOrder.orderId} para ${newOrder.proveedor} ha sido creado.`,
     });
   };
-
   return (
       <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
         <div className="flex items-center justify-between">
