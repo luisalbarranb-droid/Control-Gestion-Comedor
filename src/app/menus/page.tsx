@@ -64,10 +64,15 @@ export default function MenusPage() {
 		setSelectedDate(new Date());
 	}, []);
 
-	const { start, end } = useMemo(() => {
+	const { start, end, startTime, endTime } = useMemo(() => {
 		const start = startOfWeek(currentWeek, { weekStartsOn: 1 });
 		const end = endOfWeek(currentWeek, { weekStartsOn: 1 });
-		return { start, end };
+		return { 
+			start, 
+			end,
+			startTime: start.getTime(), // ✅ Timestamps numéricos estables
+			endTime: end.getTime()
+		};
 	}, [currentWeek]);
 
 	const menuQuery = useMemoFirebase(() => {
@@ -78,14 +83,16 @@ export default function MenusPage() {
 			where('date', '<=', end),
 			orderBy('date', 'asc'),
 		);
-	}, [firestore, start, end]);
+	}, [firestore, startTime, endTime]); // ✅ Usa timestamps en vez de objetos Date
+
 
 	const { data: menus, isLoading } = useCollection<Menu>(menuQuery);
 
 	const usersQuery = useMemoFirebase(() => {
 		if (!firestore) return null;
-		return query(collection(firestore, 'users'), orderBy('name', 'asc'));
+		return collection(firestore, 'users'); // Simplificado
 	}, [firestore]);
+
 
 	const { data: users, isLoading: isLoadingUsers } = useCollection<User>(usersQuery);
 
