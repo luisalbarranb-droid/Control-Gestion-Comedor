@@ -45,6 +45,7 @@ function convertToDate(date: Date | Timestamp | undefined): Date | undefined {
     if (!date) return undefined;
     if (date instanceof Timestamp) return date.toDate();
     if (date instanceof Date && isValid(date)) return date;
+    // Attempt to parse if it's a string or number, but only return if valid.
     const parsedDate = new Date(date);
     return isValid(parsedDate) ? parsedDate : undefined;
 }
