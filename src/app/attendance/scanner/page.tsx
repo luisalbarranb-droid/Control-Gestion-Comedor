@@ -35,12 +35,14 @@ export default function ScannerPage() {
 
   const handleError = (err: any) => {
     console.error(err);
-    setHasCamera(false);
-    toast({
-      variant: 'destructive',
-      title: 'Error de Cámara',
-      description: 'No se pudo acceder a la cámara. Revisa los permisos del navegador.',
-    });
+    if(hasCamera) {
+      setHasCamera(false);
+      toast({
+        variant: 'destructive',
+        title: 'Error de Cámara',
+        description: 'No se pudo acceder a la cámara. Revisa los permisos del navegador.',
+      });
+    }
   };
   
   useEffect(() => {
