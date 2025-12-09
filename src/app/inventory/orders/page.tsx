@@ -18,11 +18,13 @@ import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import { OrderForm } from '@/components/inventory/order-form';
 import { useToast } from '@/components/ui/toast';
+
 const statusVariant: Record<OrderStatus, string> = {
   pendiente: 'bg-yellow-100 text-yellow-800',
   completado: 'bg-green-100 text-green-800',
   cancelado: 'bg-red-100 text-red-800',
 };
+
 export default function InventoryOrdersPage() {
   const { toast } = useToast();
   const [orders, setOrders] = useState<InventoryOrder[]>(initialOrders);
