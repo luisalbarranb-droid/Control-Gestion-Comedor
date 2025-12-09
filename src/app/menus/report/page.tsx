@@ -1,124 +1,111 @@
 'use client';
 
-import React from 'react';
-import { 
-  FileText, 
-  Download, 
-  BarChart3, 
-  PieChart, 
-  Users, 
-  Package, 
-  BookOpen
+import React, { useState, useMemo, useEffect } from 'react';
+import {
+  FileSpreadsheet,
+  Download,
+  Calendar as CalendarIcon,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import Link from 'next/link';
+import {
+  collection,
+  query,
+  where,
+  orderBy,
+  Timestamp,
+} from 'firebase/firestore';
+import { useCollection, useFirestore, useUser, useMemoFirebase } from '@/firebase';
+import type { Menu } from '@/lib/types';
+import { DateRange } from 'react-day-picker';
+import { addDays, format, startOfWeek, endOfWeek } from 'date-fns';
+import { es } from 'date-fns/locale';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Calendar } from '@/components/ui/calendar';
+import { cn } from '@/lib/utils';
+import { MenusReport } from '@/components/menus/menus-report';
 
-export default function ReportsPage() {
-  // ESTRUCTURA LIMPIA:
-  // Solo devolvemos el contenedor principal (div).
-  // El menú lateral y el encabezado ya vienen del "Layout Principal", 
-  // por lo que al no ponerlos aquí, evitamos que salgan dobles.
+export default function MenuReportsPage() {
+  const { user: authUser } = useUser();
+  const firestore = useFirestore();
+
+  const [dateRange, setDateRange] = useState<DateRange | undefined>();
+
+  // CRITICAL FIX: Initialize date state in useEffect to prevent hydration mismatch.
+  useEffect(() => {
+    const today = new Date();
+    setDateRange({
+      from: startOfWeek(today, { weekStartsOn: 1 }),
+      to: endOfWeek(today, { weekStartsOn: 1 }),
+    });
+  }, []);
+
+  const menuQuery = useMemoFirebase(() => {
+    if (!firestore || !dateRange?.from || !dateRange?.to) return null;
+    return query(
+      collection(firestore, 'menus'),
+      where('date', '>=', Timestamp.fromDate(dateRange.from)),
+      where('date', '<=', Timestamp.fromDate(dateRange.to)),
+      orderBy('date', 'asc')
+    );
+  }, [firestore, dateRange]);
+
+  const { data: menus, isLoading } = useCollection<Menu>(menuQuery);
+
   return (
     <div className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
-      <div>
-        <h1 className="font-headline text-2xl font-bold md:text-3xl">Central de Reportes</h1>
-        <p className="text-gray-500">Descarga informes detallados en PDF o Excel.</p>
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+          <h1 className="font-headline text-2xl font-bold md:text-3xl">
+            Reporte Semanal de Menús
+          </h1>
+          <p className="text-muted-foreground">
+            Analiza los requerimientos de ingredientes para el período
+            seleccionado.
+          </p>
+        </div>
+        <div className="flex items-center gap-2">
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button
+                id="date"
+                variant={'outline'}
+                className={cn(
+                  'w-[260px] justify-start text-left font-normal',
+                  !dateRange && 'text-muted-foreground'
+                )}
+              >
+                <CalendarIcon className="mr-2 h-4 w-4" />
+                {dateRange?.from ? (
+                  dateRange.to ? (
+                    <>
+                      {format(dateRange.from, 'LLL dd, y', { locale: es })} -{' '}
+                      {format(dateRange.to, 'LLL dd, y', { locale: es })}
+                    </>
+                  ) : (
+                    format(dateRange.from, 'LLL dd, y', { locale: es })
+                  )
+                ) : (
+                  <span>Selecciona un rango</span>
+                )}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0" align="end">
+              <Calendar
+                initialFocus
+                mode="range"
+                defaultMonth={dateRange?.from}
+                selected={dateRange}
+                onSelect={setDateRange}
+                numberOfMonths={2}
+                locale={es}
+              />
+            </PopoverContent>
+          </Popover>
+        </div>
       </div>
+      
+      <MenusReport menus={menus || []} />
 
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-        
-        {/* Reporte de Asistencia */}
-        <Card>
-            <CardHeader>
-                <div className="flex justify-between items-start">
-                    <CardTitle className="text-xl">Reportes de Asistencia</CardTitle>
-                    <div className="p-2 bg-blue-50 rounded-lg">
-                        <Users className="h-5 w-5 text-blue-600"/> 
-                    </div>
-                </div>
-                <CardDescription>Analiza la puntualidad, ausencias y retardos del personal.</CardDescription>
-            </CardHeader>
-            <CardContent>
-                <Button asChild className="w-full bg-blue-600 hover:bg-blue-700 text-white">
-                    <Link href="/attendance/reports">Ir al Reporte</Link>
-                </Button>
-            </CardContent>
-        </Card>
-
-        {/* Reporte de Inventario */}
-        <Card>
-            <CardHeader>
-                <div className="flex justify-between items-start">
-                    <CardTitle className="text-xl">Reportes de Inventario</CardTitle>
-                    <div className="p-2 bg-indigo-50 rounded-lg">
-                        <Package className="h-5 w-5 text-indigo-600"/> 
-                    </div>
-                </div>
-                <CardDescription>Consulta el estado del stock, valor del inventario y rotación de artículos.</CardDescription>
-            </CardHeader>
-            <CardContent>
-                <Button asChild className="w-full bg-blue-600 hover:bg-blue-700 text-white">
-                    <Link href="/inventory/reports">Ir al Reporte</Link>
-                </Button>
-            </CardContent>
-        </Card>
-
-        {/* Reporte de Cierres */}
-        <Card>
-            <CardHeader>
-                <div className="flex justify-between items-start">
-                    <CardTitle className="text-xl">Reportes de Cierre Diario</CardTitle>
-                    <div className="p-2 bg-green-50 rounded-lg">
-                        <FileText className="h-5 w-5 text-green-600"/> 
-                    </div>
-                </div>
-                <CardDescription>Compara lo planificado vs. lo ejecutado y analiza las desviaciones.</CardDescription>
-            </CardHeader>
-            <CardContent>
-                <Button asChild className="w-full bg-blue-600 hover:bg-blue-700 text-white">
-                    <Link href="/daily-closing">Ir al Reporte</Link>
-                </Button>
-            </CardContent>
-        </Card>
-
-        {/* Reporte de Menús */}
-        <Card>
-            <CardHeader>
-                <div className="flex justify-between items-start">
-                    <CardTitle className="text-xl">Reportes de Menús</CardTitle>
-                    <div className="p-2 bg-orange-50 rounded-lg">
-                        <BookOpen className="h-5 w-5 text-orange-600"/> 
-                    </div>
-                </div>
-                <CardDescription>Visualiza el detalle de ingredientes y requerimientos por menú.</CardDescription>
-            </CardHeader>
-            <CardContent>
-                <Button asChild className="w-full bg-blue-600 hover:bg-blue-700 text-white">
-                    <Link href="/menus/report">Ir al Reporte</Link>
-                </Button>
-            </CardContent>
-        </Card>
-
-        {/* Estadísticas Generales */}
-        <Card>
-            <CardHeader>
-                <div className="flex justify-between items-start">
-                    <CardTitle className="text-xl">Estadísticas Generales</CardTitle>
-                    <div className="p-2 bg-purple-50 rounded-lg">
-                        <BarChart3 className="h-5 w-5 text-purple-600"/> 
-                    </div>
-                </div>
-                <CardDescription>Visualiza gráficos sobre la eficiencia y carga de trabajo.</CardDescription>
-            </CardHeader>
-            <CardContent>
-                <Button asChild className="w-full bg-blue-600 hover:bg-blue-700 text-white">
-                    <Link href="/stats">Ir al Reporte</Link>
-                </Button>
-            </CardContent>
-        </Card>
-
-      </div>
     </div>
   );
 }
