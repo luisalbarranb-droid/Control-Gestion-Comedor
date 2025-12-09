@@ -25,7 +25,7 @@ export default function PlanningPage() {
   const firestore = useFirestore();
   const { toast } = useToast();
   
-  const [currentWeek, setCurrentWeek] = useState<Date>();
+  const [currentWeek, setCurrentWeek] = useState<Date | undefined>();
   const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {

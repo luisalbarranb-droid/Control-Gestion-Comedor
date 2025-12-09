@@ -54,7 +54,11 @@ export function RecentTasks() {
   const { data: tasks, isLoading: isLoadingTasks } = useCollection<Task>(tasksQuery, { disabled: !user });
 
   const recentTasks = tasks
-    ?.sort((a, b) => (b.fechaCreacion as Date).getTime() - (a.fechaCreacion as Date).getTime())
+    ?.sort((a, b) => {
+        const dateA = a.fechaCreacion as any;
+        const dateB = b.fechaCreacion as any;
+        return (dateB?.toDate?.().getTime() || 0) - (dateA?.toDate?.().getTime() || 0);
+    })
     .slice(0, 5) || [];
 
   const getUser = (userId: string) => users?.find(u => u.id === userId);
@@ -133,5 +137,3 @@ export function RecentTasks() {
     </Card>
   );
 }
-
-    
