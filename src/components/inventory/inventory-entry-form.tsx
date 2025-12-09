@@ -34,7 +34,7 @@ import { DatePicker } from '@/components/ui/datepicker';
 import { PlusCircle, Trash2, Camera, Loader2 } from 'lucide-react';
 import type { InventoryItem } from '@/lib/types';
 import { Separator } from '../ui/separator';
-import { useToast } from '@/hooks/use-toast';
+import { useToast } from '@/components/ui/toast';
 import { extractInvoiceData } from '@/ai/flows/extract-invoice-data';
 
 const formSchema = z.object({

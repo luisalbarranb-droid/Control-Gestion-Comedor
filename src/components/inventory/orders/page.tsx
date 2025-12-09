@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState } from 'react';
@@ -13,7 +14,7 @@ import { Badge } from '@/components/ui/badge';
 import Link from 'next/link';
 import { OrderForm } from '@/components/inventory/order-form';
 import { inventoryItems } from '@/lib/placeholder-data';
-import { useToast } from '@/hooks/use-toast';
+import { useToast } from '@/components/ui/toast';
 
 const initialOrders = [
   { id: 'PED-001', proveedor: 'Distribuidora Los Andes', fecha: '2024-05-20', items: 15, total: '$450.00', estado: 'completado' },
