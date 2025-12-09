@@ -58,7 +58,7 @@ export default function MenusPage() {
 	const [dialogOpen, setDialogOpen] = useState(false);
 	const [editingMenu, setEditingMenu] = useState<Menu | null>(null);
 
-	// **CORRECCIÓN CRÍTICA**: Inicializar la fecha en `useEffect` para evitar errores de hidratación.
+	// CRITICAL FIX: Initialize date state in useEffect to prevent hydration mismatch.
 	useEffect(() => {
 		setSelectedDate(new Date());
 	}, []);

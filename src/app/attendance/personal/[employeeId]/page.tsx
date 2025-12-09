@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useMemo } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { useParams, notFound } from 'next/navigation';
 import { useDoc, useCollection, useFirestore, useMemoFirebase } from '@/firebase';
 import { doc, collection, query, where, Timestamp } from 'firebase/firestore';
@@ -12,7 +12,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Calendar as CalendarComponent } from '@/components/ui/calendar';
-import { format, startOfMonth, endOfMonth, set } from 'date-fns';
+import { format, startOfMonth, endOfMonth, set, isValid } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 
@@ -44,7 +44,13 @@ export default function EmployeeDetailPage() {
     const employeeId = params.employeeId as string;
     const firestore = useFirestore();
 
-    const [currentMonth, setCurrentMonth] = useState(new Date());
+    const [currentMonth, setCurrentMonth] = useState<Date>();
+
+    // CRITICAL FIX: Initialize date state in useEffect to prevent hydration mismatch.
+    useEffect(() => {
+		setCurrentMonth(new Date());
+	}, []);
+
 
     const employeeDocRef = useMemoFirebase(() => {
         if (!firestore || !employeeId) return null;
@@ -52,11 +58,11 @@ export default function EmployeeDetailPage() {
     }, [firestore, employeeId]);
     const { data: employee, isLoading: isLoadingEmployee } = useDoc<User>(employeeDocRef);
 
-    const start = useMemo(() => startOfMonth(currentMonth), [currentMonth]);
-    const end = useMemo(() => endOfMonth(currentMonth), [currentMonth]);
+    const start = useMemo(() => currentMonth ? startOfMonth(currentMonth) : null, [currentMonth]);
+    const end = useMemo(() => currentMonth ? endOfMonth(currentMonth) : null, [currentMonth]);
 
     const attendanceQuery = useMemoFirebase(() => {
-        if (!firestore || !employeeId) return null;
+        if (!firestore || !employeeId || !start || !end) return null;
         return query(
             collection(firestore, 'attendance'),
             where('userId', '==', employeeId),
@@ -66,7 +72,7 @@ export default function EmployeeDetailPage() {
     }, [firestore, employeeId, start, end]);
     
     const daysOffQuery = useMemoFirebase(() => {
-         if (!firestore || !employeeId) return null;
+        if (!firestore || !employeeId || !start || !end) return null;
         return query(
             collection(firestore, 'daysOff'),
             where('userId', '==', employeeId),
@@ -108,7 +114,7 @@ export default function EmployeeDetailPage() {
     const isLoading = isLoadingEmployee || isLoadingAttendance || isLoadingDaysOff;
     const getUserInitials = (name?: string) => name ? name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase() : 'U';
 
-    if (isLoading) {
+    if (isLoading || !currentMonth) {
         return <div className="flex h-screen w-full items-center justify-center">Cargando expediente...</div>;
     }
 
