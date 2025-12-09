@@ -148,14 +148,14 @@ export default function ScannerPage() {
       {status === 'success_in' && scannedUser && (
         <div className="text-center text-white">
           <CheckCircle className="h-24 w-24 text-green-400 mx-auto animate-pulse" />
-          <h2 className="text-4xl font-bold mt-4">¡Bienvenido, {scannedUser.name}!</h2>
+          <h2 className="text-4xl font-bold mt-4">¡Bienvenido, ${scannedUser.name}!</h2>
           <p className="text-2xl text-gray-300">{message}</p>
         </div>
       )}
        {status === 'success_out' && scannedUser && (
         <div className="text-center text-white">
           <CheckCircle className="h-24 w-24 text-blue-400 mx-auto animate-pulse" />
-          <h2 className="text-4xl font-bold mt-4">¡Hasta luego, {scannedUser.name}!</h2>
+          <h2 className="text-4xl font-bold mt-4">¡Hasta luego, ${scannedUser.name}!</h2>
           <p className="text-2xl text-gray-300">{message}</p>
         </div>
       )}
@@ -173,7 +173,7 @@ export default function ScannerPage() {
         {scannedUser ? (
            <div className="flex items-center gap-3">
               <Avatar>
-                <AvatarImage src={scannedUser.avatarUrl} />
+                <AvatarImage src={(scannedUser as any).avatarUrl} />
                 <AvatarFallback>{getUserInitials(scannedUser.name)}</AvatarFallback>
               </Avatar>
               <div>
