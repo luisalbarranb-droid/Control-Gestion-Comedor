@@ -1,7 +1,8 @@
+
 'use client';
 
-import React, { useState, useEffect } from 'react';
-import QrScanner from 'react-qr-scanner';
+import React, { useState, useEffect, useRef } from 'react';
+import dynamic from 'next/dynamic';
 import { useToast } from '@/components/ui/toast';
 import { useFirestore, addDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase';
 import { collection, query, where, getDocs, Timestamp, doc, serverTimestamp } from 'firebase/firestore';
@@ -9,6 +10,8 @@ import type { User, AttendanceRecord } from '@/lib/types';
 import { CameraOff, CheckCircle, XCircle } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { format } from 'date-fns';
+
+const QrScanner = dynamic(() => import('react-qr-scanner'), { ssr: false });
 
 export default function ScannerPage() {
   const [result, setResult] = useState<string | null>(null);
@@ -19,6 +22,12 @@ export default function ScannerPage() {
   const firestore = useFirestore();
   const { toast } = useToast();
   const [hasCamera, setHasCamera] = useState(true);
+  const [isClient, setIsClient] = useState(false);
+
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
+
 
   const handleScan = async (data: { text: string } | null) => {
     if (data && data.text) {
@@ -121,7 +130,7 @@ export default function ScannerPage() {
 
   return (
     <div className="w-full h-screen bg-gray-900 flex flex-col items-center justify-center p-4 relative">
-      {!status && hasCamera && (
+      {!status && hasCamera && isClient && (
         <>
           <div className="absolute top-4 left-4 text-white">
             <h1 className="text-3xl font-bold">Registro de Asistencia</h1>
