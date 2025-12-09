@@ -5,7 +5,7 @@ import { useParams, notFound } from 'next/navigation';
 import { useDoc, useCollection, useFirestore, useMemoFirebase } from '@/firebase';
 import { doc, collection, query, where, Timestamp } from 'firebase/firestore';
 import type { User, AttendanceRecord, DayOff } from '@/lib/types';
-import { ArrowLeft, User as UserIcon, Mail, Phone, Briefcase, Calendar, MapPin } from 'lucide-react';
+import { ArrowLeft, User as UserIcon, Mail, Phone, Briefcase, Calendar, MapPin, QrCode } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -15,6 +15,8 @@ import { Calendar as CalendarComponent } from '@/components/ui/calendar';
 import { format, startOfMonth, endOfMonth, set, isValid } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import QRCode from 'react-qr-code';
 
 
 // --- Helper Functions ---
@@ -49,7 +51,6 @@ export default function EmployeeDetailPage() {
     const [currentMonth, setCurrentMonth] = useState<Date | undefined>();
     const [selectedDay, setSelectedDay] = useState<Date | undefined>();
 
-    // CRITICAL FIX: Initialize date state in useEffect to prevent hydration mismatch.
     useEffect(() => {
 		const today = new Date();
         setCurrentMonth(today);
@@ -163,6 +164,19 @@ export default function EmployeeDetailPage() {
                                 <div className="flex items-center gap-3"><Phone className="h-4 w-4 text-muted-foreground" /><span>{employee.phone || 'N/A'}</span></div>
                                 <div className="flex items-center gap-3"><Briefcase className="h-4 w-4 text-muted-foreground" /><span className="capitalize">{employee.role}</span></div>
                                 <div className="flex items-center gap-3"><MapPin className="h-4 w-4 text-muted-foreground" /><span>{employee.address || 'N/A'}</span></div>
+                                <Dialog>
+                                    <DialogTrigger asChild>
+                                        <Button variant="outline" className="w-full mt-4"><QrCode className="mr-2 h-4 w-4"/> Ver Código QR</Button>
+                                    </DialogTrigger>
+                                    <DialogContent>
+                                        <DialogHeader>
+                                            <DialogTitle>Código QR de Asistencia para {employee.name}</DialogTitle>
+                                        </DialogHeader>
+                                        <div className="p-4 bg-white flex justify-center">
+                                            <QRCode value={employee.id} size={256}/>
+                                        </div>
+                                    </DialogContent>
+                                </Dialog>
                             </div>
                         </CardContent>
                     </Card>

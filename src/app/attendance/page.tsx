@@ -3,7 +3,7 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { Calendar, Users, BarChart, ClipboardList } from 'lucide-react';
+import { Calendar, Users, BarChart, ClipboardList, QrCode } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
 
 const attendanceModules = [
@@ -13,6 +13,13 @@ const attendanceModules = [
         link: '/attendance/dashboard',
         icon: BarChart,
         cta: 'Ver Dashboard'
+    },
+    {
+        title: 'Registro por QR',
+        description: 'Abre el quiosco para que los empleados registren su entrada y salida.',
+        link: '/attendance/scanner',
+        icon: QrCode,
+        cta: 'Abrir Escáner'
     },
     {
         title: 'Gestión de Personal',
