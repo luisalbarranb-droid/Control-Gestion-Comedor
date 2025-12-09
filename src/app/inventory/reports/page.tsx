@@ -25,7 +25,7 @@ import { Badge } from '@/components/ui/badge';
 import { inventoryItems, inventoryCategories, inventoryTransactions } from '@/lib/placeholder-data';
 import type { InventoryItem, InventoryReportData, InventoryCategoryId } from '@/lib/types';
 import { cn } from '@/lib/utils';
-import { useToast } from '@/hooks/use-toast';
+import { useToast } from '@/components/ui/toast';
 import Link from 'next/link';
 
 export default function InventoryReportsPage() {

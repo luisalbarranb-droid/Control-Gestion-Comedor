@@ -18,7 +18,7 @@ import type { InventoryOrder, OrderStatus, InventoryOrderItem } from '@/lib/type
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import { OrderForm } from '@/components/inventory/order-form';
-import { useToast } from '@/hooks/use-toast';
+import { useToast } from '@/components/ui/toast';
 
 const statusVariant: Record<OrderStatus, string> = {
   pendiente: 'bg-yellow-100 text-yellow-800',
@@ -33,7 +33,7 @@ export default function InventoryOrdersPage() {
 
   const handleCreateOrder = (orderData: Omit<InventoryOrder, 'orderId' | 'creadoPor' | 'costoTotal'> & { items: Omit<InventoryOrderItem, 'nombre' | 'costo'>[] }) => {
     const newItems = orderData.items.map(item => {
-        const fullItem = inventoryItems.find(i => i.itemId === item.itemId);
+        const fullItem = inventoryItems.find(i => i.id === item.itemId);
         return {
             ...item,
             nombre: fullItem?.nombre || 'N/A',
