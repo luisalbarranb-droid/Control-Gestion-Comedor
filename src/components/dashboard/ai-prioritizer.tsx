@@ -22,7 +22,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { useToast } from '@/hooks/use-toast';
+import { useToast } from '@/components/ui/toast';
 import { aiPrioritizeTasks, type AIPrioritizeTasksOutput } from '@/ai/flows/ai-prioritize-tasks';
 import { tasks as mockTasks, users as mockUsers } from '@/lib/placeholder-data';
 import type { TaskPriority } from '@/lib/types';
