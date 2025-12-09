@@ -133,17 +133,21 @@ export interface InventoryItem {
   costoUnitario?: number;
 }
 
+export type InventoryTransactionType = 'entrada' | 'salida' | 'ajuste-positivo' | 'ajuste-negativo';
+
 export interface InventoryTransaction {
   transactionId: string;
   itemId: string;
-  type: 'entrada' | 'salida';
+  type: InventoryTransactionType;
   quantity: number;
   date: Date;
   documentNumber?: string;
   supplier?: string;
   reason?: string; // e.g., 'Uso en Producción', 'Vencimiento'
   destinationArea?: AreaId;
+  costoUnitario?: number;
 }
+
 
 export interface InventoryReportData {
   'ID de Artículo': string;

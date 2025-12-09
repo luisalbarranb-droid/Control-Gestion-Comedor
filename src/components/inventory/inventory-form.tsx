@@ -29,7 +29,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { useToast } from '@/hooks/use-toast';
+import { useToast } from '@/components/ui/toast';
 import { inventoryCategories } from '@/lib/placeholder-data';
 import type { InventoryItem, InventoryCategoryId, UnitOfMeasure } from '@/lib/types';
 import { Textarea } from '../ui/textarea';
