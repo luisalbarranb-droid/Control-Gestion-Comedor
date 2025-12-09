@@ -56,14 +56,15 @@ export default function InventoryPage() {
   }
 
   const handleSaveItem = (itemData: any) => {
+    const now = new Date().toISOString();
     if (editingItem) {
-      setItems(prev => prev.map(i => i.id === editingItem.id ? { ...i, ...itemData } : i));
+      setItems(prev => prev.map(i => i.id === editingItem.id ? { ...i, ...itemData, ultimaActualizacion: now } : i));
     } else {
       const newItem: InventoryItem = {
         ...itemData,
         id: `inv-${Date.now()}`,
-        fechaCreacion: new Date(),
-        ultimaActualizacion: new Date(),
+        fechaCreacion: now,
+        ultimaActualizacion: now,
       };
       setItems(prev => [newItem, ...prev]);
     }
@@ -79,6 +80,7 @@ export default function InventoryPage() {
      }
     
     setItems(prevItems => {
+        const now = new Date().toISOString();
         let itemsUpdated = [...prevItems];
         data.items.forEach((txItem: { itemId: string; quantity: number; }) => {
             const itemIndex = itemsUpdated.findIndex(i => i.id === txItem.itemId);
@@ -92,7 +94,7 @@ export default function InventoryPage() {
                     newQuantity -= txItem.quantity;
                     transactionToast(item, txItem.quantity, 'Salida');
                 }
-                itemsUpdated[itemIndex] = { ...item, cantidad: Math.max(0, newQuantity), ultimaActualizacion: new Date() };
+                itemsUpdated[itemIndex] = { ...item, cantidad: Math.max(0, newQuantity), ultimaActualizacion: now };
             }
         });
         return itemsUpdated;
@@ -102,6 +104,7 @@ export default function InventoryPage() {
   
   const handleImport = (importedData: any[]) => {
      try {
+        const now = new Date().toISOString();
         const newItems: InventoryItem[] = importedData.map((row: any) => ({
             id: `inv-${Date.now()}-${Math.random()}`,
             nombre: String(row.nombre),
@@ -112,8 +115,8 @@ export default function InventoryPage() {
             stockMinimo: Number(row.stockMinimo),
             proveedor: String(row.proveedor || ''),
             costoUnitario: Number(row.costoUnitario || 0),
-            fechaCreacion: new Date(),
-            ultimaActualizacion: new Date(),
+            fechaCreacion: now,
+            ultimaActualizacion: now,
         }));
         
         // Simple merge: for now, we just add new items. A real-world scenario might update existing ones.
