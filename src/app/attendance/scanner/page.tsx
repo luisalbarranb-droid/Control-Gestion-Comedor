@@ -131,7 +131,7 @@ export default function ScannerPage() {
               onError={handleError}
               onScan={handleScan}
               style={{ width: '100%' }}
-              constraints={{ video: { facingMode: 'user' } }}
+              constraints={{ video: true }}
             />
           </div>
         </>
