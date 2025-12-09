@@ -1,4 +1,3 @@
-
 'use client';
 
 import {
@@ -108,5 +107,3 @@ export function MenuItemCard({ menuItem, pax }: MenuItemCardProps) {
     </Card>
   );
 }
-
-    
