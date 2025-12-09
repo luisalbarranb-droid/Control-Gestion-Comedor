@@ -30,13 +30,15 @@ function convertToDate(date: any): Date | null {
     return isNaN(parsed.getTime()) ? null : parsed;
 }
 
-const statusConfig = {
+const statusConfig: Record<string, { label: string; className: string }> = {
     presente: { label: 'Presente', className: 'bg-green-100 text-green-800 border-green-200' },
     retardo: { label: 'Retardo', className: 'bg-yellow-100 text-yellow-800 border-yellow-200' },
     ausente: { label: 'Ausente', className: 'bg-red-100 text-red-800 border-red-200' },
     justificado: { label: 'Justificado', className: 'bg-blue-100 text-blue-800 border-blue-200' },
     'dia-libre': { label: 'Día Libre', className: 'bg-gray-100 text-gray-800 border-gray-200' },
     vacaciones: { label: 'Vacaciones', className: 'bg-indigo-100 text-indigo-800 border-indigo-200' },
+    'fuera-de-horario': { label: 'Fuera de Horario', className: 'bg-purple-100 text-purple-800 border-purple-200' },
+    'no-justificado': { label: 'No Justificado', className: 'bg-orange-100 text-orange-800 border-orange-200' },
 };
 
 export default function EmployeeDetailPage() {
@@ -44,11 +46,14 @@ export default function EmployeeDetailPage() {
     const employeeId = params.employeeId as string;
     const firestore = useFirestore();
 
-    const [currentMonth, setCurrentMonth] = useState<Date>();
+    const [currentMonth, setCurrentMonth] = useState<Date | undefined>();
+    const [selectedDay, setSelectedDay] = useState<Date | undefined>();
 
     // CRITICAL FIX: Initialize date state in useEffect to prevent hydration mismatch.
     useEffect(() => {
-		setCurrentMonth(new Date());
+		const today = new Date();
+        setCurrentMonth(today);
+        setSelectedDay(today);
 	}, []);
 
 
@@ -66,8 +71,8 @@ export default function EmployeeDetailPage() {
         return query(
             collection(firestore, 'attendance'),
             where('userId', '==', employeeId),
-            where('checkIn', '>=', start),
-            where('checkIn', '<=', end)
+            where('checkIn', '>=', Timestamp.fromDate(start)),
+            where('checkIn', '<=', Timestamp.fromDate(end))
         );
     }, [firestore, employeeId, start, end]);
     
@@ -86,11 +91,11 @@ export default function EmployeeDetailPage() {
 
     const calendarModifiers = useMemo(() => {
         const modifiers: Record<string, Date[]> = {
-            presente: [], retardo: [], ausente: [], justificado: [], 'dia-libre': []
+            presente: [], retardo: [], ausente: [], justificado: [], 'dia-libre': [], vacaciones: [], 'no-justificado': [], 'fuera-de-horario': []
         };
         attendance?.forEach(rec => {
             const date = convertToDate(rec.checkIn);
-            if(date && modifiers[rec.status]) {
+            if(date && rec.status && modifiers[rec.status]) {
                 modifiers[rec.status].push(date);
             }
         });
@@ -109,6 +114,9 @@ export default function EmployeeDetailPage() {
         ausente: 'bg-red-200 text-red-900 rounded-full',
         justificado: 'bg-blue-200 text-blue-900 rounded-full',
         'dia-libre': 'bg-gray-200 text-gray-900 rounded-full',
+        vacaciones: 'bg-indigo-200 text-indigo-900 rounded-full',
+        'no-justificado': 'bg-orange-200 text-orange-900 rounded-full',
+        'fuera-de-horario': 'bg-purple-200 text-purple-900 rounded-full',
     };
 
     const isLoading = isLoadingEmployee || isLoadingAttendance || isLoadingDaysOff;
@@ -140,7 +148,7 @@ export default function EmployeeDetailPage() {
                         <CardContent className="pt-6">
                             <div className="flex flex-col items-center gap-4 text-center">
                                 <Avatar className="h-24 w-24 border-2 border-primary">
-                                    <AvatarImage src={employee.avatarUrl} />
+                                    <AvatarImage src={(employee as any).avatarUrl} />
                                     <AvatarFallback className="text-3xl">{getUserInitials(employee.name)}</AvatarFallback>
                                 </Avatar>
                                 <div>
@@ -161,10 +169,10 @@ export default function EmployeeDetailPage() {
                          <CardHeader>
                              <CardTitle>Leyenda del Calendario</CardTitle>
                          </CardHeader>
-                         <CardContent className="space-y-2">
+                         <CardContent className="grid grid-cols-2 gap-2">
                              {Object.entries(statusConfig).map(([status, {label, className}]) => (
                                 <div key={status} className="flex items-center gap-2">
-                                    <span className={cn('block h-4 w-4 rounded-full border', className.replace('text-', 'border-'))}></span>
+                                    <span className={cn('block h-4 w-4 rounded-full border', className.replace('text-', 'border-').replace('bg-','bg-opacity-100 '))}></span>
                                     <span className="text-sm">{label}</span>
                                 </div>
                              ))}
@@ -183,7 +191,8 @@ export default function EmployeeDetailPage() {
                                 mode="single"
                                 month={currentMonth}
                                 onMonthChange={setCurrentMonth}
-                                selected={new Date()}
+                                selected={selectedDay}
+                                onSelect={setSelectedDay}
                                 className="p-0"
                                 classNames={{
                                     ...calendarModifiersClassNames,
