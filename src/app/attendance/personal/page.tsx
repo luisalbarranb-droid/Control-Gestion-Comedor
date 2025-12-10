@@ -1,18 +1,19 @@
 'use client';
 
 import React, { useState } from 'react';
-import { ArrowLeft, UserPlus, Search, Upload } from 'lucide-react';
+import { ArrowLeft, UserPlus, Search, Upload, Cake } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { Input } from '@/components/ui/input';
 import { EmployeeList } from '@/components/attendance/employee-list';
 import { EmployeeForm } from '@/components/attendance/employee-form';
-import { useCollection, useFirestore, useMemoFirebase, addDocumentNonBlocking } from '@/firebase';
+import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
 import { collection, query, orderBy, writeBatch, doc, serverTimestamp, Timestamp } from 'firebase/firestore';
 import type { User } from '@/lib/types';
 import { EmployeeImportDialog } from '@/components/attendance/employee-import-dialog';
 import { useToast } from '@/components/ui/toast';
-
+import { BirthdayCalendar } from '@/components/attendance/birthday-calendar';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 
 export default function PersonalManagementPage() {
     const [isFormOpen, setIsFormOpen] = useState(false);
@@ -114,7 +115,21 @@ export default function PersonalManagementPage() {
                 <h1 className="text-xl font-semibold md:text-2xl">Gestión de Personal</h1>
             </div>
 
-            <div className="flex flex-col md:flex-row items-center justify-between gap-4">
+            <Card>
+                <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                        <Cake className="h-5 w-5 text-pink-500" />
+                        Cumpleaños del Mes
+                    </CardTitle>
+                    <CardDescription>Un vistazo a los próximos cumpleaños del equipo.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <BirthdayCalendar users={employees || []} isLoading={isLoading} />
+                </CardContent>
+            </Card>
+
+
+            <div className="flex flex-col md:flex-row items-center justify-between gap-4 mt-4">
                 <div className="relative w-full md:w-auto md:flex-grow">
                     <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                     <Input
