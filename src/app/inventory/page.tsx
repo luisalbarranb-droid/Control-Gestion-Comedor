@@ -23,7 +23,8 @@ import {
   writeBatch,
   query,
   orderBy,
-  Timestamp
+  Timestamp,
+  setDoc
 } from 'firebase/firestore';
 import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
 
@@ -91,11 +92,13 @@ export default function InventoryPage() {
       const itemRef = doc(firestore, 'inventory', editingItem.id);
       await updateDoc(itemRef, { ...itemData, ultimaActualizacion: serverTimestamp() });
     } else {
-      await addDoc(collection(firestore, 'inventory'), {
-        ...itemData,
-        fechaCreacion: serverTimestamp(),
-        ultimaActualizacion: serverTimestamp(),
-      });
+        const newItemRef = doc(collection(firestore, 'inventory'));
+        await setDoc(newItemRef, {
+            ...itemData,
+            id: newItemRef.id,
+            fechaCreacion: serverTimestamp(),
+            ultimaActualizacion: serverTimestamp(),
+        });
     }
     handleCloseForm();
   };
@@ -150,7 +153,7 @@ export default function InventoryPage() {
                 fechaCreacion: serverTimestamp(),
                 ultimaActualizacion: serverTimestamp(),
             };
-            batch.set(newItemRef, newItem);
+            batch.set(newItemRef, { ...newItem, id: newItemRef.id });
         });
         
         await batch.commit();
