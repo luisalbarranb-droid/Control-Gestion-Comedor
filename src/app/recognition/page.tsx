@@ -1,7 +1,7 @@
 
 'use client';
 
-import React, 'react';
+import React from 'react';
 import { Award, ThumbsUp, ThumbsDown, Meh, Trophy, Star } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -132,4 +132,3 @@ export default function RecognitionPage() {
         </main>
     );
 }
-
