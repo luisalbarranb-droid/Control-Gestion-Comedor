@@ -12,22 +12,50 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { MoreVertical, Package, DollarSign, AlertCircle, TrendingDown, TrendingUp, Search, Filter, Plus, FileSpreadsheet, Upload, ShoppingCart } from 'lucide-react';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
-import { format } from 'date-fns';
+import { format, isValid } from 'date-fns';
 import { useToast } from '@/components/ui/toast';
+import {
+  addDoc,
+  collection,
+  doc,
+  serverTimestamp,
+  updateDoc,
+  writeBatch,
+  query,
+  orderBy,
+  Timestamp
+} from 'firebase/firestore';
+import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
 
-import { inventoryItems as initialItems, inventoryCategories } from '@/lib/placeholder-data';
 import type { InventoryItem, InventoryCategoryId, InventoryTransaction, InventoryTransactionType, UnitOfMeasure } from '@/lib/types';
 import { InventoryForm } from '@/components/inventory/inventory-form';
 import { InventoryEntryForm } from '@/components/inventory/inventory-entry-form';
 import { InventoryExitForm } from '@/components/inventory/inventory-exit-form';
 import { InventoryImportDialog } from '@/components/inventory/inventory-import-dialog';
+import { inventoryCategories } from '@/lib/placeholder-data';
+
 
 type FormType = 'item' | 'entry' | 'exit' | 'import' | null;
 
+function convertToDate(date: any): Date | null {
+    if (!date) return null;
+    if (date instanceof Date && isValid(date)) return date;
+    if (date instanceof Timestamp) return date.toDate();
+    const parsed = new Date(date);
+    return isValid(parsed) ? parsed : null;
+}
+
 export default function InventoryPage() {
   const { toast } = useToast();
-  const [items, setItems] = useState<InventoryItem[]>(initialItems);
-  const [transactions, setTransactions] = useState<InventoryTransaction[]>([]);
+  const firestore = useFirestore();
+
+  const inventoryQuery = useMemoFirebase(() => {
+    if (!firestore) return null;
+    return query(collection(firestore, 'inventory'), orderBy('nombre', 'asc'));
+  }, [firestore]);
+
+  const { data: items, isLoading: isLoadingItems } = useCollection<InventoryItem>(inventoryQuery);
+  
   const [searchQuery, setSearchQuery] = useState('');
   const [categoryFilter, setCategoryFilter] = useState<InventoryCategoryId | 'all'>('all');
   const [activeForm, setActiveForm] = useState<FormType>(null);
@@ -38,6 +66,7 @@ export default function InventoryPage() {
   };
 
   const filteredItems = useMemo(() => {
+    if (!items) return [];
     return items.filter(item => {
       const matchesSearch = item.nombre.toLowerCase().includes(searchQuery.toLowerCase());
       const matchesCategory = categoryFilter === 'all' || item.categoriaId === categoryFilter;
@@ -55,76 +84,80 @@ export default function InventoryPage() {
     setActiveForm(null);
   }
 
-  const handleSaveItem = (itemData: any) => {
-    const now = new Date().toISOString();
+  const handleSaveItem = async (itemData: any) => {
+    if (!firestore) return;
+    
     if (editingItem) {
-      setItems(prev => prev.map(i => i.id === editingItem.id ? { ...i, ...itemData, ultimaActualizacion: now } : i));
+      const itemRef = doc(firestore, 'inventory', editingItem.id);
+      await updateDoc(itemRef, { ...itemData, ultimaActualizacion: serverTimestamp() });
     } else {
-      const newItem: InventoryItem = {
+      await addDoc(collection(firestore, 'inventory'), {
         ...itemData,
-        id: `inv-${Date.now()}`,
-        fechaCreacion: now,
-        ultimaActualizacion: now,
-      };
-      setItems(prev => [newItem, ...prev]);
+        fechaCreacion: serverTimestamp(),
+        ultimaActualizacion: serverTimestamp(),
+      });
     }
     handleCloseForm();
   };
   
-  const handleSaveTransaction = (data: any, type: InventoryTransactionType) => {
-     const transactionToast = (item: InventoryItem, quantity: number, typeLabel: string) => {
+  const handleSaveTransaction = async (data: any, type: InventoryTransactionType) => {
+    if (!firestore || !items) return;
+
+    const batch = writeBatch(firestore);
+
+    const transactionToast = (item: InventoryItem, quantity: number, typeLabel: string) => {
          toast({
             title: `Movimiento Registrado: ${typeLabel}`,
             description: `${quantity} ${item.unidad} de ${item.nombre} han sido procesadas.`
         });
-     }
+    }
     
-    setItems(prevItems => {
-        const now = new Date().toISOString();
-        let itemsUpdated = [...prevItems];
-        data.items.forEach((txItem: { itemId: string; quantity: number; }) => {
-            const itemIndex = itemsUpdated.findIndex(i => i.id === txItem.itemId);
-            if(itemIndex > -1) {
-                const item = itemsUpdated[itemIndex];
-                let newQuantity = item.cantidad;
-                if(type === 'entrada') {
-                    newQuantity += txItem.quantity;
-                    transactionToast(item, txItem.quantity, 'Entrada');
-                } else if(type === 'salida') {
-                    newQuantity -= txItem.quantity;
-                    transactionToast(item, txItem.quantity, 'Salida');
-                }
-                itemsUpdated[itemIndex] = { ...item, cantidad: Math.max(0, newQuantity), ultimaActualizacion: now };
+    data.items.forEach((txItem: { itemId: string; quantity: number; }) => {
+        const itemRef = doc(firestore, 'inventory', txItem.itemId);
+        const item = items.find(i => i.id === txItem.itemId);
+        if(item) {
+            let newQuantity = item.cantidad;
+            if(type === 'entrada') {
+                newQuantity += txItem.quantity;
+                transactionToast(item, txItem.quantity, 'Entrada');
+            } else if(type === 'salida') {
+                newQuantity -= txItem.quantity;
+                transactionToast(item, txItem.quantity, 'Salida');
             }
-        });
-        return itemsUpdated;
+            batch.update(itemRef, { cantidad: Math.max(0, newQuantity), ultimaActualizacion: serverTimestamp() });
+        }
     });
+
+    await batch.commit();
     handleCloseForm();
   };
   
-  const handleImport = (importedData: any[]) => {
+  const handleImport = async (importedData: any[]) => {
+    if (!firestore) return;
      try {
-        const now = new Date().toISOString();
-        const newItems: InventoryItem[] = importedData.map((row: any) => ({
-            id: `inv-${Date.now()}-${Math.random()}`,
-            nombre: String(row.nombre),
-            descripcion: String(row.descripcion || ''),
-            categoriaId: row.categoriaId as InventoryCategoryId,
-            cantidad: Number(row.cantidad),
-            unidad: row.unidad as UnitOfMeasure,
-            stockMinimo: Number(row.stockMinimo),
-            proveedor: String(row.proveedor || ''),
-            costoUnitario: Number(row.costoUnitario || 0),
-            fechaCreacion: now,
-            ultimaActualizacion: now,
-        }));
+        const batch = writeBatch(firestore);
+        importedData.forEach((row: any) => {
+            const newItemRef = doc(collection(firestore, 'inventory'));
+            const newItem: Omit<InventoryItem, 'id'> = {
+                nombre: String(row.nombre),
+                descripcion: String(row.descripcion || ''),
+                categoriaId: row.categoriaId as InventoryCategoryId,
+                cantidad: Number(row.cantidad),
+                unidad: row.unidad as UnitOfMeasure,
+                stockMinimo: Number(row.stockMinimo),
+                proveedor: String(row.proveedor || ''),
+                costoUnitario: Number(row.costoUnitario || 0),
+                fechaCreacion: serverTimestamp(),
+                ultimaActualizacion: serverTimestamp(),
+            };
+            batch.set(newItemRef, newItem);
+        });
         
-        // Simple merge: for now, we just add new items. A real-world scenario might update existing ones.
-        setItems(prev => [...prev, ...newItems]);
+        await batch.commit();
         handleCloseForm();
         toast({
             title: "Importación Exitosa",
-            description: `${newItems.length} artículos han sido añadidos al inventario.`
+            description: `${importedData.length} artículos han sido añadidos al inventario.`
         })
 
      } catch(e) {
@@ -187,28 +220,28 @@ export default function InventoryPage() {
                 <CardTitle className="text-sm font-medium">Total Artículos</CardTitle>
                 <Package className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
-            <CardContent><div className="text-2xl font-bold">{items.length}</div></CardContent>
+            <CardContent><div className="text-2xl font-bold">{items?.length || 0}</div></CardContent>
          </Card>
          <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">Valor Total</CardTitle>
                 <DollarSign className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
-            <CardContent><div className="text-2xl font-bold">${items.reduce((sum, item) => sum + item.cantidad * (item.costoUnitario || 0), 0).toFixed(2)}</div></CardContent>
+            <CardContent><div className="text-2xl font-bold">${items?.reduce((sum, item) => sum + item.cantidad * (item.costoUnitario || 0), 0).toFixed(2) || '0.00'}</div></CardContent>
          </Card>
          <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">Bajo Stock</CardTitle>
                 <AlertCircle className="h-4 w-4 text-orange-500" />
             </CardHeader>
-            <CardContent><div className="text-2xl font-bold text-orange-600">{items.filter(i => i.cantidad <= i.stockMinimo && i.cantidad > 0).length}</div></CardContent>
+            <CardContent><div className="text-2xl font-bold text-orange-600">{items?.filter(i => i.cantidad <= i.stockMinimo && i.cantidad > 0).length || 0}</div></CardContent>
          </Card>
          <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">Agotados</CardTitle>
                 <AlertCircle className="h-4 w-4 text-red-500" />
             </CardHeader>
-            <CardContent><div className="text-2xl font-bold text-red-600">{items.filter(i => i.cantidad === 0).length}</div></CardContent>
+            <CardContent><div className="text-2xl font-bold text-red-600">{items?.filter(i => i.cantidad === 0).length || 0}</div></CardContent>
          </Card>
       </div>
 
@@ -227,13 +260,16 @@ export default function InventoryPage() {
                     </TableRow>
                 </TableHeader>
                 <TableBody>
-                    {filteredItems.map((item) => (
+                    {isLoadingItems && <TableRow><TableCell colSpan={6} className="h-24 text-center">Cargando inventario...</TableCell></TableRow>}
+                    {!isLoadingItems && filteredItems.map((item) => {
+                        const lastUpdate = convertToDate(item.ultimaActualizacion);
+                        return (
                         <TableRow key={item.id}>
                             <TableCell className="font-medium">{item.nombre}</TableCell>
                             <TableCell><Badge variant="secondary">{getCategoryName(item.categoriaId)}</Badge></TableCell>
                             <TableCell className={cn("text-right font-bold", item.cantidad <= item.stockMinimo ? 'text-red-500' : 'text-current')}>{item.cantidad.toFixed(2)} {item.unidad}</TableCell>
                             <TableCell className="text-right text-muted-foreground">{item.stockMinimo} {item.unidad}</TableCell>
-                            <TableCell className="text-muted-foreground">{format(new Date(item.ultimaActualizacion), 'dd/MM/yy HH:mm')}</TableCell>
+                            <TableCell className="text-muted-foreground">{lastUpdate ? format(lastUpdate, 'dd/MM/yy HH:mm') : 'N/A'}</TableCell>
                             <TableCell className="text-right">
                                 <DropdownMenu>
                                     <DropdownMenuTrigger asChild>
@@ -246,8 +282,9 @@ export default function InventoryPage() {
                                 </DropdownMenu>
                             </TableCell>
                         </TableRow>
-                    ))}
-                     {filteredItems.length === 0 && (
+                        );
+                    })}
+                     {!isLoadingItems && filteredItems.length === 0 && (
                         <TableRow>
                             <TableCell colSpan={6} className="h-24 text-center">No se encontraron artículos.</TableCell>
                         </TableRow>
@@ -258,11 +295,17 @@ export default function InventoryPage() {
       </Card>
       
       {/* Forms */}
-      <InventoryForm isOpen={activeForm === 'item'} onOpenChange={handleCloseForm} onSave={handleSaveItem} item={editingItem} />
-      <InventoryEntryForm isOpen={activeForm === 'entry'} onOpenChange={handleCloseForm} onSave={(data) => handleSaveTransaction(data, 'entrada')} inventoryItems={items} />
-      <InventoryExitForm isOpen={activeForm === 'exit'} onOpenChange={handleCloseForm} onSave={(data) => handleSaveTransaction(data, 'salida')} inventoryItems={items} />
-      <InventoryImportDialog isOpen={activeForm === 'import'} onOpenChange={handleCloseForm} onImport={handleImport} />
+      {items && (
+        <>
+          <InventoryForm isOpen={activeForm === 'item'} onOpenChange={handleCloseForm} onSave={handleSaveItem} item={editingItem} />
+          <InventoryEntryForm isOpen={activeForm === 'entry'} onOpenChange={handleCloseForm} onSave={(data) => handleSaveTransaction(data, 'entrada')} inventoryItems={items} />
+          <InventoryExitForm isOpen={activeForm === 'exit'} onOpenChange={handleCloseForm} onSave={(data) => handleSaveTransaction(data, 'salida')} inventoryItems={items} />
+          <InventoryImportDialog isOpen={activeForm === 'import'} onOpenChange={handleCloseForm} onImport={handleImport} />
+        </>
+      )}
 
     </div>
   );
 }
+
+    
