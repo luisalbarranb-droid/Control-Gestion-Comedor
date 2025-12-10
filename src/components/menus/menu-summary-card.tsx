@@ -1,27 +1,38 @@
-
 'use client';
 
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
-import { Users } from 'lucide-react';
-import type { Menu, MenuItem, MenuItemCategory } from '@/lib/types';
+import { Users, Utensils } from 'lucide-react';
+import type { Menu, MenuItem, MenuItemCategory, MealType } from '@/lib/types';
 import { categoryDisplay } from '@/components/daily-closing/category-display';
 
 interface MenuSummaryCardProps {
   menu: Menu;
 }
 
+const mealTypeLabels: Record<MealType, string> = {
+    desayuno: "Desayuno",
+    almuerzo: "Almuerzo",
+    cena: "Cena",
+    merienda: "Merienda",
+    especial: "Plato Especial",
+    otro: "Otro"
+};
+
 const categoryOrder: MenuItemCategory[] = ['entrada', 'proteico', 'acompanante1', 'acompanante2', 'acompanante3', 'bebida', 'postre'];
 
 export function MenuSummaryCard({ menu }: MenuSummaryCardProps) {
+  const menuTitle = menu.name || (menu.time ? mealTypeLabels[menu.time] : "Menú");
+  
   return (
-    <Card className="h-full bg-primary/5 hover:bg-primary/10 transition-colors cursor-pointer border-primary/20 overflow-hidden">
+    <Card className="h-full bg-primary/5 hover:bg-primary/10 transition-colors cursor-pointer border-primary/20 overflow-hidden shadow-sm">
       <CardHeader className="p-2 pb-1">
-        <div className="flex items-center justify-between text-xs text-muted-foreground">
-          <div className="flex items-center gap-1 font-semibold">
-            <Users className="w-3 h-3" />
-            <span>{menu.pax} PAX</span>
-          </div>
-        </div>
+         <div className="flex justify-between items-center">
+            <span className="font-bold text-primary text-xs flex items-center gap-1"><Utensils className="w-3 h-3"/> {menuTitle}</span>
+            <div className="flex items-center gap-1 text-xs text-muted-foreground font-semibold">
+                <Users className="w-3 h-3" />
+                <span>{menu.pax} PAX</span>
+            </div>
+         </div>
       </CardHeader>
       <CardContent className="p-2 pt-0">
         <ul className="space-y-0.5">
