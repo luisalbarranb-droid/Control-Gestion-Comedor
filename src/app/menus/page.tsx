@@ -2,7 +2,7 @@
 
 import React, { useCallback, useMemo, useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, ArrowRight, FileSpreadsheet, Plus, Settings, Calendar as CalendarIcon } from 'lucide-react';
+import { ArrowLeft, ArrowRight, FileSpreadsheet, Plus, Settings, Calendar as CalendarIcon, Upload } from 'lucide-react';
 import { Calendar } from '@/components/ui/calendar';
 import {
 	Table,
@@ -38,7 +38,9 @@ import {
 	DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Edit, MoreVertical, Trash } from 'lucide-react';
-import type { Menu, User } from '@/lib/types';
+import type { Menu, User, MenuImportRow, InventoryItem, MenuItem as TMenuItem, Ingredient } from '@/lib/types';
+import { MenuImportDialog } from '@/components/menus/menu-import-dialog';
+import { useToast } from '@/components/ui/toast';
 
 
 function convertToDate(date: Date | Timestamp | undefined): Date | undefined {
@@ -53,10 +55,12 @@ function convertToDate(date: Date | Timestamp | undefined): Date | undefined {
 export default function MenusPage() {
 	const { user: authUser, profile: currentUser } = useUser();
 	const firestore = useFirestore();
+    const { toast } = useToast();
 
 	const [currentWeek, setCurrentWeek] = useState(startOfWeek(new Date(), { weekStartsOn: 1 }));
 	const [selectedDate, setSelectedDate] = useState<Date | undefined>();
 	const [dialogOpen, setDialogOpen] = useState(false);
+    const [importDialogOpen, setImportDialogOpen] = useState(false);
 	const [editingMenu, setEditingMenu] = useState<Menu | null>(null);
 
 	// CRITICAL FIX: Initialize date state in useEffect to prevent hydration mismatch.
@@ -92,9 +96,15 @@ export default function MenusPage() {
 		if (!firestore) return null;
 		return collection(firestore, 'users'); // Simplificado
 	}, [firestore]);
+    
+    const inventoryQuery = useMemoFirebase(() => {
+        if (!firestore) return null;
+        return collection(firestore, 'inventory');
+    }, [firestore]);
 
 
 	const { data: users, isLoading: isLoadingUsers } = useCollection<User>(usersQuery);
+    const { data: inventoryItems, isLoading: isLoadingInventory } = useCollection<InventoryItem>(inventoryQuery);
 
 	const handleNextWeek = useCallback(() => {
 		setCurrentWeek(prev => addWeeks(prev, 1));
@@ -218,12 +228,78 @@ export default function MenusPage() {
 		const user = users.find(u => u.id === uid);
 		return user ? (user.name || (user as any).nombres) : 'Desconocido';
 	};
+    
+    const handleImport = async (data: MenuImportRow[]) => {
+        if (!firestore || !inventoryItems) {
+            toast({ variant: 'destructive', title: 'Error', description: 'La base de datos o el inventario no están listos.' });
+            return;
+        }
+
+        const menusByDate = new Map<string, Partial<Menu>>();
+        const inventoryNameMap = new Map(inventoryItems.map(item => [item.nombre.toLowerCase(), item.id]));
+
+        for (const row of data) {
+            const dateStr = format(new Date(row.date), 'yyyy-MM-dd');
+            if (!menusByDate.has(dateStr)) {
+                menusByDate.set(dateStr, {
+                    date: Timestamp.fromDate(new Date(row.date)),
+                    pax: row.pax,
+                    items: [],
+                    createdBy: authUser?.uid,
+                    createdAt: Timestamp.now(),
+                });
+            }
+
+            const menu = menusByDate.get(dateStr)!;
+            let menuItem = menu.items?.find(item => item.name === row.itemName && item.category === row.itemCategory);
+            
+            if (!menuItem) {
+                menuItem = {
+                    id: `${row.itemCategory}-${Date.now()}`,
+                    name: row.itemName,
+                    category: row.itemCategory as any,
+                    ingredients: [],
+                };
+                menu.items?.push(menuItem);
+            }
+
+            const inventoryItemId = inventoryNameMap.get(row.ingredientName.toLowerCase());
+            if (inventoryItemId) {
+                const ingredient: Ingredient = {
+                    inventoryItemId,
+                    quantity: row.ingredientQuantity,
+                    wasteFactor: row.ingredientWasteFactor,
+                };
+                menuItem.ingredients.push(ingredient);
+            } else {
+                 toast({ variant: 'destructive', title: 'Ingrediente no encontrado', description: `El ingrediente "${row.ingredientName}" no se encontró en el inventario.` });
+            }
+        }
+
+        try {
+            const batch = writeBatch(firestore);
+            for (const menuData of menusByDate.values()) {
+                const newMenuRef = doc(collection(firestore, 'menus'));
+                batch.set(newMenuRef, menuData);
+            }
+            await batch.commit();
+            toast({ title: 'Importación Exitosa', description: `${menusByDate.size} menús han sido creados.` });
+            setImportDialogOpen(false);
+        } catch (error) {
+            console.error('Error al importar menús:', error);
+            toast({ variant: 'destructive', title: 'Error de Importación', description: 'No se pudieron guardar los menús.' });
+        }
+    };
+
 
 	return (
 		<div className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
 			<div className="flex items-center justify-between">
 				<h1 className="font-headline text-2xl font-bold md:text-3xl">Planificación de Menús</h1>
 				<div className="flex gap-2">
+                    <Button variant="outline" onClick={() => setImportDialogOpen(true)}>
+						<Upload className="mr-2 h-4 w-4" /> Importar Menús
+					</Button>
 					<Button variant="outline" asChild>
 						<Link href="/menus/calendar">
 							<CalendarIcon className="mr-2 h-4 w-4" />
@@ -351,6 +427,11 @@ export default function MenusPage() {
 				currentWeekStart={start}
 			/>
 
+            <MenuImportDialog
+                isOpen={importDialogOpen}
+                onOpenChange={setImportDialogOpen}
+                onImport={handleImport}
+            />
 		</div>
 	);
 }
