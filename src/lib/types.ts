@@ -1,4 +1,5 @@
 
+
 import { Timestamp } from 'firebase/firestore';
 
 export type Role = 'superadmin' | 'admin' | 'comun';

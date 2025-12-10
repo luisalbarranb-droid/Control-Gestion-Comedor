@@ -63,6 +63,11 @@
           "type": "string",
           "format": "date",
           "description": "The user's date of birth."
+        },
+        "avatarUrl": {
+          "type": "string",
+          "format": "uri",
+          "description": "URL of the user's profile picture."
         }
       },
       "required": [
@@ -829,5 +834,13 @@
       }
     ],
     "reasoning": "The Firestore structure is designed to support a task management system with role-based access control. It prioritizes authorization independence through denormalization and structural segregation.  \n\n**Authorization Independence (Denormalization):**\n*   `tasks` collection: The `area` and `assignedTo` fields are present in each task document. This denormalization allows security rules to validate access based on the user's role, the task's assigned area, and the assigned user without needing to perform expensive `get()` operations to retrieve the area or user details from other collections.  The inclusion of `createdBy` also allows for tracing and potential access control based on task creator.\n\n**Structural Segregation:**\n*   User data (`users` collection) is separated from task data (`tasks` collection).  \n*   Area definitions (`areas` collection) are separate from both users and tasks.\n*   Configuration data (`configuration` collection) is separate. This ensures that different types of data with varying access requirements are not mixed in the same collection.\n\n**Access Modeling:**\n*   **Private Data:** The `users` collection follows a path-based ownership model (`/users/{userId}`).\n\n**QAPs (Rules are not Filters):**\n*   Secure `list` operations for tasks are supported because each task document contains the `assignedTo` field. Rules can efficiently filter tasks based on the authenticated user's ID.\n\n**Invariants:**\n*   The structure supports invariants like ownership (through `createdBy` and `assignedTo` in the `tasks` collection) and timestamps (through `creationDate`, `dueDate`, `completionDate` in the `tasks` collection).\n\n**Additional Notes:**\n*   The `statistics` collection is designed to store aggregated data, which can be updated via backend processes. Access to this collection is restricted to admins and superadmins.\n*   The `evidence` and `comments` subcollections are intentionally avoided to minimize read costs when accessing task data. Instead, `evidenceIds` and `commentIds` are used in the `Task` entity to store references to `Evidence` and `Comment` entities which are stored as top-level collections. The `Evidence` collection denormalizes the `taskId` to allow performant security rules.\n*   The `configuration` collection allows storing application-wide settings.\n"
+  },
+  "storage": {
+    "buckets": [
+        {
+            "name": "profile-pictures",
+            "rules": "rules/storage.rules"
+        }
+    ]
   }
 }
