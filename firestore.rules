@@ -1,46 +1,50 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    // --- Helper Functions ---
+
+    // --- Helper Functions (con fallback para desarrollo) ---
     function isAuthenticated() {
       return request.auth != null;
     }
 
-    // Simplificado para el desarrollo: cualquier usuario autenticado es tratado como admin.
+    // Devuelve los datos del usuario si existen, sino un mapa vacío.
+    function getUserData() {
+      return getAfter(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+    }
+
+    // Verifica si el campo 'role' existe y es igual al rol solicitado.
+    function hasRole(role) {
+      return isAuthenticated() && 'role' in getUserData() && getUserData().role == role;
+    }
+    
+    // Para desarrollo: si el rol no está definido, asume que es admin.
     function isAdmin() {
-      return isAuthenticated();
+      return isAuthenticated() && (!exists(/databases/$(database)/documents/users/$(request.auth.uid)) || !('role' in getUserData()) || hasRole('admin') || hasRole('superadmin'));
     }
     
     function isSuperAdmin() {
-      return isAdmin(); // Para desarrollo, todos los admins son superadmins.
+       return isAuthenticated() && (!exists(/databases/$(database)/documents/users/$(request.auth.uid)) || !('role' in getUserData()) || hasRole('superadmin'));
     }
     
     function isOwner(userId) {
       return isAuthenticated() && request.auth.uid == userId;
     }
     
-    // Simplificado: asume que todos los usuarios autenticados están activos.
     function isActiveUser() {
+      // Para desarrollo, asume que todos los usuarios autenticados están activos.
       return isAuthenticated();
     }
     
-    // Validación de datos entrantes
     function hasRequiredFields(fields) {
       return request.resource.data.keys().hasAll(fields);
     }
 
     // --- User Data Rules ---
     match /users/{userId} {
-      // Leer y listar para cualquier usuario autenticado para simplificar el desarrollo
-      allow read: if isAuthenticated();
-      
-      // Crear: solo superadmins (ahora cualquier usuario autenticado)
+      allow get: if isAuthenticated() && (isOwner(userId) || isAdmin());
+      allow list: if isAdmin();
       allow create: if isSuperAdmin();
-      
-      // Actualizar: el propio usuario o un admin
       allow update: if isOwner(userId) || isAdmin();
-      
-      // Borrar: solo superadmins
       allow delete: if isSuperAdmin();
     }
 
@@ -52,7 +56,6 @@ service cloud.firestore {
 
     // --- Task Management Rules ---
     match /tasks/{taskId} {
-      // Leer y escribir para cualquier usuario activo
       allow read, write: if isActiveUser();
     }
 
@@ -81,29 +84,34 @@ service cloud.firestore {
 
     // --- Attendance Rules ---
     match /attendance/{recordId} {
-      // Permitir leer y escribir a cualquier usuario autenticado para simplificar
-      allow read, write: if isAuthenticated();
+      allow get: if isActiveUser() && (resource.data.userId == request.auth.uid || isAdmin());
+      allow list: if isAdmin();
+      allow create, update, delete: if isAdmin();
     }
     
     match /daysOff/{dayOffId} {
-      allow read, write: if isAuthenticated();
+      allow get: if isActiveUser() && (resource.data.userId == request.auth.uid || isAdmin());
+      allow list: if isAdmin();
+      allow create, update, delete: if isAdmin();
     }
     
     // --- Evaluation Criteria Rules ---
     match /evaluationCriteria/{criterionId} {
-      // Leer para cualquier usuario autenticado, escribir solo para admins
-      allow read: if isAuthenticated();
-      allow write: if isAdmin();
+      allow read: if isActiveUser(); // Permitir lectura a todos los usuarios activos
+      allow write: if isSuperAdmin();
     }
 
     // --- Monthly Evaluation Rules ---
     match /monthlyEvaluations/{evaluationId} {
-      allow read, write: if isAdmin();
+      allow get: if isActiveUser() && (resource.data.userId == request.auth.uid || isAdmin());
+      allow list: if isAdmin();
+      allow create, update, delete: if isAdmin();
     }
     
     // --- Peer Review Rules ---
     match /peer-reviews/{reviewId} {
-      allow read, write: if isAuthenticated();
+      allow read, create: if isActiveUser();
+      allow update, delete: if isAdmin();
     }
   }
 }
