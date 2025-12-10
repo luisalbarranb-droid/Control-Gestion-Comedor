@@ -21,7 +21,7 @@ const ingredientSchema = z.object({
 });
 
 const formSchema = z.object({
-  name: z.string().min(2, "El nombre del plato es obligatorio."),
+  name: z.string().min(1, "El nombre del plato es obligatorio."),
   ingredients: z.array(ingredientSchema),
 });
 
@@ -45,7 +45,7 @@ export function MealComponentForm({ isOpen, onOpenChange, onSave, inventory, com
     },
   });
 
-  const { fields, append, remove, replace } = useFieldArray({
+  const { fields, append, remove } = useFieldArray({
     control: form.control,
     name: "ingredients",
   });
@@ -114,7 +114,7 @@ export function MealComponentForm({ isOpen, onOpenChange, onSave, inventory, com
                       name={`ingredients.${index}.quantity`}
                       render={({ field }) => (
                         <FormItem className="w-24">
-                          <FormLabel className={index > 0 ? "sr-only" : ""}>Cant./Persona</FormLabel>
+                          <FormLabel className={index > 0 ? "sr-only" : ""}>Cant. Neta/Pax</FormLabel>
                           <FormControl><Input type="number" step="0.01" {...field} /></FormControl>
                           <FormMessage />
                         </FormItem>
@@ -126,7 +126,7 @@ export function MealComponentForm({ isOpen, onOpenChange, onSave, inventory, com
                       render={({ field }) => (
                         <FormItem className="w-28">
                           <FormLabel className={index > 0 ? "sr-only" : ""}>Factor Desecho</FormLabel>
-                          <FormControl><Input type="number" step="0.01" placeholder="Ej: 0.1 para 10%" {...field} /></FormControl>
+                          <FormControl><Input type="number" step="0.01" placeholder="Ej: 0.1" {...field} /></FormControl>
                           <FormMessage />
                         </FormItem>
                       )}

@@ -3,22 +3,30 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { useForm } from "react-hook-form";
+import { useForm, useFieldArray } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { useFirestore, addDocumentNonBlocking, updateDocumentNonBlocking } from "@/firebase";
 import { collection, doc, serverTimestamp, Timestamp } from "firebase/firestore";
 import { useToast } from "@/components/ui/toast";
-import type { Menu } from "@/lib/types";
-import { useEffect } from "react";
+import type { Menu, MealType, MenuItem, MenuItemCategory } from "@/lib/types";
+import { useEffect, useState } from "react";
 import { DatePicker } from "../ui/datepicker";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "../ui/form";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select";
+import { Separator } from "../ui/separator";
+import { Edit } from "lucide-react";
+import { MealComponentForm } from "./meal-component-form";
+import { inventoryItems } from "@/lib/placeholder-data"; // Using placeholder for now
+
+const categoryOrder: MenuItemCategory[] = ['entrada', 'proteico', 'acompanante1', 'acompanante2', 'acompanante3', 'bebida', 'postre'];
 
 const menuSchema = z.object({
-    name: z.string().min(3, "El nombre es requerido."),
+    name: z.string().optional(),
     date: z.date({ required_error: 'La fecha es obligatoria.'}),
     pax: z.coerce.number().int().positive("El número de comensales debe ser positivo."),
+    time: z.enum(['desayuno', 'almuerzo', 'cena', 'merienda', 'especial', 'otro']).optional(),
+    items: z.array(z.any()).min(1, "Debes definir al menos un componente del menú."),
 });
 
 type MenuFormValues = z.infer<typeof menuSchema>;
@@ -29,51 +37,93 @@ interface MenuFormProps {
     editingMenu: Menu | null;
 }
 
+const mealTypeLabels: Record<MealType, string> = {
+    desayuno: "Desayuno",
+    almuerzo: "Almuerzo",
+    cena: "Cena",
+    merienda: "Merienda",
+    especial: "Plato Especial",
+    otro: "Otro"
+};
+
 export function MenuForm({ isOpen, onOpenChange, editingMenu }: MenuFormProps) {
     const firestore = useFirestore();
     const { toast } = useToast();
+    const [editingComponent, setEditingComponent] = useState<{ category: MenuItemCategory, component: Partial<MenuItem> } | null>(null);
+
     const form = useForm<MenuFormValues>({
         resolver: zodResolver(menuSchema),
         defaultValues: {
             name: '',
             date: new Date(),
             pax: 150,
+            time: 'almuerzo',
+            items: categoryOrder.map(cat => ({ id: `new-${cat}`, name: '', category: cat, ingredients: [] }))
         }
     });
-    
+
+    const { fields, replace } = useFieldArray({
+        control: form.control,
+        name: "items"
+    });
+
     useEffect(() => {
-        if(editingMenu) {
-            form.reset({
-                name: (editingMenu as any).name || '',
-                date: editingMenu.date ? (editingMenu.date instanceof Timestamp ? editingMenu.date.toDate() : new Date(editingMenu.date)) : new Date(),
-                pax: editingMenu.pax || 150
-            });
-        } else {
-            form.reset({
-                name: '',
-                date: new Date(),
-                pax: 150,
-            });
+        if(isOpen) {
+            if(editingMenu) {
+                const menuItems = categoryOrder.map(cat => {
+                    const existing = editingMenu.items.find(item => item.category === cat);
+                    return existing || { id: `new-${cat}`, name: '', category: cat, ingredients: [] };
+                });
+                form.reset({
+                    name: (editingMenu as any).name || '',
+                    date: editingMenu.date ? (editingMenu.date instanceof Timestamp ? editingMenu.date.toDate() : new Date(editingMenu.date)) : new Date(),
+                    pax: editingMenu.pax || 150,
+                    time: editingMenu.time || 'almuerzo',
+                    items: menuItems
+                });
+            } else {
+                 form.reset({
+                    name: '',
+                    date: new Date(),
+                    pax: 150,
+                    time: 'almuerzo',
+                    items: categoryOrder.map(cat => ({ id: `new-${cat}`, name: '', category: cat, ingredients: [] }))
+                });
+            }
         }
     }, [editingMenu, isOpen, form]);
+
+    const handleSaveComponent = (componentData: Omit<MenuItem, 'id' | 'category'>) => {
+        if (!editingComponent) return;
+        const { category } = editingComponent;
+        const currentItems = form.getValues('items');
+        const itemIndex = currentItems.findIndex(item => item.category === category);
+
+        if (itemIndex > -1) {
+            const updatedItems = [...currentItems];
+            updatedItems[itemIndex] = { ...updatedItems[itemIndex], ...componentData, category };
+            form.setValue('items', updatedItems, { shouldValidate: true });
+        }
+        setEditingComponent(null);
+    };
 
     const onSubmit = async (values: MenuFormValues) => {
         if (!firestore) return;
         try {
             const dataToSave = {
                 ...values,
+                name: values.name || values.time, // Default name to meal type if empty
                 date: Timestamp.fromDate(values.date),
+                items: values.items.filter(item => item.name), // Only save items that have a name
             };
 
             if (editingMenu) {
                 const menuRef = doc(firestore, 'menus', editingMenu.id);
-                // No incluyas `items` aquí a menos que quieras sobrescribirlos
-                const { ...updateData } = dataToSave;
-                updateDocumentNonBlocking(menuRef, updateData);
+                updateDocumentNonBlocking(menuRef, dataToSave);
                 toast({ title: 'Menú actualizado' });
             } else {
                 const collectionRef = collection(firestore, 'menus');
-                addDocumentNonBlocking(collectionRef, { ...dataToSave, items: [], createdAt: serverTimestamp() });
+                addDocumentNonBlocking(collectionRef, { ...dataToSave, createdAt: serverTimestamp() });
                 toast({ title: 'Menú creado' });
             }
             onOpenChange(false);
@@ -84,58 +134,113 @@ export function MenuForm({ isOpen, onOpenChange, editingMenu }: MenuFormProps) {
     };
     
     return (
-        <Dialog open={isOpen} onOpenChange={onOpenChange}>
-            <DialogContent>
-                <DialogHeader>
-                    <DialogTitle>{editingMenu ? 'Editar Menú' : 'Nuevo Menú'}</DialogTitle>
-                    <DialogDescription>
-                        {editingMenu ? 'Actualiza los detalles de este menú.' : 'Crea un nuevo menú para planificar.'}
-                    </DialogDescription>
-                </DialogHeader>
-                 <Form {...form}>
-                    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-                         <FormField
-                            control={form.control}
-                            name="name"
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>Nombre del Menú/Platillo</FormLabel>
-                                    <FormControl><Input placeholder="Ej: Almuerzo Ejecutivo" {...field} /></FormControl>
-                                    <FormMessage />
-                                </FormItem>
-                            )}
-                        />
-                        <div className="grid grid-cols-2 gap-4">
-                            <FormField
-                                control={form.control}
-                                name="date"
-                                render={({ field }) => (
-                                    <FormItem className="flex flex-col">
-                                        <FormLabel>Fecha</FormLabel>
-                                        <DatePicker date={field.value} setDate={field.onChange} />
-                                        <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
+        <>
+            <Dialog open={isOpen} onOpenChange={onOpenChange}>
+                <DialogContent className="sm:max-w-2xl">
+                    <DialogHeader>
+                        <DialogTitle>{editingMenu ? 'Editar Menú Completo' : 'Nuevo Menú Completo'}</DialogTitle>
+                        <DialogDescription>
+                            Define el tipo de comida, los comensales y cada uno de los 7 componentes del menú.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <Form {...form}>
+                        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 max-h-[70vh] overflow-y-auto pr-4">
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                <FormField
+                                    control={form.control}
+                                    name="date"
+                                    render={({ field }) => (
+                                        <FormItem className="flex flex-col">
+                                            <FormLabel>Fecha</FormLabel>
+                                            <DatePicker date={field.value} setDate={field.onChange} />
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
+                                <FormField
+                                    control={form.control}
+                                    name="time"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel>Tipo de Comida</FormLabel>
+                                            <Select onValueChange={field.onChange} value={field.value}>
+                                                <FormControl><SelectTrigger><SelectValue/></SelectTrigger></FormControl>
+                                                <SelectContent>
+                                                    {Object.entries(mealTypeLabels).map(([key, label]) => (
+                                                        <SelectItem key={key} value={key}>{label}</SelectItem>
+                                                    ))}
+                                                </SelectContent>
+                                            </Select>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
+                                <FormField
+                                    control={form.control}
+                                    name="pax"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel>Comensales (PAX)</FormLabel>
+                                            <FormControl><Input type="number" {...field} /></FormControl>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
+                            </div>
+
                              <FormField
                                 control={form.control}
-                                name="pax"
+                                name="name"
                                 render={({ field }) => (
                                     <FormItem>
-                                        <FormLabel>Comensales (PAX)</FormLabel>
-                                        <FormControl><Input type="number" {...field} /></FormControl>
+                                        <FormLabel>Nombre del Menú (Opcional)</FormLabel>
+                                        <FormControl><Input placeholder="Ej: Almuerzo Ejecutivo, Cena Navideña" {...field} /></FormControl>
                                         <FormMessage />
                                     </FormItem>
                                 )}
                             />
-                        </div>
-                        <DialogFooter>
-                            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
-                            <Button type="submit">Guardar</Button>
-                        </DialogFooter>
-                    </form>
-                </Form>
-            </DialogContent>
-        </Dialog>
+
+                            <Separator />
+                            <div className="space-y-2">
+                                <FormLabel>Componentes del Menú</FormLabel>
+                                {fields.map((item, index) => (
+                                    <div key={item.id} className="flex items-center justify-between p-2 rounded-md border bg-muted/50">
+                                        <div className="flex flex-col">
+                                            <span className="font-semibold capitalize text-sm text-muted-foreground">{(item as MenuItem).category.replace('acompanante', 'Acomp. ')}</span>
+                                            <span className="text-sm truncate">{(item as MenuItem).name || 'Sin definir'}</span>
+                                        </div>
+                                        <Button
+                                            type="button"
+                                            variant="outline"
+                                            size="sm"
+                                            onClick={() => setEditingComponent({ category: (item as MenuItem).category, component: item as MenuItem })}
+                                        >
+                                            <Edit className="mr-2 h-3 w-3" /> {(item as MenuItem).name ? 'Editar' : 'Definir'}
+                                        </Button>
+                                    </div>
+                                ))}
+                                <FormMessage>{form.formState.errors.items?.message}</FormMessage>
+                            </div>
+
+                            <DialogFooter className="pt-4">
+                                <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
+                                <Button type="submit">Guardar Menú</Button>
+                            </DialogFooter>
+                        </form>
+                    </Form>
+                </DialogContent>
+            </Dialog>
+
+            {editingComponent && (
+                <MealComponentForm 
+                    isOpen={!!editingComponent}
+                    onOpenChange={() => setEditingComponent(null)}
+                    onSave={handleSaveComponent}
+                    inventory={inventoryItems}
+                    component={editingComponent.component}
+                    category={editingComponent.category}
+                />
+            )}
+        </>
     );
 }

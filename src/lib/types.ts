@@ -185,6 +185,7 @@ export interface InventoryOrder {
 
 // MENU TYPES
 export type MenuItemCategory = 'entrada' | 'proteico' | 'acompanante1' | 'acompanante2' | 'acompanante3' | 'bebida' | 'postre';
+export type MealType = 'desayuno' | 'almuerzo' | 'cena' | 'merienda' | 'especial' | 'otro';
 
 export interface Ingredient {
   inventoryItemId: string; // link to InventoryItem
@@ -202,6 +203,7 @@ export interface MenuItem {
 export interface Menu {
   id: string;
   date: Timestamp | Date;
+  time?: MealType; // New optional field for meal type
   pax: number; // number of people
   items: MenuItem[];
 }
