@@ -5,13 +5,9 @@ import {
   Users, 
   Plus, 
   Search,
-  MoreVertical,
-  Mail,
-  User as UserIcon,
-  ArrowLeft
+  UserPlus
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import Link from 'next/link';
 import { Input } from '@/components/ui/input';
 import { EmployeeList } from '@/components/attendance/employee-list';
 import { EmployeeForm } from '@/components/attendance/employee-form';
@@ -56,6 +52,7 @@ export default function UsersManagementPage() {
     return (
         <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
             <div className="flex items-center gap-4">
+                 <Users className="h-6 w-6" />
                 <h1 className="text-xl font-semibold md:text-2xl">Gestión de Personal</h1>
             </div>
 
