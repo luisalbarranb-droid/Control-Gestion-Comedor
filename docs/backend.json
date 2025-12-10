@@ -704,6 +704,48 @@
             }
         },
         "required": ["id", "reviewerId", "revieweeId", "taskId", "rating", "date"]
+    },
+    "EvaluationCriterion": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Evaluation Criterion",
+      "type": "object",
+      "description": "Defines a single editable parameter for employee evaluations.",
+      "properties": {
+        "id": { "type": "string", "description": "Unique identifier for the criterion." },
+        "name": { "type": "string", "description": "Display name of the criterion (e.g., 'Puntualidad')." },
+        "description": { "type": "string", "description": "Explanation of what this criterion measures." },
+        "maxPoints": { "type": "number", "description": "The maximum points that can be awarded for this criterion." },
+        "isActive": { "type": "boolean", "description": "Whether this criterion is currently used in evaluations." }
+      },
+      "required": ["id", "name", "description", "maxPoints", "isActive"]
+    },
+    "MonthlyEvaluation": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Monthly Evaluation",
+      "type": "object",
+      "description": "Stores the results of a user's monthly performance evaluation.",
+      "properties": {
+        "id": { "type": "string", "description": "Unique identifier, e.g., {userId}_{period}." },
+        "userId": { "type": "string", "description": "The user being evaluated." },
+        "period": { "type": "string", "description": "The evaluation period in YYYY-MM format." },
+        "scores": {
+          "type": "array",
+          "description": "Scores for each criterion.",
+          "items": {
+            "type": "object",
+            "properties": {
+              "criterionId": { "type": "string", "description": "Reference to the EvaluationCriterion." },
+              "score": { "type": "number", "description": "Points awarded for this criterion." },
+              "comment": { "type": "string", "description": "Optional comment from the evaluator." }
+            },
+            "required": ["criterionId", "score"]
+          }
+        },
+        "totalScore": { "type": "number", "description": "The sum of all scores for the period." },
+        "evaluatorId": { "type": "string", "description": "The user ID of the person who conducted the evaluation." },
+        "evaluationDate": { "type": "string", "format": "date-time", "description": "When the evaluation was submitted." }
+      },
+      "required": ["id", "userId", "period", "scores", "totalScore", "evaluatorId", "evaluationDate"]
     }
   },
   "auth": {
@@ -902,6 +944,22 @@
                   "description": "The unique identifier of the peer review."
               }
           ]
+        }
+      },
+      {
+        "path": "/evaluationCriteria/{criterionId}",
+        "definition": {
+          "entityName": "EvaluationCriterion",
+          "schema": { "$ref": "#/backend/entities/EvaluationCriterion" },
+          "description": "Stores the editable criteria for performance evaluations."
+        }
+      },
+      {
+        "path": "/monthlyEvaluations/{evaluationId}",
+        "definition": {
+          "entityName": "MonthlyEvaluation",
+          "schema": { "$ref": "#/backend/entities/MonthlyEvaluation" },
+          "description": "Stores the results of monthly employee evaluations."
         }
       }
     ],

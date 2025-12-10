@@ -299,3 +299,28 @@ export interface WeeklyPlan {
   name: string;
   menus: (Menu | null)[];
 }
+
+// --- EVALUATION TYPES ---
+export interface EvaluationCriterion {
+  id: string;
+  name: string;
+  description: string;
+  maxPoints: number;
+  isActive: boolean;
+}
+
+export interface EvaluationScore {
+    criterionId: string;
+    score: number;
+    comment?: string;
+}
+
+export interface MonthlyEvaluation {
+    id: string; // e.g., {userId}_{period}
+    userId: string;
+    period: string; // YYYY-MM
+    scores: EvaluationScore[];
+    totalScore: number;
+    evaluatorId: string;
+    evaluationDate: Timestamp | Date;
+}
