@@ -13,7 +13,8 @@ import {
   ClipboardCheck,
   FileSpreadsheet,
   Settings,
-  CalendarDays
+  CalendarDays,
+  Award,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -24,6 +25,7 @@ const navItems = [
   { href: '/daily-closing', label: 'Cierres Diarios', icon: <ClipboardCheck className="h-5 w-5" /> },
   { href: '/inventory', label: 'Inventario', icon: <Archive className="h-5 w-5" /> },
   { href: '/attendance', label: 'Gestión de RRHH', icon: <Users className="h-5 w-5" /> },
+  { href: '/recognition', label: 'Reconocimientos', icon: <Award className="h-5 w-5" /> },
   { href: '/reports', label: 'Reportes', icon: <FileSpreadsheet className="h-5 w-5" /> },
   { href: '/stats', label: 'Estadísticas', icon: <AreaChart className="h-5 w-5" /> },
   { href: '/settings', label: 'Configuración', icon: <Settings className="h-5 w-5" /> },

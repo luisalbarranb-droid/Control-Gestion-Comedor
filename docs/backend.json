@@ -68,6 +68,17 @@
           "type": "string",
           "format": "uri",
           "description": "URL of the user's profile picture."
+        },
+        "monthlyPoints": {
+            "type": "number",
+            "description": "Points accumulated by the user during the current month for recognition programs."
+        },
+        "recognitions": {
+            "type": "array",
+            "description": "List of recognitions or awards received by the user, e.g., 'employee_of_the_month_YYYY-MM'.",
+            "items": {
+                "type": "string"
+            }
         }
       },
       "required": [
@@ -222,6 +233,14 @@
         "parentId": {
           "type": "string",
           "description": "Task ID of the parent task for recurring tasks. (Reference to Task)"
+        },
+        "qualityScore": {
+            "type": "number",
+            "description": "Supervisor's rating of the task quality (1-5)."
+        },
+        "effortScore": {
+            "type": "number",
+            "description": "Supervisor's rating of the effort put in (1-5)."
         }
       },
       "required": [
@@ -646,6 +665,45 @@
         }
       },
       "required": ["id", "userId", "weekStartDate", "dayOff"]
+    },
+    "PeerReview": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "title": "Peer Review",
+        "type": "object",
+        "description": "Represents a peer-to-peer review on a specific task.",
+        "properties": {
+            "id": {
+                "type": "string",
+                "description": "Unique identifier for the review."
+            },
+            "reviewerId": {
+                "type": "string",
+                "description": "User ID of the person giving the review."
+            },
+            "revieweeId": {
+                "type": "string",
+                "description": "User ID of the person being reviewed."
+            },
+            "taskId": {
+                "type": "string",
+                "description": "The task associated with this review."
+            },
+            "rating": {
+                "type": "string",
+                "enum": ["positive", "neutral", "negative"],
+                "description": "The peer's rating of the task execution."
+            },
+            "comment": {
+                "type": "string",
+                "description": "An optional comment from the peer."
+            },
+            "date": {
+                "type": "string",
+                "format": "date-time",
+                "description": "Date and time the review was submitted."
+            }
+        },
+        "required": ["id", "reviewerId", "revieweeId", "taskId", "rating", "date"]
     }
   },
   "auth": {
@@ -829,6 +887,20 @@
               "name": "dayOffId",
               "description": "The unique identifier for the day off record, combining userId and week start date."
             }
+          ]
+        }
+      },
+      {
+        "path": "/peer-reviews/{reviewId}",
+        "definition": {
+          "entityName": "PeerReview",
+          "schema": { "$ref": "#/backend/entities/PeerReview" },
+          "description": "Stores peer-to-peer feedback on completed tasks.",
+          "params": [
+              {
+                  "name": "reviewId",
+                  "description": "The unique identifier of the peer review."
+              }
           ]
         }
       }
