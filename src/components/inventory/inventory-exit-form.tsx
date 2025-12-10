@@ -121,7 +121,7 @@ export function InventoryExitForm({ isOpen, onOpenChange, onSave, inventoryItems
   }, [selectedReason, form]);
   
   useEffect(() => {
-    if (menuDate && menus) {
+    if (menuDate && !isLoadingMenus && menus) {
         const selectedMenu = menus.find(menu => {
             const d = convertToDate(menu.date);
             return d ? isSameDay(d, menuDate) : false;
@@ -134,9 +134,9 @@ export function InventoryExitForm({ isOpen, onOpenChange, onSave, inventoryItems
                 if (!menuItem.ingredients) return;
                 
                 menuItem.ingredients.forEach(ingredient => {
-                    if (ingredient.wasteFactor >= 1) return; // Evita división por cero o negativo
-                    
-                    const grossQuantity = ingredient.quantity / (1 - ingredient.wasteFactor);
+                    // Evita división por cero o negativo
+                    const wasteFactor = Math.max(0, Math.min(0.99, ingredient.wasteFactor));
+                    const grossQuantity = ingredient.quantity / (1 - wasteFactor);
                     const totalQuantity = grossQuantity * selectedMenu.pax;
                     const currentQuantity = ingredientMap.get(ingredient.inventoryItemId) || 0;
                     ingredientMap.set(ingredient.inventoryItemId, currentQuantity + totalQuantity);
@@ -170,7 +170,7 @@ export function InventoryExitForm({ isOpen, onOpenChange, onSave, inventoryItems
             replace([{ itemId: '', quantity: 0 }]);
         }
     }
-  }, [menuDate, menus, replace, toast, form]);
+  }, [menuDate, menus, isLoadingMenus, replace, toast, form]);
 
 
   return (
