@@ -16,7 +16,7 @@ import {
 import { useToast } from '@/components/ui/toast';
 import { UploadCloud, File, X, Download } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import type { MenuImportRow } from '@/lib/types';
+import type { MenuImportRow, MealType } from '@/lib/types';
 
 interface MenuImportDialogProps {
   isOpen: boolean;
@@ -24,7 +24,8 @@ interface MenuImportDialogProps {
   onImport: (data: MenuImportRow[]) => void;
 }
 
-const requiredColumns: (keyof MenuImportRow)[] = ['date', 'pax', 'itemName', 'itemCategory', 'ingredientName', 'ingredientQuantity', 'ingredientWasteFactor'];
+const requiredColumns: (keyof MenuImportRow)[] = ['date', 'pax', 'time', 'itemName', 'itemCategory', 'ingredientName', 'ingredientQuantity', 'ingredientWasteFactor'];
+const mealTypes: MealType[] = ['desayuno', 'almuerzo', 'cena', 'merienda', 'especial', 'otro'];
 
 export function MenuImportDialog({ isOpen, onOpenChange, onImport }: MenuImportDialogProps) {
   const { toast } = useToast();
@@ -116,6 +117,7 @@ export function MenuImportDialog({ isOpen, onOpenChange, onImport }: MenuImportD
       {
         date: '2024-08-01',
         pax: 150,
+        time: 'almuerzo',
         itemName: 'Pollo al Horno',
         itemCategory: 'proteico',
         ingredientName: 'Pechuga de Pollo',
@@ -125,11 +127,22 @@ export function MenuImportDialog({ isOpen, onOpenChange, onImport }: MenuImportD
       {
         date: '2024-08-01',
         pax: 150,
+        time: 'almuerzo',
         itemName: 'Arroz Blanco',
         itemCategory: 'acompanante1',
         ingredientName: 'Arroz Grano Largo',
         ingredientQuantity: 0.1,
         ingredientWasteFactor: 0
+      },
+       {
+        date: '2024-08-01',
+        pax: 80,
+        time: 'cena',
+        itemName: 'Sopa de Vegetales',
+        itemCategory: 'entrada',
+        ingredientName: 'Cebolla',
+        ingredientQuantity: 0.05,
+        ingredientWasteFactor: 0.1
       },
     ];
 
@@ -181,7 +194,7 @@ export function MenuImportDialog({ isOpen, onOpenChange, onImport }: MenuImportD
             <div className="space-y-2">
                 <h4 className="font-medium">Instrucciones y Plantilla</h4>
                 <p className="text-sm text-muted-foreground">
-                    Tu archivo debe tener una fila por cada ingrediente de cada plato. La fecha y el PAX se repetirán. Columnas requeridas:
+                    Tu archivo debe tener una fila por cada ingrediente de cada plato. La fecha, PAX y tipo de comida se repetirán. Columnas requeridas:
                 </p>
                 <div className="flex flex-wrap items-center gap-2">
                     {requiredColumns.map(col => (
@@ -192,6 +205,7 @@ export function MenuImportDialog({ isOpen, onOpenChange, onImport }: MenuImportD
                         Descargar plantilla
                     </Button>
                 </div>
+                <p className="text-xs text-muted-foreground pt-2">Valores permitidos para 'time': {mealTypes.join(', ')}.</p>
             </div>
 
             {parsedData.length > 0 && (

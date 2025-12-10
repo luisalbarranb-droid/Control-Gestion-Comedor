@@ -38,7 +38,7 @@ import {
 	DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Edit, MoreVertical, Trash } from 'lucide-react';
-import type { Menu, User, MenuImportRow, InventoryItem, MenuItem as TMenuItem, Ingredient } from '@/lib/types';
+import type { Menu, User, MenuImportRow, InventoryItem, MenuItem as TMenuItem, Ingredient, MealType } from '@/lib/types';
 import { MenuImportDialog } from '@/components/menus/menu-import-dialog';
 import { useToast } from '@/components/ui/toast';
 
@@ -210,17 +210,9 @@ export default function MenusPage() {
 	}, [menusByDay, selectedDate]);
 
 
-	const formatTime = (time: string) => {
-		if (!time || !time.includes(':')) return time;
-		try {
-			const [hour, minute] = time.split(':').map(Number);
-			const date = new Date();
-			date.setHours(hour);
-			date.setMinutes(minute);
-			return format(date, 'hh:mm a');
-		} catch {
-			return time;
-		}
+	const formatTime = (time?: MealType) => {
+		if (!time) return '';
+        return time.charAt(0).toUpperCase() + time.slice(1);
 	};
 
 	const getUserName = (uid?: string) => {
@@ -235,22 +227,25 @@ export default function MenusPage() {
             return;
         }
 
-        const menusByDate = new Map<string, Partial<Menu>>();
+        const menusByDateAndType = new Map<string, Partial<Menu>>();
         const inventoryNameMap = new Map(inventoryItems.map(item => [item.nombre.toLowerCase(), item.id]));
 
         for (const row of data) {
             const dateStr = format(new Date(row.date), 'yyyy-MM-dd');
-            if (!menusByDate.has(dateStr)) {
-                menusByDate.set(dateStr, {
+            const mapKey = `${dateStr}_${row.time}`;
+            
+            if (!menusByDateAndType.has(mapKey)) {
+                menusByDateAndType.set(mapKey, {
                     date: Timestamp.fromDate(new Date(row.date)),
                     pax: row.pax,
+                    time: row.time,
                     items: [],
                     createdBy: authUser?.uid,
                     createdAt: Timestamp.now(),
                 });
             }
 
-            const menu = menusByDate.get(dateStr)!;
+            const menu = menusByDateAndType.get(mapKey)!;
             let menuItem = menu.items?.find(item => item.name === row.itemName && item.category === row.itemCategory);
             
             if (!menuItem) {
@@ -278,12 +273,12 @@ export default function MenusPage() {
 
         try {
             const batch = writeBatch(firestore);
-            for (const menuData of menusByDate.values()) {
+            for (const menuData of menusByDateAndType.values()) {
                 const newMenuRef = doc(collection(firestore, 'menus'));
                 batch.set(newMenuRef, menuData);
             }
             await batch.commit();
-            toast({ title: 'Importación Exitosa', description: `${menusByDate.size} menús han sido creados.` });
+            toast({ title: 'Importación Exitosa', description: `${menusByDateAndType.size} menús han sido creados.` });
             setImportDialogOpen(false);
         } catch (error) {
             console.error('Error al importar menús:', error);
@@ -384,11 +379,11 @@ export default function MenusPage() {
 							{!isLoading && selectedDayData?.menus.map(menu => (
 								<TableRow key={menu.id}>
 									<TableCell className="font-semibold text-gray-800">
-										{formatTime((menu as any).time)}
+										{formatTime(menu.time)}
 									</TableCell>
-									<TableCell>{(menu as any).name || 'Menú sin nombre'}</TableCell>
+									<TableCell>{menu.name || 'Menú sin nombre'}</TableCell>
 									<TableCell className="text-sm text-gray-600">
-										{(menu.items?.[0]?.ingredients?.map(i => i.inventoryItemId).join(', ')) || 'N/A'}
+										{menu.items?.map(i => i.name).join(', ') || 'N/A'}
 									</TableCell>
 									<TableCell className="text-sm text-gray-500">
 										{getUserName((menu as any).createdBy)}

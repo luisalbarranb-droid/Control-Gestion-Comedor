@@ -202,8 +202,9 @@ export interface MenuItem {
 
 export interface Menu {
   id: string;
+  name?: string;
   date: Timestamp | Date;
-  time?: MealType; // New optional field for meal type
+  time?: MealType;
   pax: number; // number of people
   items: MenuItem[];
 }
@@ -223,6 +224,7 @@ export interface MenuReportData {
 export interface MenuImportRow {
   date: Date;
   pax: number;
+  time: MealType;
   itemName: string;
   itemCategory: string;
   ingredientName: string;
