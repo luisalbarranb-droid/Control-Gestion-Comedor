@@ -14,6 +14,8 @@ import { collection, query, where, Timestamp } from 'firebase/firestore';
 import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
 import type { AttendanceRecord, User } from '@/lib/types';
 import { cn } from '@/lib/utils';
+import { Skeleton } from '@/components/ui/skeleton';
+
 
 // --- Helper Functions ---
 function isTimestamp(value: any): value is Timestamp {
@@ -42,15 +44,15 @@ const statusConfig = {
 
 export default function AttendanceDashboardPage() {
   const firestore = useFirestore();
-  const [currentDate, setCurrentDate] = useState<Date | undefined>();
+  const [currentDate, setCurrentDate] = useState<Date>(new Date());
+  const [isClient, setIsClient] = useState(false);
 
-  // CRITICAL FIX: Initialize date state in useEffect to prevent hydration mismatch.
+  // CRITICAL FIX: Ensure client-side-only code runs after mount to prevent hydration mismatch.
   useEffect(() => {
-    setCurrentDate(new Date());
+    setIsClient(true);
   }, []);
 
   const { startOfToday, endOfToday } = useMemo(() => {
-    if (!currentDate) return { startOfToday: null, endOfToday: null };
     const start = set(currentDate, { hours: 0, minutes: 0, seconds: 0, milliseconds: 0 });
     const end = set(currentDate, { hours: 23, minutes: 59, seconds: 59, milliseconds: 999 });
     return { startOfToday: start, endOfToday: end };
@@ -58,7 +60,7 @@ export default function AttendanceDashboardPage() {
 
 
   const attendanceQuery = useMemoFirebase(() => {
-    if (!firestore || !startOfToday || !endOfToday) return null;
+    if (!firestore) return null;
     return query(
       collection(firestore, 'attendance'),
       where('checkIn', '>=', Timestamp.fromDate(startOfToday)),
@@ -96,10 +98,30 @@ export default function AttendanceDashboardPage() {
     return { present, late, absent, recent };
   }, [attendanceRecords, users]);
 
-  const isLoading = isLoadingAttendance || isLoadingUsers || !currentDate;
+  const isLoading = isLoadingAttendance || isLoadingUsers;
 
   const getUser = (userId: string) => users?.find(u => u.id === userId);
   const getUserInitials = (name?: string) => name ? name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase() : 'U';
+  
+  if (!isClient) {
+    return (
+        <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
+            <div className="flex items-center gap-4">
+                <Skeleton className="h-7 w-7 rounded-full" />
+                <Skeleton className="h-8 w-48" />
+            </div>
+            <div className="grid gap-4 md:grid-cols-3">
+                <Card><CardHeader><Skeleton className="h-5 w-24" /></CardHeader><CardContent><Skeleton className="h-8 w-16" /><Skeleton className="h-4 w-full mt-2" /></CardContent></Card>
+                <Card><CardHeader><Skeleton className="h-5 w-24" /></CardHeader><CardContent><Skeleton className="h-8 w-16" /><Skeleton className="h-4 w-full mt-2" /></CardContent></Card>
+                <Card><CardHeader><Skeleton className="h-5 w-24" /></CardHeader><CardContent><Skeleton className="h-8 w-16" /><Skeleton className="h-4 w-full mt-2" /></CardContent></Card>
+            </div>
+             <Card>
+                <CardHeader><CardTitle>Actividad Reciente</CardTitle><CardDescription>Últimos registros de entrada y salida del día de hoy.</CardDescription></CardHeader>
+                <CardContent><Skeleton className="h-40 w-full" /></CardContent>
+            </Card>
+        </main>
+    );
+  }
 
   return (
     <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
