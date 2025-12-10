@@ -752,7 +752,17 @@
     "providers": [
       "password",
       "anonymous"
-    ]
+    ],
+    "customClaims": {
+      "role": {
+        "type": "string",
+        "enum": [
+          "superadmin",
+          "admin",
+          "comun"
+        ]
+      }
+    }
   },
   "firestore": {
     "structure": [
@@ -974,3 +984,5 @@
     ]
   }
 }
+
+    

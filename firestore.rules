@@ -2,20 +2,22 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // --- User Data Rules ---
-    // Users can read their own profile.
-    // Admins/Superadmins can read any profile and list all users.
-    match /users/{userId} {
-      function isOwner() {
-        return request.auth.uid == userId;
-      }
-      function isAdmin() {
-        return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['admin', 'superadmin'];
-      }
+    // --- Helper Functions ---
+    function isOwner(userId) {
+      return request.auth.uid == userId;
+    }
 
-      allow get: if request.auth != null && (isOwner() || isAdmin());
-      allow list: if request.auth != null && isAdmin();
-      allow write: if request.auth != null && (isOwner() || isAdmin());
+    function isAdmin() {
+      // Use custom claims for role checks - this is faster and more secure.
+      return request.auth.token.role in ['admin', 'superadmin'];
+    }
+
+    // --- User Data Rules ---
+    // Users can read/update their own profile.
+    // Admins can read any profile and list all users.
+    match /users/{userId} {
+      allow get, update: if request.auth != null && (isOwner(userId) || isAdmin());
+      allow list, create, delete: if request.auth != null && isAdmin();
     }
 
     // --- Area Management Rules ---
@@ -23,12 +25,12 @@ service cloud.firestore {
     // Only Admins/Superadmins can create, update, or delete them.
     match /areas/{areaId} {
       allow read: if request.auth != null;
-      allow write: if request.auth != null && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['admin', 'superadmin'];
+      allow write: if request.auth != null && isAdmin();
     }
 
     // --- Task Management Rules ---
-    // Authenticated users can interact with tasks based on more specific rules
-    // (e.g., assignee, creator, admin of the area). For now, allow read/write for any authenticated user.
+    // More granular rules should be added here later based on roles and assignments.
+    // For now, allow read/write for any authenticated user.
     match /tasks/{taskId} {
       allow read, write: if request.auth != null;
     }
@@ -36,14 +38,14 @@ service cloud.firestore {
     // --- Statistics Rules ---
     // Only Admins and Superadmins can read or write statistics.
     match /statistics/{period} {
-      allow read, write: if request.auth != null && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['admin', 'superadmin'];
+      allow read, write: if request.auth != null && isAdmin();
     }
     
     // --- Configuration Rules ---
     // Public read for authenticated users, write access for Superadmins only.
     match /configuration/{configId} {
       allow read: if request.auth != null;
-      allow write: if request.auth != null && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'superadmin';
+      allow write: if request.auth != null && request.auth.token.role == 'superadmin';
     }
 
     // --- Inventory Rules ---
@@ -51,7 +53,7 @@ service cloud.firestore {
     // Only Admins/Superadmins can write to inventory.
     match /inventory/{itemId} {
       allow read: if request.auth != null;
-      allow write: if request.auth != null && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['admin', 'superadmin'];
+      allow write: if request.auth != null && isAdmin();
     }
     
     // --- Menu Rules ---
@@ -59,17 +61,17 @@ service cloud.firestore {
     // Only Admins/Superadmins can write to menus.
     match /menus/{menuId} {
        allow read: if request.auth != null;
-       allow write: if request.auth != null && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['admin', 'superadmin'];
+       allow write: if request.auth != null && isAdmin();
     }
 
     // --- Attendance and HR Rules ---
     // Only Admins/Superadmins can manage attendance, days off, and evaluations.
     match /attendance/{recordId} {
-      allow read, write: if request.auth != null && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['admin', 'superadmin'];
+      allow read, write: if request.auth != null && isAdmin();
     }
     
     match /daysOff/{dayOffId} {
-       allow read, write: if request.auth != null && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['admin', 'superadmin'];
+       allow read, write: if request.auth != null && isAdmin();
     }
 
     // --- Evaluation Criteria Rules ---
@@ -77,15 +79,15 @@ service cloud.firestore {
     // Only Admins/Superadmins can write.
     match /evaluationCriteria/{criterionId} {
       allow get, list: if request.auth != null;
-      allow write: if request.auth != null && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['admin', 'superadmin'];
+      allow write: if request.auth != null && isAdmin();
     }
 
     // --- Monthly Evaluation Rules ---
     // Users can read their own evaluation.
     // Admins/Superadmins can read any evaluation and list/write all.
     match /monthlyEvaluations/{evaluationId} {
-      allow get: if request.auth != null && (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['admin', 'superadmin'] || resource.data.userId == request.auth.uid);
-      allow list, write: if request.auth != null && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['admin', 'superadmin'];
+      allow get: if request.auth != null && (isAdmin() || resource.data.userId == request.auth.uid);
+      allow list, write: if request.auth != null && isAdmin();
     }
     
     // --- Peer Review Rules ---
@@ -94,15 +96,10 @@ service cloud.firestore {
     // Admins can read all reviews.
     match /peer-reviews/{reviewId} {
         allow create: if request.auth != null;
-        allow read: if request.auth != null && (resource.data.reviewerId == request.auth.uid || resource.data.revieweeId == request.auth.uid || get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['admin', 'superadmin']);
+        allow read: if request.auth != null && (resource.data.reviewerId == request.auth.uid || resource.data.revieweeId == request.auth.uid || isAdmin());
         // Update/Delete rules can be added here if necessary
-    }
-
-
-    // --- Default Deny ---
-    // Fallback rule to deny access to any other collections.
-    match /{document=**} {
-      allow read, write: if false;
     }
   }
 }
+
+    
