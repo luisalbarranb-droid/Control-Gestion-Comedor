@@ -97,7 +97,7 @@ service cloud.firestore {
     
     // --- Evaluation Criteria Rules ---
     match /evaluationCriteria/{criterionId} {
-      allow read: if isActiveUser(); // Permitir lectura a todos los usuarios activos
+      allow read: if isActiveUser(); 
       allow write: if isSuperAdmin();
     }
 
