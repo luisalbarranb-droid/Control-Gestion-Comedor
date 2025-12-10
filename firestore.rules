@@ -1,8 +1,72 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
+
+    // Users can read their own profile, admins can read any profile
+    match /users/{userId} {
+      allow read: if request.auth != null && (request.auth.uid == userId || get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['admin', 'superadmin']);
+      allow write: if request.auth != null && request.auth.uid == userId;
+    }
+
+    // Admins and Superadmins can manage areas
+    match /areas/{areaId} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['admin', 'superadmin'];
+    }
+
+    // Authenticated users can interact with tasks
+    match /tasks/{taskId} {
+      allow read, write: if request.auth != null;
+    }
+
+    // Admins and Superadmins can read statistics
+    match /statistics/{period} {
+      allow read: if request.auth != null && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['admin', 'superadmin'];
+      allow write: if request.auth != null && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['admin', 'superadmin'];
+    }
+    
+    // Config is public for authenticated users
+    match /configuration/{configId} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'superadmin';
+    }
+
+    // Inventory is readable by all authenticated, writable by admins
+    match /inventory/{itemId} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['admin', 'superadmin'];
+    }
+    
+    // Menus are readable by all authenticated, writable by admins
+    match /menus/{menuId} {
+       allow read: if request.auth != null;
+       allow write: if request.auth != null && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['admin', 'superadmin'];
+    }
+
+    // Attendance is managed by HR roles (admins)
+    match /attendance/{recordId} {
+      allow read, write: if request.auth != null && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['admin', 'superadmin'];
+    }
+    
+    // Days off are managed by HR roles (admins)
+    match /daysOff/{dayOffId} {
+       allow read, write: if request.auth != null && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['admin', 'superadmin'];
+    }
+
+    // Evaluation Criteria are readable by authenticated users, writable by admins
+    match /evaluationCriteria/{criterionId} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['admin', 'superadmin'];
+    }
+
+    // Evaluations are managed by admins
+    match /monthlyEvaluations/{evaluationId} {
+      allow read, write: if request.auth != null && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['admin', 'superadmin'];
+    }
+
+    // Fallback for other collections if necessary
     match /{document=**} {
-      allow read, write: if true;
+      allow read, write: if false;
     }
   }
 }
