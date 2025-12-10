@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
@@ -34,11 +33,13 @@ import { DatePicker } from '@/components/ui/datepicker';
 import { PlusCircle, Trash2, BookOpen } from 'lucide-react';
 import type { InventoryItem, AreaId, Menu } from '@/lib/types';
 import { Separator } from '../ui/separator';
-import { areas, weeklyMenus } from '@/lib/placeholder-data';
+import { areas } from '@/lib/placeholder-data';
 import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
 import { Calendar } from '../ui/calendar';
 import { useToast } from '@/components/ui/toast';
-import { format } from 'date-fns';
+import { format, isSameDay } from 'date-fns';
+import { useCollection, useFirestore, useMemoFirebase, useUser } from '@/firebase';
+import { collection, Timestamp } from 'firebase/firestore';
 
 const exitReasons = [
     { id: 'produccion', label: 'Uso en Producción' },
@@ -66,9 +67,25 @@ interface InventoryExitFormProps {
   inventoryItems: InventoryItem[];
 }
 
+function convertToDate(date: any): Date | null {
+    if (!date) return null;
+    if (date instanceof Date) return date;
+    if (date instanceof Timestamp) return date.toDate();
+    const parsed = new Date(date);
+    return isNaN(parsed.getTime()) ? null : parsed;
+}
+
 export function InventoryExitForm({ isOpen, onOpenChange, onSave, inventoryItems }: InventoryExitFormProps) {
   const { toast } = useToast();
   const [menuDate, setMenuDate] = useState<Date>();
+  const firestore = useFirestore();
+
+  const menusQuery = useMemoFirebase(() => {
+    if (!firestore) return null;
+    return collection(firestore, 'menus');
+  }, [firestore]);
+
+  const { data: menus, isLoading: isLoadingMenus } = useCollection<Menu>(menusQuery);
   
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -84,14 +101,6 @@ export function InventoryExitForm({ isOpen, onOpenChange, onSave, inventoryItems
   });
   
   const selectedReason = form.watch('reason');
-  
-  const menusByDate = useMemo(() => {
-    return weeklyMenus.reduce((acc, menu) => {
-      const dateKey = format(new Date(menu.date), 'yyyy-MM-dd');
-      acc[dateKey] = menu;
-      return acc;
-    }, {} as Record<string, Menu>);
-  }, []);
 
   useEffect(() => {
     if (!isOpen) {
@@ -112,14 +121,18 @@ export function InventoryExitForm({ isOpen, onOpenChange, onSave, inventoryItems
   }, [selectedReason, form]);
   
   useEffect(() => {
-    if (menuDate) {
-        const dateKey = format(menuDate, 'yyyy-MM-dd');
-        const selectedMenu = menusByDate[dateKey];
+    if (menuDate && menus) {
+        const selectedMenu = menus.find(menu => {
+            const d = convertToDate(menu.date);
+            return d ? isSameDay(d, menuDate) : false;
+        });
 
         if (selectedMenu) {
             const ingredientMap = new Map<string, number>();
             selectedMenu.items.forEach(menuItem => {
+                if (!menuItem.ingredients) return;
                 menuItem.ingredients.forEach(ingredient => {
+                    if (ingredient.wasteFactor >= 1) return; // Evita división por cero o negativo
                     const grossQuantity = ingredient.quantity / (1 - ingredient.wasteFactor);
                     const totalQuantity = grossQuantity * selectedMenu.pax;
                     const currentQuantity = ingredientMap.get(ingredient.inventoryItemId) || 0;
@@ -154,7 +167,7 @@ export function InventoryExitForm({ isOpen, onOpenChange, onSave, inventoryItems
             replace([{ itemId: '', quantity: 0 }]);
         }
     }
-  }, [menuDate, menusByDate, replace, toast, form]);
+  }, [menuDate, menus, replace, toast, form]);
 
 
   return (
@@ -232,9 +245,9 @@ export function InventoryExitForm({ isOpen, onOpenChange, onSave, inventoryItems
 
              <Popover>
                 <PopoverTrigger asChild>
-                    <Button type="button" variant="outline">
+                    <Button type="button" variant="outline" disabled={isLoadingMenus}>
                         <BookOpen className="mr-2 h-4 w-4" />
-                        Cargar desde Menú Planificado
+                        {isLoadingMenus ? 'Cargando menús...' : 'Cargar desde Menú Planificado'}
                     </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-auto p-0">
