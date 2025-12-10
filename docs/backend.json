@@ -49,6 +49,20 @@
         "phone": {
           "type": "string",
           "description": "Phone number of the user (optional)."
+        },
+        "fechaIngreso": {
+          "type": "string",
+          "format": "date-time",
+          "description": "The user's start date in the company."
+        },
+        "diasContrato": {
+          "type": "number",
+          "description": "Duration of the contract in days (if applicable)."
+        },
+        "fechaNacimiento": {
+          "type": "string",
+          "format": "date",
+          "description": "The user's date of birth."
         }
       },
       "required": [

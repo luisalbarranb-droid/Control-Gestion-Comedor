@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useEffect } from 'react';
@@ -31,9 +32,10 @@ import {
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/ui/toast';
 import { useFirestore, addDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase';
-import { collection, doc, serverTimestamp } from 'firebase/firestore';
-import type { User, Role, AreaId, WorkerType, ContractType } from '@/lib/types';
+import { collection, doc, serverTimestamp, Timestamp } from 'firebase/firestore';
+import type { User } from '@/lib/types';
 import { areas } from '@/lib/placeholder-data';
+import { DatePicker } from '../ui/datepicker';
 
 const employeeSchema = z.object({
   name: z.string().min(3, 'El nombre es requerido.'),
@@ -45,6 +47,9 @@ const employeeSchema = z.object({
   area: z.string().optional(),
   workerType: z.enum(['obrero', 'empleado']),
   contractType: z.enum(['determinado', 'indeterminado', 'prueba']),
+  fechaIngreso: z.date().optional(),
+  fechaNacimiento: z.date().optional(),
+  diasContrato: z.coerce.number().optional(),
 });
 
 type EmployeeFormValues = z.infer<typeof employeeSchema>;
@@ -53,6 +58,14 @@ interface EmployeeFormProps {
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
   employee: User | null;
+}
+
+const convertToDate = (date: any): Date | undefined => {
+    if (!date) return undefined;
+    if (date instanceof Date) return date;
+    if (date instanceof Timestamp) return date.toDate();
+    const parsed = new Date(date);
+    return isNaN(parsed.getTime()) ? undefined : parsed;
 }
 
 export function EmployeeForm({ isOpen, onOpenChange, employee }: EmployeeFormProps) {
@@ -70,6 +83,9 @@ export function EmployeeForm({ isOpen, onOpenChange, employee }: EmployeeFormPro
       area: undefined,
       workerType: 'obrero',
       contractType: 'indeterminado',
+      fechaIngreso: undefined,
+      fechaNacimiento: undefined,
+      diasContrato: 0,
     },
   });
 
@@ -85,25 +101,43 @@ export function EmployeeForm({ isOpen, onOpenChange, employee }: EmployeeFormPro
         area: employee.area || undefined,
         workerType: employee.workerType || 'obrero',
         contractType: employee.contractType || 'indeterminado',
+        fechaIngreso: convertToDate(employee.fechaIngreso),
+        fechaNacimiento: convertToDate(employee.fechaNacimiento),
+        diasContrato: employee.diasContrato || 0,
       });
     } else {
-      form.reset();
+      form.reset({
+        name: '',
+        cedula: '',
+        email: '',
+        phone: '',
+        address: '',
+        role: 'comun',
+        area: undefined,
+        workerType: 'obrero',
+        contractType: 'indeterminado',
+        fechaIngreso: new Date(),
+        fechaNacimiento: undefined,
+        diasContrato: 0,
+      });
     }
   }, [employee, isOpen, form]);
 
   const onSubmit = async (values: EmployeeFormValues) => {
     if (!firestore) return;
     try {
+      const dataToSave = { ...values };
+
       if (employee) {
         // Update
         const employeeRef = doc(firestore, 'users', employee.id);
-        updateDocumentNonBlocking(employeeRef, values);
+        updateDocumentNonBlocking(employeeRef, dataToSave);
         toast({ title: 'Empleado actualizado', description: `${values.name} ha sido actualizado.` });
       } else {
         // Create
         const collectionRef = collection(firestore, 'users');
         const newEmployeeData = {
-          ...values,
+          ...dataToSave,
           isActive: true,
           creationDate: serverTimestamp(),
         };
@@ -203,6 +237,17 @@ export function EmployeeForm({ isOpen, onOpenChange, employee }: EmployeeFormPro
                   </Select>
                   <FormMessage />
                 </FormItem>
+              )} />
+            </div>
+             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+               <FormField name="fechaIngreso" control={form.control} render={({ field }) => (
+                <FormItem className="flex flex-col"><FormLabel>Fecha de Ingreso</FormLabel><DatePicker date={field.value} setDate={field.onChange} /><FormMessage /></FormItem>
+              )} />
+               <FormField name="fechaNacimiento" control={form.control} render={({ field }) => (
+                <FormItem className="flex flex-col"><FormLabel>Fecha de Nacimiento</FormLabel><DatePicker date={field.value} setDate={field.onChange} /><FormMessage /></FormItem>
+              )} />
+               <FormField name="diasContrato" control={form.control} render={({ field }) => (
+                <FormItem><FormLabel>Días de Contrato</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>
               )} />
             </div>
             <DialogFooter className="pt-6">

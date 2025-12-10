@@ -36,6 +36,9 @@ export interface User {
   lastLogin?: string | Date;
   nombres?: string;
   apellidos?: string;
+  fechaIngreso?: Timestamp | Date | string;
+  diasContrato?: number;
+  fechaNacimiento?: Timestamp | Date | string;
 }
 
 export interface Area {
