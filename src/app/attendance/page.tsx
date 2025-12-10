@@ -1,9 +1,10 @@
+
 'use client';
 
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { Calendar, Users, BarChart, ClipboardList, QrCode } from 'lucide-react';
+import { Calendar, Users, BarChart, ClipboardList, QrCode, ClipboardEdit } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
 
 const attendanceModules = [
@@ -34,6 +35,13 @@ const attendanceModules = [
         link: '/attendance/planning',
         icon: Calendar,
         cta: 'Ir a Planificar'
+    },
+    {
+        title: 'Matriz de Evaluación',
+        description: 'Define y edita los criterios para la evaluación del rendimiento del personal.',
+        link: '/settings/evaluation-matrix',
+        icon: ClipboardEdit,
+        cta: 'Configurar Matriz'
     },
     {
         title: 'Reportes de Asistencia',

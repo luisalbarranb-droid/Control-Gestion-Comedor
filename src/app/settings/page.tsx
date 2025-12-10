@@ -1,9 +1,10 @@
+
 'use client';
 
 import { Settings, ShieldCheck } from 'lucide-react';
 import { ProfileCard } from '@/components/settings/profile-card';
 import Link from 'next/link';
-import { Card, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardDescription, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 
 export default function SettingsPage() {
@@ -32,11 +33,6 @@ export default function SettingsPage() {
                     </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-2">
-                    <Button variant="outline" className="w-full justify-start" asChild>
-                       <Link href="/settings/evaluation-matrix">
-                        Matriz de Evaluación
-                       </Link>
-                    </Button>
                      <Button variant="outline" className="w-full justify-start" asChild>
                        <Link href="/settings/areas">
                         Gestionar Áreas
