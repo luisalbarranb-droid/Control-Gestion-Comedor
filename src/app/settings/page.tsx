@@ -25,8 +25,7 @@ import {
 } from 'firebase/firestore';
 import { useCollection, useFirestore, useUser, useMemoFirebase } from '@/firebase';
 import { UserForm } from '@/components/user/user-form';
-// Si MenuForm da error, coméntalo temporalmente o verifica su ruta
-// import { MenuForm } from '@/components/menu/menu-form'; 
+import { MenuForm } from '@/components/menu/menu-form';
 import {
 	DropdownMenu,
 	DropdownMenuContent,
@@ -175,7 +174,7 @@ export default function SettingsPage() {
             </div>
 
             <UserForm isOpen={isUserFormOpen} onOpenChange={handleUserFormClose} editingUser={editingUser} />
-            {/* <MenuForm isOpen={isMenuFormOpen} onOpenChange={handleMenuFormClose} editingMenu={editingMenu} /> */}
+            <MenuForm isOpen={isMenuFormOpen} onOpenChange={handleMenuFormClose} editingMenu={editingMenu} />
 		</div>
 	);
 }
