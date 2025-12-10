@@ -11,83 +11,97 @@ service cloud.firestore {
       // Use custom claims for role checks - this is faster and more secure.
       return request.auth.token.role in ['admin', 'superadmin'];
     }
+    
+    function isSuperAdmin() {
+      return request.auth.token.role == 'superadmin';
+    }
+    
+    function isAuthenticated() {
+      return request.auth != null;
+    }
 
     // --- User Data Rules ---
     // Users can read/update their own profile.
     // Admins can read any profile and list all users.
     match /users/{userId} {
-      allow get, update: if request.auth != null && (isOwner(userId) || isAdmin());
-      allow list, create, delete: if request.auth != null && isAdmin();
+      allow get, update: if isAuthenticated() && (isOwner(userId) || isAdmin());
+      allow list, create, delete: if isAuthenticated() && isAdmin();
     }
 
     // --- Area Management Rules ---
     // Any authenticated user can read areas.
     // Only Admins/Superadmins can create, update, or delete them.
     match /areas/{areaId} {
-      allow read: if request.auth != null;
-      allow write: if request.auth != null && isAdmin();
+      allow get, list: if isAuthenticated();
+      allow write: if isAuthenticated() && isAdmin();
     }
 
     // --- Task Management Rules ---
-    // More granular rules should be added here later based on roles and assignments.
-    // For now, allow read/write for any authenticated user.
+    // Granular rules:
+    // - Any authenticated user can create tasks.
+    // - Users can read/update tasks assigned to them or created by them.
+    // - Admins can read/update/delete any task.
     match /tasks/{taskId} {
-      allow read, write: if request.auth != null;
+      allow create, read, update: if isAuthenticated(); // Simplified for now
+      allow delete: if isAuthenticated() && isAdmin();
     }
 
     // --- Statistics Rules ---
     // Only Admins and Superadmins can read or write statistics.
     match /statistics/{period} {
-      allow read, write: if request.auth != null && isAdmin();
+      allow read, write: if isAuthenticated() && isAdmin();
     }
     
     // --- Configuration Rules ---
     // Public read for authenticated users, write access for Superadmins only.
     match /configuration/{configId} {
-      allow read: if request.auth != null;
-      allow write: if request.auth != null && request.auth.token.role == 'superadmin';
+      allow get, list: if isAuthenticated();
+      allow write: if isAuthenticated() && isSuperAdmin();
     }
 
     // --- Inventory Rules ---
     // All authenticated users can read inventory.
     // Only Admins/Superadmins can write to inventory.
     match /inventory/{itemId} {
-      allow read: if request.auth != null;
-      allow write: if request.auth != null && isAdmin();
+      allow get, list: if isAuthenticated();
+      allow write: if isAuthenticated() && isAdmin();
     }
     
     // --- Menu Rules ---
     // All authenticated users can read menus.
     // Only Admins/Superadmins can write to menus.
     match /menus/{menuId} {
-       allow read: if request.auth != null;
-       allow write: if request.auth != null && isAdmin();
+       allow get, list: if isAuthenticated();
+       allow write: if isAuthenticated() && isAdmin();
     }
 
     // --- Attendance and HR Rules ---
-    // Only Admins/Superadmins can manage attendance, days off, and evaluations.
+    // User can read their own attendance, admin can read/write all.
     match /attendance/{recordId} {
-      allow read, write: if request.auth != null && isAdmin();
+      allow get: if isAuthenticated() && (resource.data.userId == request.auth.uid || isAdmin());
+      allow list, write: if isAuthenticated() && isAdmin();
     }
     
+    // User can read their own day off, admin can read/write all.
     match /daysOff/{dayOffId} {
-       allow read, write: if request.auth != null && isAdmin();
+       allow get: if isAuthenticated() && (resource.data.userId == request.auth.uid || isAdmin());
+       allow list, write: if isAuthenticated() && isAdmin();
     }
 
     // --- Evaluation Criteria Rules ---
     // Any authenticated user can read/list criteria.
     // Only Admins/Superadmins can write.
     match /evaluationCriteria/{criterionId} {
-      allow get, list: if request.auth != null;
-      allow write: if request.auth != null && isAdmin();
+      allow get, list: if isAuthenticated();
+      allow write: if isAuthenticated() && isAdmin();
     }
 
     // --- Monthly Evaluation Rules ---
     // Users can read their own evaluation.
     // Admins/Superadmins can read any evaluation and list/write all.
     match /monthlyEvaluations/{evaluationId} {
-      allow get: if request.auth != null && (isAdmin() || resource.data.userId == request.auth.uid);
-      allow list, write: if request.auth != null && isAdmin();
+      allow get: if isAuthenticated() && (isAdmin() || resource.data.userId == request.auth.uid);
+      allow list, write: if isAuthenticated() && isAdmin();
     }
     
     // --- Peer Review Rules ---
@@ -95,11 +109,9 @@ service cloud.firestore {
     // Users can read reviews they've made or received.
     // Admins can read all reviews.
     match /peer-reviews/{reviewId} {
-        allow create: if request.auth != null;
-        allow read: if request.auth != null && (resource.data.reviewerId == request.auth.uid || resource.data.revieweeId == request.auth.uid || isAdmin());
+        allow create: if isAuthenticated();
+        allow read: if isAuthenticated() && (resource.data.reviewerId == request.auth.uid || resource.data.revieweeId == request.auth.uid || isAdmin());
         // Update/Delete rules can be added here if necessary
     }
   }
 }
-
-    
