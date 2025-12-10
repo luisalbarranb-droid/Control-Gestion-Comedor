@@ -36,7 +36,7 @@ import { collection, doc, query, orderBy } from 'firebase/firestore';
 import { addDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import type { EvaluationCriterion } from '@/lib/types';
 import { CriterionForm } from '@/components/settings/criterion-form';
-import { useToast } from '@/components/ui/use-toast';
+import { useToast } from '@/components/ui/toast';
 import { Badge } from '@/components/ui/badge';
 
 
@@ -87,9 +87,9 @@ export default function EvaluationMatrixPage() {
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
           <Button variant="outline" size="icon" className="h-7 w-7" asChild>
-            <Link href="/settings">
+            <Link href="/attendance">
               <ArrowLeft className="h-4 w-4" />
-              <span className="sr-only">Volver a Configuración</span>
+              <span className="sr-only">Volver a RRHH</span>
             </Link>
           </Button>
           <h1 className="text-xl font-semibold md:text-2xl">
