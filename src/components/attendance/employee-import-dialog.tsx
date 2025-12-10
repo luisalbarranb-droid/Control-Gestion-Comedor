@@ -23,7 +23,7 @@ interface EmployeeImportDialogProps {
   onImport: (data: any[]) => void;
 }
 
-const requiredColumns = ['name', 'cedula', 'email', 'phone', 'address', 'role', 'area', 'workerType', 'contractType'];
+const requiredColumns = ['name', 'cedula', 'email', 'phone', 'address', 'role', 'area', 'workerType', 'contractType', 'fechaIngreso', 'diasContrato', 'fechaNacimiento'];
 
 export function EmployeeImportDialog({ isOpen, onOpenChange, onImport }: EmployeeImportDialogProps) {
   const { toast } = useToast();
@@ -60,7 +60,7 @@ export function EmployeeImportDialog({ isOpen, onOpenChange, onImport }: Employe
     reader.onload = (e) => {
       try {
         const data = new Uint8Array(e.target?.result as ArrayBuffer);
-        const workbook = XLSX.read(data, { type: 'array' });
+        const workbook = XLSX.read(data, { type: 'array', cellDates: true });
         const sheetName = workbook.SheetNames[0];
         const worksheet = workbook.Sheets[sheetName];
         const json = XLSX.utils.sheet_to_json(worksheet);
@@ -80,7 +80,7 @@ export function EmployeeImportDialog({ isOpen, onOpenChange, onImport }: Employe
 
         setParsedData(json);
       } catch (err) {
-        setError('Hubo un error al procesar el archivo. Asegúrate de que es un archivo de Excel válido.');
+        setError('Hubo un error al procesar el archivo. Asegúrate de que es un archivo de Excel válido y las fechas están en formato YYYY-MM-DD.');
         setFile(null);
       }
     };
@@ -121,7 +121,10 @@ export function EmployeeImportDialog({ isOpen, onOpenChange, onImport }: Employe
         role: 'comun',
         area: 'cocina',
         workerType: 'obrero',
-        contractType: 'indeterminado'
+        contractType: 'indeterminado',
+        fechaIngreso: '2023-01-15',
+        diasContrato: 0,
+        fechaNacimiento: '1990-05-20',
       },
        {
         name: 'Maria Garcia',
@@ -132,7 +135,10 @@ export function EmployeeImportDialog({ isOpen, onOpenChange, onImport }: Employe
         role: 'admin',
         area: 'servicio',
         workerType: 'empleado',
-        contractType: 'determinado'
+        contractType: 'determinado',
+        fechaIngreso: '2024-03-01',
+        diasContrato: 90,
+        fechaNacimiento: '1995-11-10',
       }
     ];
 
@@ -209,7 +215,7 @@ export function EmployeeImportDialog({ isOpen, onOpenChange, onImport }: Employe
                         <TableBody>
                             {parsedData.slice(0, 10).map((row, i) => (
                                 <TableRow key={i}>
-                                    {Object.values(row).map((val: any, j) => <TableCell key={j}>{String(val)}</TableCell>)}
+                                    {Object.values(row).map((val: any, j) => <TableCell key={j}>{String(val instanceof Date ? val.toLocaleDateString() : val)}</TableCell>)}
                                 </TableRow>
                             ))}
                         </TableBody>

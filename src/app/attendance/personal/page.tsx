@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input';
 import { EmployeeList } from '@/components/attendance/employee-list';
 import { EmployeeForm } from '@/components/attendance/employee-form';
 import { useCollection, useFirestore, useMemoFirebase, addDocumentNonBlocking } from '@/firebase';
-import { collection, query, orderBy, writeBatch, doc, serverTimestamp } from 'firebase/firestore';
+import { collection, query, orderBy, writeBatch, doc, serverTimestamp, Timestamp } from 'firebase/firestore';
 import type { User } from '@/lib/types';
 import { EmployeeImportDialog } from '@/components/attendance/employee-import-dialog';
 import { useToast } from '@/components/ui/toast';
@@ -60,7 +60,6 @@ export default function PersonalManagementPage() {
             let importedCount = 0;
 
             importedData.forEach((row: any) => {
-                // Validación básica de datos
                 if (row.name && row.cedula && row.email && row.role) {
                     const newEmployeeRef = doc(collection(firestore, 'users'));
                     const newEmployee: Partial<User> = {
@@ -76,6 +75,9 @@ export default function PersonalManagementPage() {
                         contractType: row.contractType as User['contractType'],
                         isActive: true,
                         creationDate: serverTimestamp(),
+                        fechaIngreso: row.fechaIngreso ? Timestamp.fromDate(new Date(row.fechaIngreso)) : undefined,
+                        diasContrato: row.diasContrato ? Number(row.diasContrato) : 0,
+                        fechaNacimiento: row.fechaNacimiento ? Timestamp.fromDate(new Date(row.fechaNacimiento)) : undefined,
                     };
                     batch.set(newEmployeeRef, newEmployee);
                     importedCount++;
@@ -94,7 +96,7 @@ export default function PersonalManagementPage() {
 
         } catch (e) {
             console.error("Error al importar empleados:", e);
-            toast({ variant: 'destructive', title: 'Error de Importación', description: 'Ocurrió un error al guardar los datos.' });
+            toast({ variant: 'destructive', title: 'Error de Importación', description: 'Ocurrió un error al guardar los datos. Revisa el formato de las fechas.' });
         } finally {
             setIsImportOpen(false);
         }
