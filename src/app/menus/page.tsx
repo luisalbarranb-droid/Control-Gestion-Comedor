@@ -173,6 +173,78 @@ export default function MenusPage() {
 		}
 	}, [firestore, menus, start, authUser?.uid, toast]);
 
+    const handleImport = useCallback(async (data: MenuImportRow[]) => {
+        if (!firestore || !inventoryItems || inventoryItems.length === 0) {
+            toast({ variant: 'destructive', title: 'Error', description: 'El inventario no está cargado. Intenta de nuevo.' });
+            return;
+        }
+
+        const batch = writeBatch(firestore);
+        
+        // Group by date and time
+        const menusToCreate = data.reduce((acc, row) => {
+            const dateStr = format(new Date(row.date), 'yyyy-MM-dd');
+            const key = `${dateStr}_${row.time}`;
+            if (!acc[key]) {
+                acc[key] = {
+                    date: new Date(row.date),
+                    pax: row.pax,
+                    time: row.time,
+                    items: {}
+                };
+            }
+
+            if (!acc[key].items[row.itemName]) {
+                acc[key].items[row.itemName] = {
+                    name: row.itemName,
+                    category: row.itemCategory,
+                    ingredients: []
+                };
+            }
+            
+            const inventoryItem = inventoryItems.find(i => i.nombre.toLowerCase() === row.ingredientName.toLowerCase());
+            
+            if (inventoryItem) {
+                acc[key].items[row.itemName].ingredients.push({
+                    inventoryItemId: inventoryItem.id,
+                    quantity: row.ingredientQuantity,
+                    wasteFactor: row.ingredientWasteFactor,
+                });
+            } else {
+                 console.warn(`Ingrediente no encontrado en el inventario: ${row.ingredientName}`);
+            }
+
+            return acc;
+        }, {} as Record<string, any>);
+
+        try {
+             for (const key in menusToCreate) {
+                const menuData = menusToCreate[key];
+                const newMenuRef = doc(collection(firestore, 'menus'));
+                
+                const finalMenu: Omit<Menu, 'id'> = {
+                    name: menuData.time,
+                    date: Timestamp.fromDate(menuData.date),
+                    pax: menuData.pax,
+                    time: menuData.time,
+                    items: Object.values(menuData.items),
+                };
+                
+                batch.set(newMenuRef, {
+                    ...finalMenu,
+                    createdBy: authUser?.uid,
+                    createdAt: Timestamp.now(),
+                });
+            }
+
+            await batch.commit();
+            toast({ title: 'Importación Exitosa', description: `${Object.keys(menusToCreate).length} menús han sido creados/actualizados.` });
+            setImportDialogOpen(false);
+        } catch (e) {
+            console.error('Error al importar menús:', e);
+            toast({ variant: 'destructive', title: 'Error de Importación', description: 'Ocurrió un error al guardar los menús.' });
+        }
+    }, [firestore, authUser, inventoryItems, toast]);
 
 	const weekDays = useMemo(() => {
 		const days = [];
@@ -317,4 +389,3 @@ export default function MenusPage() {
 		</div>
 	);
 }
-    
