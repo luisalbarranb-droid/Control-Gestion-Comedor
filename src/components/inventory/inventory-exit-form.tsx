@@ -129,10 +129,13 @@ export function InventoryExitForm({ isOpen, onOpenChange, onSave, inventoryItems
 
         if (selectedMenu) {
             const ingredientMap = new Map<string, number>();
+            
             selectedMenu.items.forEach(menuItem => {
                 if (!menuItem.ingredients) return;
+                
                 menuItem.ingredients.forEach(ingredient => {
                     if (ingredient.wasteFactor >= 1) return; // Evita división por cero o negativo
+                    
                     const grossQuantity = ingredient.quantity / (1 - ingredient.wasteFactor);
                     const totalQuantity = grossQuantity * selectedMenu.pax;
                     const currentQuantity = ingredientMap.get(ingredient.inventoryItemId) || 0;
@@ -156,7 +159,7 @@ export function InventoryExitForm({ isOpen, onOpenChange, onSave, inventoryItems
 
             toast({
                 title: "Menú Cargado",
-                description: `Se han cargado los ingredientes para el menú de ${selectedMenu.pax} PAX.`
+                description: `Se han cargado ${newItems.length} ingredientes para el menú de ${selectedMenu.pax} PAX.`
             });
         } else {
              toast({
