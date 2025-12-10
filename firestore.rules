@@ -86,7 +86,7 @@ service cloud.firestore {
     }
 
     // --- Evaluation Criteria Rules ---
-    // Cualquier usuario autenticado puede leer/listar, "admins" pueden escribir.
+    // CORRECCIÓN: Se permite explícitamente leer y listar a cualquier usuario autenticado.
     match /evaluationCriteria/{criterionId} {
       allow get, list: if isAuthenticated();
       allow write: if isAdmin();
