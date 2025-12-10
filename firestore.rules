@@ -32,11 +32,8 @@ service cloud.firestore {
 
     // --- User Data Rules ---
     match /users/{userId} {
-      // Leer: el propio usuario o admins
-      allow get: if isAuthenticated() && (isOwner(userId) || isAdmin());
-      
-      // Listar: solo admins (ahora cualquier usuario autenticado)
-      allow list: if isAdmin();
+      // Leer y listar para cualquier usuario autenticado para simplificar el desarrollo
+      allow read: if isAuthenticated();
       
       // Crear: solo superadmins (ahora cualquier usuario autenticado)
       allow create: if isSuperAdmin();
