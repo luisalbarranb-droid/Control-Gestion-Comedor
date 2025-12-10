@@ -1,110 +1,181 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-
     // --- Helper Functions ---
     function isAuthenticated() {
       return request.auth != null;
     }
-
-    // Simplificado para el desarrollo: cualquier usuario autenticado es tratado como admin.
-    // Esto evita errores de permisos mientras no se implemente la asignación de roles.
+    
+    // Lee el documento del usuario desde Firestore para verificar su rol
+    function getUserData() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+    }
+    
+    function hasRole(role) {
+      return isAuthenticated() && getUserData().role == role;
+    }
+    
     function isAdmin() {
-      return isAuthenticated();
+      return hasRole('admin') || hasRole('superadmin');
     }
     
     function isSuperAdmin() {
-      // Por ahora, cualquier admin es superadmin para simplificar.
-      return isAdmin();
+      return hasRole('superadmin');
     }
     
     function isOwner(userId) {
-      return request.auth.uid == userId;
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+    
+    // Verifica que el usuario esté activo (no suspendido)
+    function isActiveUser() {
+      return isAuthenticated() && getUserData().isActive == true;
+    }
+    
+    // Validación de datos entrantes
+    function hasRequiredFields(fields) {
+      return request.resource.data.keys().hasAll(fields);
     }
 
     // --- User Data Rules ---
-    // Un usuario puede leer y actualizar su propio perfil.
-    // Un "admin" (cualquier usuario autenticado) puede listar y crear usuarios.
     match /users/{userId} {
-      allow get, update: if isAuthenticated() && (isOwner(userId) || isAdmin());
-      allow list, create, delete: if isAdmin();
+      // Leer: el propio usuario o admins
+      allow get: if isAuthenticated() && (isOwner(userId) || isAdmin());
+      
+      // Listar: solo admins
+      allow list: if isAdmin();
+      
+      // Crear: solo superadmins (al registrar nuevos usuarios)
+      allow create: if isSuperAdmin() && 
+                       hasRequiredFields(['email', 'name', 'role', 'isActive', 'creationDate']);
+      
+      // Actualizar: el usuario puede actualizar su perfil (pero no su rol)
+      allow update: if isOwner(userId) && 
+                       !request.resource.data.diff(resource.data).affectedKeys().hasAny(['role', 'isActive']);
+      
+      // Admins pueden actualizar todo excepto roles de otros admins
+      allow update: if isAdmin() && 
+                       (!resource.data.role.hasAny(['admin', 'superadmin']) || isSuperAdmin());
+      
+      // Borrar: solo superadmins
+      allow delete: if isSuperAdmin();
     }
 
     // --- Area Management Rules ---
-    // Cualquier usuario autenticado puede leer áreas.
-    // Solo "admins" pueden escribir.
     match /areas/{areaId} {
-      allow get, list: if isAuthenticated();
+      allow read: if isActiveUser();
       allow write: if isAdmin();
     }
 
     // --- Task Management Rules ---
-    // Simplificado por ahora: cualquier usuario autenticado puede crear, leer y actualizar tareas.
-    // Solo "admins" pueden borrar.
     match /tasks/{taskId} {
-      allow create, read, update: if isAuthenticated();
+      // Leer: usuarios activos
+      allow read: if isActiveUser();
+      
+      // Crear: usuarios activos (admins asignan, usuarios pueden crear para sí mismos)
+      allow create: if isActiveUser() && 
+                       hasRequiredFields(['titulo', 'asignadoA', 'estado', 'fechaCreacion', 'creadoPor']) &&
+                       (request.resource.data.creadoPor == request.auth.uid || isAdmin());
+      
+      // Actualizar: el asignado puede actualizar estado/notas, admins pueden actualizar todo
+      allow update: if isActiveUser() && 
+                       (resource.data.asignadoA == request.auth.uid || isAdmin());
+      
+      // Borrar: solo admins
       allow delete: if isAdmin();
     }
 
     // --- Statistics Rules ---
-    // Solo "admins" pueden leer o escribir estadísticas.
     match /statistics/{period} {
       allow read, write: if isAdmin();
     }
     
     // --- Configuration Rules ---
-    // Lectura pública para usuarios autenticados, escritura solo para "superadmins".
     match /configuration/{configId} {
-      allow get, list: if isAuthenticated();
+      allow read: if isActiveUser();
       allow write: if isSuperAdmin();
     }
 
     // --- Inventory Rules ---
-    // Todos los usuarios autenticados pueden leer, "admins" pueden escribir.
     match /inventory/{itemId} {
-      allow get, list: if isAuthenticated();
-      allow write: if isAdmin();
+      allow read: if isActiveUser();
+      allow create: if isAdmin() && 
+                       hasRequiredFields(['nombre', 'cantidad', 'unidad', 'ultimaActualizacion']);
+      allow update: if isAdmin();
+      allow delete: if isSuperAdmin();
     }
     
     // --- Menu Rules ---
-    // Todos los usuarios autenticados pueden leer, "admins" pueden escribir.
     match /menus/{menuId} {
-       allow get, list: if isAuthenticated();
-       allow write: if isAdmin();
+      allow read: if isActiveUser();
+      allow create, update, delete: if isAdmin();
     }
 
-    // --- Attendance and HR Rules ---
-    // El usuario puede leer sus propios registros, "admins" pueden leer/escribir todos.
+    // --- Attendance Rules ---
     match /attendance/{recordId} {
-      allow get: if isAuthenticated() && (resource.data.userId == request.auth.uid || isAdmin());
-      allow list, write: if isAdmin();
+      // Leer: el usuario solo ve sus registros, admins ven todos
+      allow get: if isActiveUser() && 
+                    (resource.data.userId == request.auth.uid || isAdmin());
+      allow list: if isAdmin();
+      
+      // Crear: cualquier usuario activo puede registrar su propia asistencia
+      allow create: if isActiveUser() && 
+                       request.resource.data.userId == request.auth.uid &&
+                       hasRequiredFields(['userId', 'checkIn', 'status']);
+      
+      // Actualizar: el usuario puede registrar su salida, admins pueden ajustar
+      allow update: if isActiveUser() && 
+                       (request.resource.data.userId == request.auth.uid || isAdmin());
+      allow delete: if isAdmin();
     }
     
     match /daysOff/{dayOffId} {
-       allow get: if isAuthenticated() && (resource.data.userId == request.auth.uid || isAdmin());
-       allow list, write: if isAdmin();
-    }
-
-    // --- Evaluation Criteria Rules ---
-    // CORRECCIÓN: Se permite explícitamente leer y listar a cualquier usuario autenticado.
-    match /evaluationCriteria/{criterionId} {
-      allow get, list: if isAuthenticated();
+      // Leer: el usuario ve sus días, admins ven todos
+      allow get: if isActiveUser() && (resource.data.userId == request.auth.uid || isAdmin());
+      allow list: if isAdmin();
       allow write: if isAdmin();
+    }
+    
+    // --- Evaluation Criteria Rules ---
+    match /evaluationCriteria/{criterionId} {
+      allow read: if isActiveUser();
+      allow write: if isSuperAdmin();
     }
 
     // --- Monthly Evaluation Rules ---
-    // El usuario puede leer su propia evaluación, "admins" pueden leer/escribir todas.
     match /monthlyEvaluations/{evaluationId} {
-      allow get: if isAuthenticated() && (isAdmin() || resource.data.userId == request.auth.uid);
-      allow list, write: if isAdmin();
+      // Leer: el evaluado ve su evaluación, admins ven todas
+      allow get: if isActiveUser() && 
+                    (resource.data.userId == request.auth.uid || isAdmin());
+      allow list: if isAdmin();
+      
+      // Crear/Actualizar: solo admins
+      allow create, update: if isAdmin() && 
+                               hasRequiredFields(['userId', 'period', 'scores', 'evaluatorId', 'evaluationDate']);
+      
+      allow delete: if isSuperAdmin();
     }
     
     // --- Peer Review Rules ---
-    // Cualquier usuario autenticado puede crear.
-    // Los usuarios pueden leer las revisiones que hicieron o recibieron.
     match /peer-reviews/{reviewId} {
-        allow create: if isAuthenticated();
-        allow read: if isAuthenticated() && (resource.data.reviewerId == request.auth.uid || resource.data.revieweeId == request.auth.uid || isAdmin());
+      // Crear: usuarios activos pueden crear reviews
+      allow create: if isActiveUser() && 
+                       request.resource.data.reviewerId == request.auth.uid &&
+                       hasRequiredFields(['reviewerId', 'revieweeId', 'taskId', 'rating', 'date']);
+      
+      // Leer: revisor, revisado o admin
+      allow read: if isActiveUser() && 
+                     (resource.data.reviewerId == request.auth.uid || 
+                      resource.data.revieweeId == request.auth.uid || 
+                      isAdmin());
+      
+      // Actualizar: solo el revisor dentro de 24 horas de creación
+      allow update: if isActiveUser() && 
+                       resource.data.reviewerId == request.auth.uid &&
+                       request.time < resource.data.date + duration.value(24, 'h');
+      
+      // Borrar: solo superadmins
+      allow delete: if isSuperAdmin();
     }
   }
 }

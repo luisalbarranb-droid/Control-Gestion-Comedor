@@ -32,7 +32,7 @@ import {
 } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/ui/toast';
-import { useFirestore, addDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase';
+import { useFirestore, setDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase';
 import { collection, doc, serverTimestamp, Timestamp } from 'firebase/firestore';
 import type { User } from '@/lib/types';
 import { areas } from '@/lib/placeholder-data';
@@ -184,11 +184,11 @@ export function EmployeeForm({ isOpen, onOpenChange, employee }: EmployeeFormPro
         const newEmployeeData = {
           ...dataToSave,
           id: docId, // Save the ID in the document
-          isActive: true,
-          creationDate: serverTimestamp(),
+          isActive: true, // Campo requerido por las nuevas reglas
+          creationDate: serverTimestamp(), // Campo requerido por las nuevas reglas
         };
         // Use setDoc here since we have the full ref
-        await doc(employeeRef).set(newEmployeeData);
+        setDocumentNonBlocking(employeeRef, newEmployeeData);
         toast({ title: 'Empleado creado', description: `${values.name} ha sido agregado.` });
       }
       onOpenChange(false);
