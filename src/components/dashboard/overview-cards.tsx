@@ -6,19 +6,24 @@ import { ClipboardList, CheckCircle, Clock, TrendingUp } from 'lucide-react';
 import { useCollection, useFirestore, useUser, useMemoFirebase } from '@/firebase';
 import { collection } from 'firebase/firestore';
 import type { Task } from '@/lib/types';
-import { useMemo } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import { Loader2 } from 'lucide-react';
 
 export function OverviewCards() {
+  const [isClient, setIsClient] = useState(false);
   const firestore = useFirestore();
   const { user } = useUser();
+
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
 
   const tasksQuery = useMemoFirebase(() => {
     if (!firestore) return null;
     return collection(firestore, 'tasks');
   }, [firestore]);
 
-  const { data: tasks, isLoading } = useCollection<Task>(tasksQuery, { disabled: !user });
+  const { data: tasks, isLoading: isLoadingTasks } = useCollection<Task>(tasksQuery, { disabled: !user });
 
   const stats = useMemo(() => {
     if (!tasks) {
@@ -36,6 +41,8 @@ export function OverviewCards() {
       eficiencia: Math.round(eficiencia),
     };
   }, [tasks]);
+
+  const isLoading = isLoadingTasks || !isClient;
 
   const cardData = [
     { title: "Total de Tareas", value: stats.total, icon: ClipboardList, description: "en el último mes" },
@@ -67,5 +74,3 @@ export function OverviewCards() {
     </div>
   );
 }
-
-    
