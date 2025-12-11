@@ -15,6 +15,7 @@ import {
   Settings,
   CalendarDays,
   Award,
+  Share2,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -28,6 +29,7 @@ const navItems = [
   { href: '/recognition', label: 'Reconocimientos', icon: <Award className="h-5 w-5" /> },
   { href: '/reports', label: 'Reportes', icon: <FileSpreadsheet className="h-5 w-5" /> },
   { href: '/stats', label: 'Estadísticas', icon: <AreaChart className="h-5 w-5" /> },
+  { href: '/share', label: 'Compartir App', icon: <Share2 className="h-5 w-5" /> },
   { href: '/settings', label: 'Configuración', icon: <Settings className="h-5 w-5" /> },
 ];
 
