@@ -13,11 +13,16 @@ import { cn } from '@/lib/utils';
 import { useCollection, useFirestore, useUser, useMemoFirebase } from '@/firebase';
 import { collection } from 'firebase/firestore';
 import type { Task, User } from '@/lib/types';
-import { useMemo } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 
 export function TopPerformers() {
+  const [isClient, setIsClient] = useState(false);
   const firestore = useFirestore();
   const { user } = useUser();
+
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
 
   const usersQuery = useMemoFirebase(() => {
     if (!firestore) return null;
@@ -82,7 +87,7 @@ export function TopPerformers() {
         </CardDescription>
       </CardHeader>
       <CardContent>
-        {isLoading ? (
+        {!isClient || isLoading ? (
           <div className="flex justify-center items-center h-full min-h-[150px]">
             <Loader2 className="h-6 w-6 animate-spin" />
           </div>
@@ -111,5 +116,3 @@ export function TopPerformers() {
     </Card>
   );
 }
-
-    
