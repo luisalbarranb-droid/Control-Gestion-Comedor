@@ -19,6 +19,7 @@ import { useCollection, useFirestore, useUser, useMemoFirebase } from '@/firebas
 import { collection, query, orderBy, limit } from 'firebase/firestore';
 import { areas } from '@/lib/placeholder-data';
 import { Loader2 } from 'lucide-react';
+import { useState, useEffect } from 'react';
 
 
 const priorityVariant: Record<TaskPriority, string> = {
@@ -37,8 +38,13 @@ const statusVariant: Record<TaskStatus, string> = {
 }
 
 export function RecentTasks() {
+  const [isClient, setIsClient] = useState(false);
   const firestore = useFirestore();
   const { user } = useUser();
+
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
 
   const usersQuery = useMemoFirebase(() => {
     if (!firestore) return null;
@@ -65,7 +71,7 @@ export function RecentTasks() {
         <CardDescription>Un vistazo rápido a las últimas tareas asignadas y su estado.</CardDescription>
       </CardHeader>
       <CardContent>
-         {isLoading ? (
+         {!isClient || isLoading ? (
           <div className="flex justify-center items-center h-40">
             <Loader2 className="h-6 w-6 animate-spin" />
           </div>
@@ -129,5 +135,3 @@ export function RecentTasks() {
     </Card>
   );
 }
-
-    
