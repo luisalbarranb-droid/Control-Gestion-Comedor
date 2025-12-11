@@ -16,7 +16,7 @@ import { FirebaseErrorListener } from '@/components/FirebaseErrorListener';
 
 export function Providers({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const noSidebarRoutes = ['/login', '/signup']; 
+  const noSidebarRoutes = ['/login', '/signup', '/share']; 
   const showSidebar = !noSidebarRoutes.includes(pathname);
 
   return (
