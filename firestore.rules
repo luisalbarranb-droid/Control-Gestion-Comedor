@@ -30,8 +30,8 @@ service cloud.firestore {
       return isAuthenticated() && request.auth.uid == userId;
     }
     
+    // ESTA ES LA FUNCIÓN CLAVE: Cualquier usuario autenticado se considera activo y admin para desarrollo
     function isActiveUser() {
-      // Para desarrollo, asume que todos los usuarios autenticados están activos.
       return isAuthenticated();
     }
     
