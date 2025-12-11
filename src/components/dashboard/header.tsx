@@ -5,8 +5,18 @@ import { Button } from '@/components/ui/button';
 import { Sheet, SheetTrigger, SheetContent } from '@/components/ui/sheet';
 import { PanelLeft, LogOut, User as UserIcon } from 'lucide-react';
 import { MainNav } from './main-nav';
+import { useAuth } from '@/firebase';
+import { useRouter } from 'next/navigation';
 
 export function Header() {
+  const auth = useAuth();
+  const router = useRouter();
+
+  const handleLogout = async () => {
+    await auth.signOut();
+    router.push('/login');
+  };
+
   return (
     <header className="sticky top-0 z-30 flex h-14 items-center gap-4 border-b bg-background px-4 sm:static sm:h-auto sm:border-0 sm:bg-transparent sm:px-6">
       
@@ -45,7 +55,7 @@ export function Header() {
             variant="ghost" 
             size="sm" 
             className="text-red-600 hover:text-red-700 hover:bg-red-50 gap-2 ml-1"
-            onClick={() => alert("Cierre de sesión simulado para la demo.")}
+            onClick={handleLogout}
         >
             <LogOut className="h-4 w-4" />
             <span className="hidden sm:inline">Salir</span>
