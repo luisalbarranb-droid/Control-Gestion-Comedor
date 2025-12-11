@@ -1,53 +1,63 @@
 'use client';
 
 import React, { useMemo, useState, useEffect } from 'react';
-import { format, set, subDays } from 'date-fns';
-import { es } from 'date-fns/locale';
-import { Button } from '@/components/ui/button';
-import Link from 'next/link';
-import { ArrowLeft, Clock, UserCheck, UserX, AlertTriangle, CalendarCheck2 } from 'lucide-react';
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { format, set } from 'date-fns';
+import { ArrowLeft, Clock, UserCheck, UserX } from 'lucide-react';
+import {
+  Card,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+  CardContent,
+} from '@/components/ui/card';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Skeleton } from '@/components/ui/skeleton';
+import Link from 'next/link';
 import { collection, query, where, Timestamp } from 'firebase/firestore';
 import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
 import type { AttendanceRecord, User } from '@/lib/types';
 import { cn } from '@/lib/utils';
-import { Skeleton } from '@/components/ui/skeleton';
-
 
 // --- Helper Functions ---
 function isTimestamp(value: any): value is Timestamp {
-    return value && typeof value === 'object' && value.toDate && typeof value.toDate === 'function';
+  return value && typeof value === 'object' && value.toDate && typeof value.toDate === 'function';
 }
 
 function convertToDate(date: any): Date | null {
-    if (!date) return null;
-    if (date instanceof Date) return date;
-    if (isTimestamp(date)) return date.toDate();
-    const parsed = new Date(date);
-    return isNaN(parsed.getTime()) ? null : parsed;
+  if (!date) return null;
+  if (date instanceof Date) return date;
+  if (isTimestamp(date)) return date.toDate();
+  const parsed = new Date(date);
+  return isNaN(parsed.getTime()) ? null : parsed;
 }
 
 const statusConfig = {
-    presente: { label: 'Presente', className: 'bg-green-100 text-green-800' },
-    retardo: { label: 'Retardo', className: 'bg-yellow-100 text-yellow-800' },
-    ausente: { label: 'Ausente', className: 'bg-red-100 text-red-800' },
-    'fuera-de-horario': { label: 'Fuera de Horario', className: 'bg-purple-100 text-purple-800' },
-    justificado: { label: 'Justificado', className: 'bg-blue-100 text-blue-800' },
-    'no-justificado': { label: 'No Justificado', className: 'bg-orange-100 text-orange-800' },
-    vacaciones: { label: 'Vacaciones', className: 'bg-indigo-100 text-indigo-800' },
-    'dia-libre': { label: 'Día Libre', className: 'bg-gray-100 text-gray-800' },
+  presente: { label: 'Presente', className: 'bg-green-100 text-green-800' },
+  retardo: { label: 'Retardo', className: 'bg-yellow-100 text-yellow-800' },
+  ausente: { label: 'Ausente', className: 'bg-red-100 text-red-800' },
+  'fuera-de-horario': { label: 'Fuera de Horario', className: 'bg-purple-100 text-purple-800' },
+  justificado: { label: 'Justificado', className: 'bg-blue-100 text-blue-800' },
+  'no-justificado': { label: 'No Justificado', className: 'bg-orange-100 text-orange-800' },
+  vacaciones: { label: 'Vacaciones', className: 'bg-indigo-100 text-indigo-800' },
+  'dia-libre': { label: 'Día Libre', className: 'bg-gray-100 text-gray-800' },
 };
-
 
 export default function AttendanceDashboardPage() {
   const firestore = useFirestore();
-  const [currentDate, setCurrentDate] = useState<Date>(new Date());
+  const [currentDate, setCurrentDate] = useState<Date>(() => new Date());
   const [isClient, setIsClient] = useState(false);
 
-  // CRITICAL FIX: Ensure client-side-only code runs after mount to prevent hydration mismatch.
+  // Soluciona el error de hidratación asegurando que el código del lado del cliente se ejecute después del montaje.
   useEffect(() => {
     setIsClient(true);
   }, []);
@@ -57,7 +67,6 @@ export default function AttendanceDashboardPage() {
     const end = set(currentDate, { hours: 23, minutes: 59, seconds: 59, milliseconds: 999 });
     return { startOfToday: start, endOfToday: end };
   }, [currentDate]);
-
 
   const attendanceQuery = useMemoFirebase(() => {
     if (!firestore) return null;
@@ -83,9 +92,8 @@ export default function AttendanceDashboardPage() {
     const present = attendanceRecords.filter(r => r.status === 'presente').length;
     const late = attendanceRecords.filter(r => r.status === 'retardo').length;
     
-    // An active user is one who should be working today (not on a day off, etc.)
-    // For simplicity, we consider all users active for now.
-    const absent = users.filter(u => u.isActive).length - presentIds.size;
+    const activeUsers = users.filter(u => u.isActive).length;
+    const absent = activeUsers > 0 ? activeUsers - presentIds.size : 0;
 
     const recent = attendanceRecords
       .sort((a, b) => {
@@ -188,13 +196,13 @@ export default function AttendanceDashboardPage() {
                         {stats.recent.map(record => {
                             const user = getUser(record.userId);
                             const checkInTime = convertToDate(record.checkIn);
-                            const statusInfo = statusConfig[record.status] || { label: record.status, className: 'bg-gray-100 text-gray-800' };
+                            const statusInfo = statusConfig[record.status as keyof typeof statusConfig] || { label: record.status, className: 'bg-gray-100 text-gray-800' };
                             return (
                                 <TableRow key={record.id}>
                                     <TableCell>
                                         <div className="flex items-center gap-3">
                                             <Avatar>
-                                                <AvatarImage src={(user as any)?.avatarUrl} />
+                                                <AvatarImage src={user?.avatarUrl} />
                                                 <AvatarFallback>{getUserInitials(user?.name)}</AvatarFallback>
                                             </Avatar>
                                             <span>{user?.name || 'Desconocido'}</span>

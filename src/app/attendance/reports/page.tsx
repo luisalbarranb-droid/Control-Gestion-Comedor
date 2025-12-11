@@ -13,6 +13,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { DateRange } from 'react-day-picker';
 import { DateRangePicker } from '@/components/attendance/date-range-picker';
+import { Skeleton } from '@/components/ui/skeleton';
+
 
 // --- Helper Functions ---
 function isTimestamp(value: any): value is Timestamp {
@@ -30,9 +32,11 @@ function convertToDate(date: any): Date | null {
 export default function AttendanceReportPage() {
     const firestore = useFirestore();
     const [dateRange, setDateRange] = useState<DateRange | undefined>();
+    const [isClient, setIsClient] = useState(false);
 
-    // CRITICAL FIX: Initialize date state in useEffect to prevent hydration mismatch.
+    // Soluciona el error de hidratación asegurando que el código del lado del cliente se ejecute después del montaje.
     useEffect(() => {
+        setIsClient(true);
         setDateRange({
             from: startOfMonth(new Date()),
             to: endOfMonth(new Date()),
@@ -102,7 +106,38 @@ export default function AttendanceReportPage() {
         });
     }, [users, attendance, daysOff, dateRange]);
 
-    const isLoading = isLoadingUsers || isLoadingAttendance || isLoadingDaysOff || !dateRange;
+    const isLoading = !isClient || isLoadingUsers || isLoadingAttendance || isLoadingDaysOff || !dateRange;
+
+    if (!isClient) {
+        return (
+            <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                    <div className="flex items-center gap-4">
+                        <Skeleton className="h-7 w-7" />
+                        <div>
+                            <Skeleton className="h-8 w-64 mb-2" />
+                            <Skeleton className="h-4 w-80" />
+                        </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                        <Skeleton className="h-10 w-[300px]" />
+                        <Skeleton className="h-10 w-28" />
+                        <Skeleton className="h-10 w-28" />
+                    </div>
+                </div>
+                <Card>
+                    <CardHeader>
+                        <Skeleton className="h-6 w-48 mb-2" />
+                        <Skeleton className="h-4 w-96" />
+                    </CardHeader>
+                    <CardContent>
+                        <Skeleton className="h-64 w-full" />
+                    </CardContent>
+                </Card>
+            </main>
+        );
+    }
+
 
     return (
         <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
