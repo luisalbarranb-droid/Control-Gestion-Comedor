@@ -44,7 +44,7 @@ function generateMonthOptions() {
 
 export default function MonthlyEvaluationPage() {
   const firestore = useFirestore();
-  const { user: authUser } = useUser();
+  const { user: authUser, isUserLoading } = useUser();
   const { toast } = useToast();
 
   const [selectedUser, setSelectedUser] = useState<string | null>(null);
@@ -52,18 +52,18 @@ export default function MonthlyEvaluationPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const usersQuery = useMemoFirebase(() => {
-    if (!firestore) return null;
+    if (!firestore || !authUser) return null;
     return query(collection(firestore, 'users'), orderBy('name'));
-  }, [firestore]);
+  }, [firestore, authUser]);
 
   const criteriaQuery = useMemoFirebase(() => {
-    if (!firestore) return null;
+    if (!firestore || !authUser) return null;
     return query(
       collection(firestore, 'evaluationCriteria'),
       where('isActive', '==', true),
       orderBy('name')
     );
-  }, [firestore]);
+  }, [firestore, authUser]);
 
   const { data: users, isLoading: isLoadingUsers } = useCollection<User>(usersQuery);
   const { data: criteria, isLoading: isLoadingCriteria } = useCollection<EvaluationCriterion>(criteriaQuery);
@@ -109,7 +109,7 @@ export default function MonthlyEvaluationPage() {
     }
   };
   
-  const isLoading = isLoadingUsers || isLoadingCriteria;
+  const isLoading = isLoadingUsers || isLoadingCriteria || isUserLoading;
   const canEvaluate = selectedUser && criteria && criteria.length > 0;
 
   return (
