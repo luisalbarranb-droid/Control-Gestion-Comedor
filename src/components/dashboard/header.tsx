@@ -1,3 +1,4 @@
+
 'use client';
 
 import React from 'react';
@@ -58,7 +59,7 @@ export function Header() {
             onClick={handleLogout}
         >
             <LogOut className="h-4 w-4" />
-            <span className="hidden sm:inline">Salir</span>
+            <span>Salir</span>
         </Button>
       </div>
 
