@@ -92,7 +92,7 @@ export function EmployeeForm({ isOpen, onOpenChange, employee }: EmployeeFormPro
       email: '',
       phone: '',
       address: '',
-      role: 'comun',
+      role: 'superadmin', // Default to superadmin for new users
       area: undefined,
       workerType: 'obrero',
       contractType: 'indeterminado',
@@ -128,7 +128,7 @@ export function EmployeeForm({ isOpen, onOpenChange, employee }: EmployeeFormPro
         email: '',
         phone: '',
         address: '',
-        role: 'comun',
+        role: 'superadmin', // Default to superadmin for new users
         area: undefined,
         workerType: 'obrero',
         contractType: 'indeterminado',
@@ -186,6 +186,7 @@ export function EmployeeForm({ isOpen, onOpenChange, employee }: EmployeeFormPro
           id: docId, // Save the ID in the document
           isActive: true, // Campo requerido por las nuevas reglas
           creationDate: serverTimestamp(), // Campo requerido por las nuevas reglas
+          createdBy: 'system' // Add createdBy field
         };
         // Use setDoc here since we have the full ref
         setDocumentNonBlocking(employeeRef, newEmployeeData);

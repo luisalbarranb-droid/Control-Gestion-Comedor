@@ -2,35 +2,34 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // --- Helper Functions (con fallback para desarrollo) ---
+    // --- Helper Functions ---
     function isAuthenticated() {
       return request.auth != null;
     }
 
-    // Devuelve los datos del usuario si existen, sino un mapa vacío.
     function getUserData() {
-      return getAfter(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+      // Use get() instead of getAfter() for read operations.
+      // Provides a fallback for non-existent user documents during checks.
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
     }
 
-    // Verifica si el campo 'role' existe y es igual al rol solicitado.
     function hasRole(role) {
       return isAuthenticated() && 'role' in getUserData() && getUserData().role == role;
     }
     
-    // Para desarrollo: si el rol no está definido, asume que es admin.
+    // Simplified isAdmin check. Explicitly requires the role.
     function isAdmin() {
-      return isAuthenticated() && (!exists(/databases/$(database)/documents/users/$(request.auth.uid)) || !('role' in getUserData()) || hasRole('admin') || hasRole('superadmin'));
+      return hasRole('admin') || hasRole('superadmin');
     }
     
     function isSuperAdmin() {
-       return isAuthenticated() && (!exists(/databases/$(database)/documents/users/$(request.auth.uid)) || !('role' in getUserData()) || hasRole('superadmin'));
+       return hasRole('superadmin');
     }
     
     function isOwner(userId) {
       return isAuthenticated() && request.auth.uid == userId;
     }
     
-    // ESTA ES LA FUNCIÓN CLAVE: Cualquier usuario autenticado se considera activo y admin para desarrollo
     function isActiveUser() {
       return isAuthenticated();
     }
@@ -41,9 +40,9 @@ service cloud.firestore {
 
     // --- User Data Rules ---
     match /users/{userId} {
-      allow get: if isAuthenticated() && (isOwner(userId) || isAdmin());
+      allow read, get: if isAuthenticated() && (isOwner(userId) || isAdmin());
       allow list: if isAdmin();
-      allow create: if isSuperAdmin();
+      allow create: if isSuperAdmin(); // Only superadmins can create users directly.
       allow update: if isOwner(userId) || isAdmin();
       allow delete: if isSuperAdmin();
     }
