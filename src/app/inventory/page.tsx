@@ -129,7 +129,7 @@ export default function InventoryPage() {
         description: `Se han eliminado ${selectedItems.length} artículos.`,
       });
       setSelectedItems([]);
-      forceCollectionUpdate();
+      // forceCollectionUpdate is automatically called by the hook on deletion
     } catch (e) {
       console.error("Error eliminando los artículos seleccionados: ", e);
       toast({ variant: 'destructive', title: 'Error', description: 'No se pudo completar el borrado seleccionado.' });
@@ -392,7 +392,7 @@ export default function InventoryPage() {
                         <TableHead className="w-10">
                             <Checkbox
                                 onCheckedChange={handleSelectAll}
-                                checked={selectedItems.length === filteredItems.length && filteredItems.length > 0}
+                                checked={selectedItems.length > 0 && selectedItems.length === filteredItems.length ? true : selectedItems.length > 0 ? 'indeterminate' : false}
                                 aria-label="Seleccionar todo"
                             />
                         </TableHead>
@@ -465,3 +465,5 @@ export default function InventoryPage() {
     </div>
   );
 }
+
+    
