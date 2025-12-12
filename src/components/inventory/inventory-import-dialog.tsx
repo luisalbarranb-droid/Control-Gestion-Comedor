@@ -24,8 +24,8 @@ interface InventoryImportDialogProps {
   onImport: (data: any[]) => void;
 }
 
-const requiredColumns = ['nombre', 'categoriaId', 'cantidad', 'unidadReceta', 'stockMinimo'];
-const allColumns = ['nombre', 'descripcion', 'categoriaId', 'subCategoria', 'cantidad', 'unidadReceta', 'unidadCompra', 'factorConversion', 'stockMinimo', 'proveedor', 'costoUnitario'];
+const requiredColumns = ['codigo', 'nombre', 'categoriaId', 'cantidad', 'unidadReceta', 'stockMinimo'];
+const allColumns = ['codigo', 'nombre', 'descripcion', 'categoriaId', 'subCategoria', 'cantidad', 'unidadReceta', 'unidadCompra', 'factorConversion', 'stockMinimo', 'proveedor', 'costoUnitario'];
 
 
 export function InventoryImportDialog({ isOpen, onOpenChange, onImport }: InventoryImportDialogProps) {
@@ -116,6 +116,7 @@ export function InventoryImportDialog({ isOpen, onOpenChange, onImport }: Invent
   const handleDownloadTemplate = () => {
     const templateData = [
       {
+        codigo: 'CAR-001',
         nombre: 'Ej: Pechuga de Pollo',
         descripcion: 'Ej: Fileteada y sin piel',
         categoriaId: 'carnes',
@@ -129,6 +130,7 @@ export function InventoryImportDialog({ isOpen, onOpenChange, onImport }: Invent
         costoUnitario: 80.50
       },
        {
+        codigo: 'VIV-001',
         nombre: 'Ej: Arroz',
         descripcion: '',
         categoriaId: 'viveres',

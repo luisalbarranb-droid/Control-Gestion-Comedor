@@ -459,6 +459,10 @@
           "type": "string",
           "description": "Unique identifier for the inventory item."
         },
+        "codigo": {
+          "type": "string",
+          "description": "Unique business logic identifier for the item (e.g., CAR-001, VIV-001)."
+        },
         "nombre": {
           "type": "string",
           "description": "Name of the item."
@@ -516,6 +520,7 @@
       },
       "required": [
         "id",
+        "codigo",
         "nombre",
         "categoriaId",
         "cantidad",

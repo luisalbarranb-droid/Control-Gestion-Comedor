@@ -24,7 +24,9 @@ import {
   query,
   orderBy,
   Timestamp,
-  setDoc
+  setDoc,
+  getDocs,
+  where
 } from 'firebase/firestore';
 import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
 
@@ -55,7 +57,7 @@ export default function InventoryPage() {
     return query(collection(firestore, 'inventory'), orderBy('nombre', 'asc'));
   }, [firestore]);
 
-  const { data: items, isLoading: isLoadingItems } = useCollection<InventoryItem>(inventoryQuery);
+  const { data: items, isLoading: isLoadingItems, forceCollectionUpdate } = useCollection<InventoryItem>(inventoryQuery);
   
   const [searchQuery, setSearchQuery] = useState('');
   const [categoryFilter, setCategoryFilter] = useState<InventoryCategoryId | 'all'>('all');
@@ -85,22 +87,30 @@ export default function InventoryPage() {
     setActiveForm(null);
   }
 
-  const handleSaveItem = async (itemData: any) => {
+  const handleSaveItem = async (itemData: any, isNew: boolean) => {
     if (!firestore) return;
     
-    if (editingItem) {
-      const itemRef = doc(firestore, 'inventory', editingItem.id);
-      await updateDoc(itemRef, { ...itemData, ultimaActualizacion: serverTimestamp() });
-    } else {
-        const newItemRef = doc(collection(firestore, 'inventory'));
-        await setDoc(newItemRef, {
-            ...itemData,
-            id: newItemRef.id,
-            fechaCreacion: serverTimestamp(),
-            ultimaActualizacion: serverTimestamp(),
-        });
+    try {
+        if (isNew) {
+            const newItemRef = doc(collection(firestore, 'inventory'));
+            await setDoc(newItemRef, {
+                ...itemData,
+                id: newItemRef.id,
+                fechaCreacion: serverTimestamp(),
+                ultimaActualizacion: serverTimestamp(),
+            });
+            toast({ title: 'Artículo Creado', description: `El artículo "${itemData.nombre}" ha sido creado.`});
+        } else if (editingItem) {
+            const itemRef = doc(firestore, 'inventory', editingItem.id);
+            await updateDoc(itemRef, { ...itemData, ultimaActualizacion: serverTimestamp() });
+            toast({ title: 'Artículo Actualizado', description: `El artículo "${itemData.nombre}" ha sido actualizado.`});
+        }
+        forceCollectionUpdate();
+        handleCloseForm();
+    } catch (e) {
+        console.error("Error guardando artículo: ", e);
+        toast({ variant: 'destructive', title: 'Error', description: 'No se pudo guardar el artículo.' });
     }
-    handleCloseForm();
   };
   
   const handleSaveTransaction = async (data: any, type: InventoryTransactionType) => {
@@ -132,47 +142,79 @@ export default function InventoryPage() {
     });
 
     await batch.commit();
+    forceCollectionUpdate();
     handleCloseForm();
   };
   
   const handleImport = async (importedData: any[]) => {
-    if (!firestore) return;
-     try {
-        const batch = writeBatch(firestore);
-        importedData.forEach((row: any) => {
-            const newItemRef = doc(collection(firestore, 'inventory'));
-            const newItem: Omit<InventoryItem, 'id' | 'fechaCreacion' | 'ultimaActualizacion'> = {
-                nombre: String(row.nombre),
-                descripcion: String(row.descripcion || ''),
-                categoriaId: row.categoriaId as InventoryCategoryId,
-                subCategoria: row.subCategoria || '',
-                cantidad: Number(row.cantidad),
-                unidadReceta: row.unidadReceta as UnitOfMeasure,
-                unidadCompra: row.unidadCompra as UnitOfMeasure,
-                factorConversion: Number(row.factorConversion || 1),
-                stockMinimo: Number(row.stockMinimo),
-                proveedor: String(row.proveedor || ''),
-                costoUnitario: Number(row.costoUnitario || 0),
-            };
-            batch.set(newItemRef, { 
-                ...newItem, 
+    if (!firestore) {
+        toast({ variant: 'destructive', title: 'Error de base de datos'});
+        return;
+    };
+
+    const batch = writeBatch(firestore);
+    const inventoryRef = collection(firestore, 'inventory');
+    let updatedCount = 0;
+    let createdCount = 0;
+
+    // Get all existing codes
+    const existingCodes = (items || []).reduce((acc, item) => {
+        if(item.codigo) acc[item.codigo] = item.id;
+        return acc;
+    }, {} as Record<string, string>);
+
+    for (const row of importedData) {
+        if (!row.codigo) continue; // Skip rows without a code
+
+        const itemData = {
+            nombre: String(row.nombre),
+            codigo: String(row.codigo),
+            descripcion: String(row.descripcion || ''),
+            categoriaId: row.categoriaId as InventoryCategoryId,
+            subCategoria: row.subCategoria || '',
+            cantidad: Number(row.cantidad || 0),
+            unidadReceta: (row.unidadReceta as UnitOfMeasure) || 'unidad',
+            unidadCompra: (row.unidadCompra as UnitOfMeasure) || undefined,
+            factorConversion: Number(row.factorConversion || 1),
+            stockMinimo: Number(row.stockMinimo || 0),
+            proveedor: String(row.proveedor || ''),
+            costoUnitario: Number(row.costoUnitario || 0),
+            ultimaActualizacion: serverTimestamp(),
+        };
+
+        const existingId = existingCodes[itemData.codigo];
+
+        if (existingId) {
+            // Update existing item
+            const itemRef = doc(inventoryRef, existingId);
+            batch.update(itemRef, itemData);
+            updatedCount++;
+        } else {
+            // Create new item
+            const newItemRef = doc(inventoryRef);
+            batch.set(newItemRef, {
+                ...itemData,
                 id: newItemRef.id,
                 fechaCreacion: serverTimestamp(),
-                ultimaActualizacion: serverTimestamp(),
             });
-        });
-        
+            createdCount++;
+        }
+    }
+
+    try {
         await batch.commit();
         handleCloseForm();
+        forceCollectionUpdate(); // Force a re-fetch of the data
         toast({
-            title: "Importación Exitosa",
-            description: `${importedData.length} artículos han sido añadidos al inventario.`
-        })
+            title: "Importación Completada",
+            description: `${createdCount} artículos creados y ${updatedCount} actualizados.`
+        });
+    } catch (e) {
+        console.error("Error en la importación: ", e);
+        toast({ variant: 'destructive', title: 'Error de Importación', description: 'Ocurrió un error al guardar los datos.' });
+    }
+}
 
-     } catch(e) {
-        toast({ variant: 'destructive', title: 'Error de Importación', description: 'El formato de los datos es incorrecto.' });
-     }
-  }
 
   return (
     <div className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">

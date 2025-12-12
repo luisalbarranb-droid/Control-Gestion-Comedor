@@ -30,13 +30,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { useToast } from '@/components/ui/toast';
 import { inventoryCategories } from '@/lib/placeholder-data';
 import type { InventoryItem, InventoryCategoryId, UnitOfMeasure } from '@/lib/types';
 import { Textarea } from '../ui/textarea';
 
 const formSchema = z.object({
   nombre: z.string().min(2, { message: 'El nombre debe tener al menos 2 caracteres.' }),
+  codigo: z.string().min(1, 'El código es obligatorio.'),
   descripcion: z.string().optional(),
   categoriaId: z.string({ required_error: 'Debes seleccionar una categoría.' }),
   subCategoria: z.string().optional(),
@@ -55,18 +55,18 @@ type FormValues = z.infer<typeof formSchema>;
 interface InventoryFormProps {
   isOpen: boolean;
   onOpenChange: (isOpen: boolean) => void;
-  onSave: (item: any) => void;
+  onSave: (item: any, isNew: boolean) => void;
   item: InventoryItem | null;
 }
 
 const unitsOfMeasure: UnitOfMeasure[] = ['kg', 'g', 'lt', 'ml', 'unidad', 'paquete', 'caja'];
 
 export function InventoryForm({ isOpen, onOpenChange, onSave, item }: InventoryFormProps) {
-  const { toast } = useToast();
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       nombre: '',
+      codigo: '',
       descripcion: '',
       cantidad: 0,
       stockMinimo: 0,
@@ -87,6 +87,7 @@ export function InventoryForm({ isOpen, onOpenChange, onSave, item }: InventoryF
     } else {
       form.reset({
         nombre: '',
+        codigo: '',
         descripcion: '',
         categoriaId: undefined,
         subCategoria: '',
@@ -108,17 +109,7 @@ export function InventoryForm({ isOpen, onOpenChange, onSave, item }: InventoryF
       unidadReceta: values.unidadReceta as UnitOfMeasure,
       unidadCompra: values.unidadCompra as UnitOfMeasure,
     };
-
-    if (item) {
-      onSave({ ...item, ...dataToSave });
-    } else {
-      onSave(dataToSave);
-    }
-
-    toast({
-      title: `Artículo ${item ? 'actualizado' : 'creado'}`,
-      description: `El artículo "${values.nombre}" ha sido guardado.`,
-    });
+    onSave(dataToSave, !item);
   };
 
   return (
@@ -131,20 +122,35 @@ export function InventoryForm({ isOpen, onOpenChange, onSave, item }: InventoryF
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="grid gap-4 py-4 max-h-[70vh] overflow-y-auto pr-6">
-            <FormField
-              control={form.control}
-              name="nombre"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Nombre del Producto</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Ej: Pechuga de Pollo" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 max-h-[70vh] overflow-y-auto pr-6">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                 <FormField
+                    control={form.control}
+                    name="codigo"
+                    render={({ field }) => (
+                        <FormItem className="sm:col-span-1">
+                        <FormLabel>Código</FormLabel>
+                        <FormControl>
+                            <Input placeholder="Ej: VIV-001" {...field} disabled={!!item} />
+                        </FormControl>
+                        <FormMessage />
+                        </FormItem>
+                    )}
+                />
+                <FormField
+                    control={form.control}
+                    name="nombre"
+                    render={({ field }) => (
+                        <FormItem className="sm:col-span-2">
+                        <FormLabel>Nombre del Producto</FormLabel>
+                        <FormControl>
+                            <Input placeholder="Ej: Pechuga de Pollo" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                        </FormItem>
+                    )}
+                />
+            </div>
             
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <FormField

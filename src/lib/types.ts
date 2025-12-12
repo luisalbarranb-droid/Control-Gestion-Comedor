@@ -125,6 +125,7 @@ export interface InventoryCategory {
 
 export interface InventoryItem {
   id: string;
+  codigo: string; // Unique business logic identifier
   nombre: string;
   descripcion?: string;
   categoriaId: InventoryCategoryId;
