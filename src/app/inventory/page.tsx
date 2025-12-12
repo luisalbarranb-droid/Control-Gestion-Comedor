@@ -31,6 +31,18 @@ import {
   deleteDoc,
 } from 'firebase/firestore';
 import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+
 
 import type { InventoryItem, InventoryCategoryId, InventoryTransaction, InventoryTransactionType, UnitOfMeasure } from '@/lib/types';
 import { InventoryForm } from '@/components/inventory/inventory-form';
@@ -111,10 +123,6 @@ export default function InventoryPage() {
   const handleDeleteSelected = async () => {
     if (!firestore || selectedItems.length === 0) return;
     
-    const confirmation = window.confirm(`¿Estás seguro de que deseas eliminar ${selectedItems.length} artículos seleccionados? Esta acción es irreversible.`);
-    
-    if (!confirmation) return;
-
     try {
       const batch = writeBatch(firestore);
       selectedItems.forEach(itemId => {
@@ -371,10 +379,26 @@ export default function InventoryPage() {
             <div className="flex justify-between items-center">
               <CardTitle>Listado de Artículos</CardTitle>
               {selectedItems.length > 0 && (
-                 <Button variant="destructive" size="sm" onClick={handleDeleteSelected}>
-                    <Trash2 className="mr-2 h-4 w-4" />
-                    Eliminar ({selectedItems.length})
-                </Button>
+                 <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                        <Button variant="destructive" size="sm">
+                            <Trash2 className="mr-2 h-4 w-4" />
+                            Eliminar ({selectedItems.length})
+                        </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                        <AlertDialogHeader>
+                            <AlertDialogTitle>¿Estás absolutamente seguro?</AlertDialogTitle>
+                            <AlertDialogDescription>
+                                Esta acción es irreversible y eliminará permanentemente {selectedItems.length} artículo(s) de tu inventario.
+                            </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                            <AlertDialogAction onClick={handleDeleteSelected}>Continuar</AlertDialogAction>
+                        </AlertDialogFooter>
+                    </AlertDialogContent>
+                 </AlertDialog>
               )}
             </div>
           </CardHeader>
@@ -457,7 +481,3 @@ export default function InventoryPage() {
     </div>
   );
 }
-
-    
-
-    
