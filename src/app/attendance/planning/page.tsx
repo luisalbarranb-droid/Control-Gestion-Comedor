@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useMemo, useEffect } from 'react';
@@ -17,13 +18,14 @@ import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { useToast } from '@/components/ui/toast';
 import { collection, query, where, getDocs, writeBatch, doc, orderBy } from 'firebase/firestore';
-import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
+import { useCollection, useFirestore, useMemoFirebase, useUser } from '@/firebase';
 import type { User, DayOff } from '@/lib/types';
 import Link from 'next/link';
 
 export default function PlanningPage() {
   const firestore = useFirestore();
   const { toast } = useToast();
+  const { isUserLoading } = useUser();
   
   const [currentWeek, setCurrentWeek] = useState<Date | undefined>();
   const [isSaving, setIsSaving] = useState(false);
@@ -45,14 +47,14 @@ export default function PlanningPage() {
     return query(collection(firestore, 'users'), orderBy('name', 'asc'));
   }, [firestore]);
   
-  const { data: users, isLoading: isLoadingUsers } = useCollection<User>(usersQuery);
+  const { data: users, isLoading: isLoadingUsers } = useCollection<User>(usersQuery, { disabled: isUserLoading });
 
   const daysOffQuery = useMemoFirebase(() => {
     if (!firestore || !weekStartStr) return null;
     return query(collection(firestore, 'daysOff'), where('weekStartDate', '==', weekStartStr));
   }, [firestore, weekStartStr]);
 
-  const { data: existingDaysOff, isLoading: isLoadingDaysOff } = useCollection<DayOff>(daysOffQuery);
+  const { data: existingDaysOff, isLoading: isLoadingDaysOff } = useCollection<DayOff>(daysOffQuery, { disabled: isUserLoading });
 
   const [selectedDays, setSelectedDays] = useState<Record<string, string[]>>({});
 
@@ -129,7 +131,7 @@ export default function PlanningPage() {
 
   const getUserInitials = (name?: string) => name ? name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase() : 'U';
 
-  const isLoading = isLoadingUsers || isLoadingDaysOff || !currentWeek;
+  const isLoading = isLoadingUsers || isLoadingDaysOff || !currentWeek || isUserLoading;
 
   return (
     <div className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
