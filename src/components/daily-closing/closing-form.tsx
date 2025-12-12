@@ -50,7 +50,7 @@ type FormValues = z.infer<typeof formSchema>;
 interface ClosingFormProps {
   isOpen: boolean;
   onOpenChange: (isOpen: boolean) => void;
-  onSave: (data: Omit<DailyClosing, 'closingId' | 'plannedMenu' | 'closedBy' | 'date'>) => void;
+  onSave: (data: Omit<DailyClosing, 'closingId' | 'plannedMenuId' | 'closedBy' | 'date'>) => void;
   plannedMenu: Menu | null;
   existingClosing?: DailyClosing | null;
 }

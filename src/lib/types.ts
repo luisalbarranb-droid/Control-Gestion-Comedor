@@ -245,8 +245,8 @@ export interface DailyClosingItem {
 
 export interface DailyClosing {
   closingId: string;
-  date: Date;
-  plannedMenu: Menu | null;
+  date: Timestamp | Date;
+  plannedMenuId: string | null;
   executedPax: number;
   executedItems: DailyClosingItem[];
   variations: string;
