@@ -97,7 +97,7 @@ service cloud.firestore {
     
     // --- Evaluation Criteria Rules ---
     match /evaluationCriteria/{criterionId} {
-      allow get, list: if isAuthenticated();
+      allow get, list: if isAdmin();
       allow write: if isSuperAdmin();
     }
 
