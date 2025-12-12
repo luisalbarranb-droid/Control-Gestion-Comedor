@@ -412,16 +412,20 @@ export default function InventoryPage() {
                         </TableHead>
                         <TableHead>Producto</TableHead>
                         <TableHead>Categoría</TableHead>
-                        <TableHead>Sub-Categoría</TableHead>
-                        <TableHead>Unidad de Compra</TableHead>
-                        <TableHead className="text-right">Cantidad (en Receta)</TableHead>
-                        <TableHead>Proveedor</TableHead>
+                        <TableHead className="text-center">Cant. (Un. Compra)</TableHead>
+                        <TableHead className="text-center">Stock Mínimo (Un. Compra)</TableHead>
+                        <TableHead className="text-center">Cant. (Un. Receta)</TableHead>
                         <TableHead><span className="sr-only">Actions</span></TableHead>
                     </TableRow>
                 </TableHeader>
                 <TableBody>
                     {isLoadingItems && <TableRow><TableCell colSpan={8} className="h-24 text-center">Cargando inventario...</TableCell></TableRow>}
                     {!isLoadingItems && filteredItems.map((item) => {
+                        const factor = item.factorConversion || 1;
+                        const quantityInPurchaseUnit = item.cantidad / factor;
+                        const minStockInPurchaseUnit = item.stockMinimo / factor;
+                        const isLowStock = quantityInPurchaseUnit <= minStockInPurchaseUnit;
+
                         return (
                         <TableRow key={item.id} data-state={selectedItems.includes(item.id) && "selected"}>
                             <TableCell>
@@ -433,13 +437,18 @@ export default function InventoryPage() {
                             </TableCell>
                             <TableCell className="font-medium">{item.nombre}</TableCell>
                             <TableCell><Badge variant="secondary">{getCategoryName(item.categoriaId)}</Badge></TableCell>
-                            <TableCell>{item.subCategoria || 'N/A'}</TableCell>
-                            <TableCell className="uppercase">{item.unidadCompra || 'N/A'}</TableCell>
-                            <TableCell className={cn("text-right font-bold", item.cantidad <= item.stockMinimo ? 'text-red-500' : 'text-current')}>
+                            <TableCell className={cn("text-center font-bold", isLowStock ? 'text-red-500' : 'text-current')}>
+                                {quantityInPurchaseUnit.toFixed(2)}
+                                <span className="text-xs text-muted-foreground ml-1 uppercase">{item.unidadCompra || 'N/A'}</span>
+                            </TableCell>
+                             <TableCell className="text-center">
+                                {minStockInPurchaseUnit.toFixed(2)}
+                                <span className="text-xs text-muted-foreground ml-1 uppercase">{item.unidadCompra || 'N/A'}</span>
+                            </TableCell>
+                             <TableCell className="text-center">
                                 {item.cantidad.toFixed(2)}
                                 <span className="text-xs text-muted-foreground ml-1 uppercase">{item.unidadReceta}</span>
                             </TableCell>
-                            <TableCell>{item.proveedor || 'N/A'}</TableCell>
                             <TableCell className="text-right">
                                 <DropdownMenu>
                                     <DropdownMenuTrigger asChild>
