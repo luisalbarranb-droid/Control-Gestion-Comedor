@@ -71,7 +71,7 @@ export default function InventoryPage() {
     return query(collection(firestore, 'inventory'), orderBy('nombre', 'asc'));
   }, [firestore]);
 
-  const { data: items, isLoading: isLoadingItems, forceCollectionUpdate } = useCollection<InventoryItem>(inventoryQuery);
+  const { data: items, isLoading: isLoadingItems } = useCollection<InventoryItem>(inventoryQuery);
   
   const [searchQuery, setSearchQuery] = useState('');
   const [categoryFilter, setCategoryFilter] = useState<InventoryCategoryId | 'all'>('all');
@@ -104,7 +104,7 @@ export default function InventoryPage() {
   }
   
   const handleDeleteItem = async (itemId: string) => {
-    if (!firestore || !window.confirm('¿Estás seguro de que deseas eliminar este artículo? Esta acción no se puede deshacer.')) return;
+    if (!firestore) return;
     
     try {
         const itemRef = doc(firestore, 'inventory', itemId);
@@ -113,7 +113,6 @@ export default function InventoryPage() {
             title: 'Artículo Eliminado',
             description: 'El artículo ha sido eliminado del inventario.',
         });
-        forceCollectionUpdate();
     } catch (e) {
         console.error("Error eliminando artículo: ", e);
         toast({ variant: 'destructive', title: 'Error', description: 'No se pudo eliminar el artículo.' });
@@ -137,7 +136,6 @@ export default function InventoryPage() {
         description: `Se han eliminado ${selectedItems.length} artículos.`,
       });
       setSelectedItems([]);
-      forceCollectionUpdate();
     } catch (e) {
       console.error("Error eliminando los artículos seleccionados: ", e);
       toast({ variant: 'destructive', title: 'Error', description: 'No se pudo completar el borrado seleccionado.' });
@@ -188,7 +186,6 @@ export default function InventoryPage() {
             await updateDoc(itemRef, { ...itemData, ultimaActualizacion: serverTimestamp() });
             toast({ title: 'Artículo Actualizado', description: `El artículo "${itemData.nombre}" ha sido actualizado.`});
         }
-        forceCollectionUpdate();
         handleCloseForm();
     } catch (e) {
         console.error("Error guardando artículo: ", e);
@@ -225,7 +222,6 @@ export default function InventoryPage() {
     });
 
     await batch.commit();
-    forceCollectionUpdate();
     handleCloseForm();
   };
   
@@ -284,7 +280,6 @@ export default function InventoryPage() {
     try {
         await batch.commit();
         handleCloseForm();
-        forceCollectionUpdate();
         toast({
             title: "Importación Completada",
             description: `${createdCount} artículos creados y ${updatedCount} actualizados.`
