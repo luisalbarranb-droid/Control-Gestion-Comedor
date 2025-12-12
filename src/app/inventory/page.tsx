@@ -111,7 +111,7 @@ export default function InventoryPage() {
     const transactionToast = (item: InventoryItem, quantity: number, typeLabel: string) => {
          toast({
             title: `Movimiento Registrado: ${typeLabel}`,
-            description: `${quantity} ${item.unidad} de ${item.nombre} han sido procesadas.`
+            description: `${quantity} ${item.unidadReceta} de ${item.nombre} han sido procesadas.`
         });
     }
     
@@ -146,7 +146,7 @@ export default function InventoryPage() {
                 descripcion: String(row.descripcion || ''),
                 categoriaId: row.categoriaId as InventoryCategoryId,
                 cantidad: Number(row.cantidad),
-                unidad: row.unidad as UnitOfMeasure,
+                unidadReceta: row.unidad as UnitOfMeasure,
                 stockMinimo: Number(row.stockMinimo),
                 proveedor: String(row.proveedor || ''),
                 costoUnitario: Number(row.costoUnitario || 0),
@@ -254,25 +254,26 @@ export default function InventoryPage() {
             <Table>
                 <TableHeader>
                     <TableRow>
-                        <TableHead>Artículo</TableHead>
+                        <TableHead>Producto</TableHead>
                         <TableHead>Categoría</TableHead>
+                        <TableHead>Sub-Categoría</TableHead>
+                        <TableHead>Unidad (Receta)</TableHead>
                         <TableHead className="text-right">Cantidad</TableHead>
-                        <TableHead className="text-right">Stock Mínimo</TableHead>
-                        <TableHead>Últ. Act.</TableHead>
+                        <TableHead>Proveedor</TableHead>
                         <TableHead><span className="sr-only">Actions</span></TableHead>
                     </TableRow>
                 </TableHeader>
                 <TableBody>
-                    {isLoadingItems && <TableRow><TableCell colSpan={6} className="h-24 text-center">Cargando inventario...</TableCell></TableRow>}
+                    {isLoadingItems && <TableRow><TableCell colSpan={7} className="h-24 text-center">Cargando inventario...</TableCell></TableRow>}
                     {!isLoadingItems && filteredItems.map((item) => {
-                        const lastUpdate = convertToDate(item.ultimaActualizacion);
                         return (
                         <TableRow key={item.id}>
                             <TableCell className="font-medium">{item.nombre}</TableCell>
                             <TableCell><Badge variant="secondary">{getCategoryName(item.categoriaId)}</Badge></TableCell>
-                            <TableCell className={cn("text-right font-bold", item.cantidad <= item.stockMinimo ? 'text-red-500' : 'text-current')}>{item.cantidad.toFixed(2)} {item.unidad}</TableCell>
-                            <TableCell className="text-right text-muted-foreground">{item.stockMinimo} {item.unidad}</TableCell>
-                            <TableCell className="text-muted-foreground">{lastUpdate ? format(lastUpdate, 'dd/MM/yy HH:mm') : 'N/A'}</TableCell>
+                            <TableCell>{item.subCategoria || 'N/A'}</TableCell>
+                            <TableCell className="uppercase">{item.unidadReceta}</TableCell>
+                            <TableCell className={cn("text-right font-bold", item.cantidad <= item.stockMinimo ? 'text-red-500' : 'text-current')}>{item.cantidad.toFixed(2)}</TableCell>
+                            <TableCell>{item.proveedor || 'N/A'}</TableCell>
                             <TableCell className="text-right">
                                 <DropdownMenu>
                                     <DropdownMenuTrigger asChild>
@@ -289,7 +290,7 @@ export default function InventoryPage() {
                     })}
                      {!isLoadingItems && filteredItems.length === 0 && (
                         <TableRow>
-                            <TableCell colSpan={6} className="h-24 text-center">No se encontraron artículos.</TableCell>
+                            <TableCell colSpan={7} className="h-24 text-center">No se encontraron artículos.</TableCell>
                         </TableRow>
                      )}
                 </TableBody>
@@ -310,5 +311,3 @@ export default function InventoryPage() {
     </div>
   );
 }
-
-    

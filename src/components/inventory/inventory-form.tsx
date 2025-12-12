@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useEffect } from 'react';
@@ -38,12 +39,16 @@ const formSchema = z.object({
   nombre: z.string().min(2, { message: 'El nombre debe tener al menos 2 caracteres.' }),
   descripcion: z.string().optional(),
   categoriaId: z.string({ required_error: 'Debes seleccionar una categoría.' }),
+  subCategoria: z.string().optional(),
   cantidad: z.coerce.number().min(0, 'La cantidad no puede ser negativa.'),
-  unidad: z.string({ required_error: 'Debes seleccionar una unidad de medida.' }),
+  unidadReceta: z.string({ required_error: 'La unidad de receta es obligatoria.' }),
+  unidadCompra: z.string().optional(),
+  factorConversion: z.coerce.number().optional(),
   stockMinimo: z.coerce.number().min(0, 'El stock mínimo no puede ser negativo.'),
   proveedor: z.string().optional(),
   costoUnitario: z.coerce.number().optional(),
 });
+
 
 type FormValues = z.infer<typeof formSchema>;
 
@@ -67,6 +72,8 @@ export function InventoryForm({ isOpen, onOpenChange, onSave, item }: InventoryF
       stockMinimo: 0,
       proveedor: '',
       costoUnitario: 0,
+      subCategoria: '',
+      factorConversion: 1,
     },
   });
 
@@ -75,14 +82,18 @@ export function InventoryForm({ isOpen, onOpenChange, onSave, item }: InventoryF
       form.reset({
         ...item,
         costoUnitario: item.costoUnitario || 0,
+        factorConversion: item.factorConversion || 1,
       });
     } else {
       form.reset({
         nombre: '',
         descripcion: '',
         categoriaId: undefined,
+        subCategoria: '',
         cantidad: 0,
-        unidad: undefined,
+        unidadReceta: undefined,
+        unidadCompra: undefined,
+        factorConversion: 1,
         stockMinimo: 0,
         proveedor: '',
         costoUnitario: 0,
@@ -94,7 +105,8 @@ export function InventoryForm({ isOpen, onOpenChange, onSave, item }: InventoryF
     const dataToSave = {
       ...values,
       categoriaId: values.categoriaId as InventoryCategoryId,
-      unidad: values.unidad as UnitOfMeasure,
+      unidadReceta: values.unidadReceta as UnitOfMeasure,
+      unidadCompra: values.unidadCompra as UnitOfMeasure,
     };
 
     if (item) {
@@ -125,7 +137,7 @@ export function InventoryForm({ isOpen, onOpenChange, onSave, item }: InventoryF
               name="nombre"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Nombre del Artículo</FormLabel>
+                  <FormLabel>Nombre del Producto</FormLabel>
                   <FormControl>
                     <Input placeholder="Ej: Pechuga de Pollo" {...field} />
                   </FormControl>
@@ -133,6 +145,45 @@ export function InventoryForm({ isOpen, onOpenChange, onSave, item }: InventoryF
                 </FormItem>
               )}
             />
+            
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="categoriaId"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Categoría</FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Selecciona..." />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {inventoryCategories.map(cat => (
+                          <SelectItem key={cat.id} value={cat.id}>{cat.nombre}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="subCategoria"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Sub-Categoría</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Ej: Aves" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+
             <FormField
               control={form.control}
               name="descripcion"
@@ -146,60 +197,63 @@ export function InventoryForm({ isOpen, onOpenChange, onSave, item }: InventoryF
                 </FormItem>
               )}
             />
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <FormField
                 control={form.control}
-                name="categoriaId"
+                name="unidadCompra"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Categoría</FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Selecciona una categoría" />
-                        </SelectTrigger>
-                      </FormControl>
+                    <FormLabel>Unidad de Compra</FormLabel>
+                     <Select onValueChange={field.onChange} value={field.value}>
+                      <FormControl><SelectTrigger><SelectValue placeholder="Ej: caja" /></SelectTrigger></FormControl>
                       <SelectContent>
-                        {inventoryCategories.map(cat => (
-                          <SelectItem key={cat.id} value={cat.id}>{cat.nombre}</SelectItem>
-                        ))}
+                        {unitsOfMeasure.map(unit => (<SelectItem key={unit} value={unit} className="uppercase">{unit}</SelectItem>))}
                       </SelectContent>
                     </Select>
                     <FormMessage />
                   </FormItem>
                 )}
               />
+              <FormField
+                control={form.control}
+                name="unidadReceta"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Unidad de Receta</FormLabel>
+                     <Select onValueChange={field.onChange} value={field.value}>
+                      <FormControl><SelectTrigger><SelectValue placeholder="Ej: kg" /></SelectTrigger></FormControl>
+                      <SelectContent>
+                        {unitsOfMeasure.map(unit => (<SelectItem key={unit} value={unit} className="uppercase">{unit}</SelectItem>))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+               <FormField
+                control={form.control}
+                name="factorConversion"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Factor Conversión</FormLabel>
+                    <FormControl><Input type="number" placeholder="1" {...field} /></FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                <FormField
                 control={form.control}
                 name="cantidad"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Cantidad Actual</FormLabel>
+                    <FormLabel>Cantidad Actual (en Un. Receta)</FormLabel>
                     <FormControl>
                       <Input type="number" placeholder="0" {...field} />
                     </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-               <FormField
-                control={form.control}
-                name="unidad"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Unidad de Medida</FormLabel>
-                     <Select onValueChange={field.onChange} value={field.value}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Selecciona una unidad" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {unitsOfMeasure.map(unit => (
-                            <SelectItem key={unit} value={unit} className="uppercase">{unit}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -236,7 +290,7 @@ export function InventoryForm({ isOpen, onOpenChange, onSave, item }: InventoryF
               name="costoUnitario"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Costo Unitario (Opcional)</FormLabel>
+                  <FormLabel>Costo por Unidad de Compra</FormLabel>
                   <FormControl>
                     <Input type="number" placeholder="0.00" {...field} />
                   </FormControl>

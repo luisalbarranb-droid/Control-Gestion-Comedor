@@ -128,14 +128,18 @@ export interface InventoryItem {
   nombre: string;
   descripcion?: string;
   categoriaId: InventoryCategoryId;
-  cantidad: number;
-  unidad: UnitOfMeasure;
+  subCategoria?: string;
+  cantidad: number; // In recipe units
+  unidadReceta: UnitOfMeasure;
+  unidadCompra?: UnitOfMeasure;
+  factorConversion?: number; // How many recipe units are in one purchase unit
   stockMinimo: number;
   fechaCreacion: Timestamp | Date;
   ultimaActualizacion: Timestamp | Date;
   proveedor?: string;
-  costoUnitario?: number;
+  costoUnitario?: number; // Cost per purchase unit
 }
+
 
 export type InventoryTransactionType = 'entrada' | 'salida' | 'ajuste-positivo' | 'ajuste-negativo';
 

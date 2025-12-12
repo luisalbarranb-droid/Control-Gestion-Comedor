@@ -471,17 +471,29 @@
           "type": "string",
           "description": "Category of the item (carnes, viveres, etc.)."
         },
+        "subCategoria": {
+          "type": "string",
+          "description": "Sub-category for more detailed classification."
+        },
         "cantidad": {
           "type": "number",
-          "description": "Current quantity in stock."
+          "description": "Current quantity in stock, measured in 'unidadReceta'."
         },
-        "unidad": {
+        "unidadReceta": {
           "type": "string",
-          "description": "Unit of measure (kg, g, lt, ml, unidad, etc.)."
+          "description": "Unit of measure for recipes (kg, g, lt, ml, unidad, etc.)."
+        },
+        "unidadCompra": {
+          "type": "string",
+          "description": "Unit of measure for purchasing (caja, paquete, etc.)."
+        },
+        "factorConversion": {
+          "type": "number",
+          "description": "How many 'unidadReceta' are in one 'unidadCompra'."
         },
         "stockMinimo": {
           "type": "number",
-          "description": "Minimum stock level before reorder warning."
+          "description": "Minimum stock level in 'unidadReceta' before reorder warning."
         },
         "fechaCreacion": {
           "type": "string",
@@ -499,7 +511,7 @@
         },
         "costoUnitario": {
           "type": "number",
-          "description": "Cost per unit of the item."
+          "description": "Cost per 'unidadCompra'."
         }
       },
       "required": [
@@ -507,7 +519,7 @@
         "nombre",
         "categoriaId",
         "cantidad",
-        "unidad",
+        "unidadReceta",
         "stockMinimo",
         "fechaCreacion",
         "ultimaActualizacion"
@@ -984,5 +996,3 @@
     ]
   }
 }
-
-    
