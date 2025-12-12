@@ -105,17 +105,19 @@ export default function InventoryPage() {
   
   const handleDeleteItem = async (itemId: string) => {
     if (!firestore) return;
-    
-    try {
-        const itemRef = doc(firestore, 'inventory', itemId);
-        await deleteDoc(itemRef);
-        toast({
-            title: 'Artículo Eliminado',
-            description: 'El artículo ha sido eliminado del inventario.',
-        });
-    } catch (e) {
-        console.error("Error eliminando artículo: ", e);
-        toast({ variant: 'destructive', title: 'Error', description: 'No se pudo eliminar el artículo.' });
+
+    if (window.confirm('¿Estás seguro de que deseas eliminar este artículo? Esta acción es irreversible.')) {
+      try {
+          const itemRef = doc(firestore, 'inventory', itemId);
+          await deleteDoc(itemRef);
+          toast({
+              title: 'Artículo Eliminado',
+              description: 'El artículo ha sido eliminado del inventario.',
+          });
+      } catch (e) {
+          console.error("Error eliminando artículo: ", e);
+          toast({ variant: 'destructive', title: 'Error', description: 'No se pudo eliminar el artículo.' });
+      }
     }
   };
 
@@ -411,8 +413,8 @@ export default function InventoryPage() {
                         <TableHead>Producto</TableHead>
                         <TableHead>Categoría</TableHead>
                         <TableHead>Sub-Categoría</TableHead>
-                        <TableHead>Unidad (Receta)</TableHead>
-                        <TableHead className="text-right">Cantidad</TableHead>
+                        <TableHead>Unidad de Compra</TableHead>
+                        <TableHead className="text-right">Cantidad (en Receta)</TableHead>
                         <TableHead>Proveedor</TableHead>
                         <TableHead><span className="sr-only">Actions</span></TableHead>
                     </TableRow>
@@ -432,8 +434,11 @@ export default function InventoryPage() {
                             <TableCell className="font-medium">{item.nombre}</TableCell>
                             <TableCell><Badge variant="secondary">{getCategoryName(item.categoriaId)}</Badge></TableCell>
                             <TableCell>{item.subCategoria || 'N/A'}</TableCell>
-                            <TableCell className="uppercase">{item.unidadReceta}</TableCell>
-                            <TableCell className={cn("text-right font-bold", item.cantidad <= item.stockMinimo ? 'text-red-500' : 'text-current')}>{item.cantidad.toFixed(2)}</TableCell>
+                            <TableCell className="uppercase">{item.unidadCompra || 'N/A'}</TableCell>
+                            <TableCell className={cn("text-right font-bold", item.cantidad <= item.stockMinimo ? 'text-red-500' : 'text-current')}>
+                                {item.cantidad.toFixed(2)}
+                                <span className="text-xs text-muted-foreground ml-1 uppercase">{item.unidadReceta}</span>
+                            </TableCell>
                             <TableCell>{item.proveedor || 'N/A'}</TableCell>
                             <TableCell className="text-right">
                                 <DropdownMenu>
