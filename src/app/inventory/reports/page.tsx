@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -33,7 +34,7 @@ export default function InventoryReportsPage() {
   const [items] = useState<InventoryItem[]>(inventoryItems);
 
   const getCategoryName = (categoryId: InventoryCategoryId) => {
-    return inventoryCategories.find(cat => cat.id === categoryId)?.nombre || 'N/A';
+    return inventoryCategories.find(cat => cat.id === categoryId)?.nombre || 'Categoría Desconocida';
   };
 
   const lowStockItems = items.filter(item => item.cantidad <= item.stockMinimo);
