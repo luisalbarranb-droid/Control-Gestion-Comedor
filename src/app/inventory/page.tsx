@@ -14,6 +14,7 @@ import Link from 'next/link';
 import { cn } from '@/lib/utils';
 import { format, isValid } from 'date-fns';
 import { useToast } from '@/components/ui/toast';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
   addDoc,
   collection,
@@ -64,6 +65,8 @@ export default function InventoryPage() {
   const [categoryFilter, setCategoryFilter] = useState<InventoryCategoryId | 'all'>('all');
   const [activeForm, setActiveForm] = useState<FormType>(null);
   const [editingItem, setEditingItem] = useState<InventoryItem | null>(null);
+  const [selectedItems, setSelectedItems] = useState<string[]>([]);
+
 
   const getCategoryName = (categoryId: InventoryCategoryId) => {
     return inventoryCategories.find(cat => cat.id === categoryId)?.nombre || 'N/A';
@@ -105,44 +108,46 @@ export default function InventoryPage() {
     }
   };
 
-  const handleDeleteAll = async () => {
-    if (!firestore || !items) return;
+  const handleDeleteSelected = async () => {
+    if (!firestore || selectedItems.length === 0) return;
     
-    const confirmation = window.prompt('Esta acción es irreversible y eliminará todos los artículos del inventario. Escribe "ELIMINAR" para confirmar.');
+    const confirmation = window.confirm(`¿Estás seguro de que deseas eliminar ${selectedItems.length} artículos seleccionados? Esta acción es irreversible.`);
     
-    if (confirmation !== 'ELIMINAR') {
-      toast({
-        title: 'Borrado cancelado',
-        description: 'La operación de borrado masivo ha sido cancelada.',
-        variant: 'default',
-      });
-      return;
-    }
+    if (!confirmation) return;
 
     try {
       const batch = writeBatch(firestore);
-      const inventorySnapshot = await getDocs(collection(firestore, 'inventory'));
-      
-      if (inventorySnapshot.empty) {
-        toast({ title: 'Inventario ya vacío', description: 'No hay artículos que eliminar.' });
-        return;
-      }
-      
-      inventorySnapshot.forEach(doc => {
-        batch.delete(doc.ref);
+      selectedItems.forEach(itemId => {
+        const itemRef = doc(firestore, 'inventory', itemId);
+        batch.delete(itemRef);
       });
       
       await batch.commit();
       
       toast({
-        title: 'Inventario Eliminado',
-        description: `Se han eliminado ${inventorySnapshot.size} artículos.`,
+        title: 'Artículos Eliminados',
+        description: `Se han eliminado ${selectedItems.length} artículos.`,
       });
+      setSelectedItems([]);
       forceCollectionUpdate();
     } catch (e) {
-      console.error("Error eliminando todos los artículos: ", e);
-      toast({ variant: 'destructive', title: 'Error', description: 'No se pudo completar el borrado masivo.' });
+      console.error("Error eliminando los artículos seleccionados: ", e);
+      toast({ variant: 'destructive', title: 'Error', description: 'No se pudo completar el borrado seleccionado.' });
     }
+  };
+
+  const handleSelectAll = (checked: boolean | 'indeterminate') => {
+    if (checked === true) {
+      setSelectedItems(filteredItems.map(item => item.id));
+    } else {
+      setSelectedItems([]);
+    }
+  };
+
+  const handleSelectItem = (itemId: string, checked: boolean) => {
+    setSelectedItems(prev => 
+      checked ? [...prev, itemId] : prev.filter(id => id !== itemId)
+    );
   };
 
 
@@ -372,16 +377,25 @@ export default function InventoryPage() {
          <CardHeader>
             <div className="flex justify-between items-center">
               <CardTitle>Listado de Artículos</CardTitle>
-              <Button variant="destructive" size="sm" onClick={handleDeleteAll} disabled={!items || items.length === 0}>
-                <Trash2 className="mr-2 h-4 w-4" />
-                Eliminar Todo
-              </Button>
+              {selectedItems.length > 0 && (
+                 <Button variant="destructive" size="sm" onClick={handleDeleteSelected}>
+                    <Trash2 className="mr-2 h-4 w-4" />
+                    Eliminar ({selectedItems.length})
+                </Button>
+              )}
             </div>
           </CardHeader>
         <CardContent className="p-0">
             <Table>
                 <TableHeader>
                     <TableRow>
+                        <TableHead className="w-10">
+                            <Checkbox
+                                onCheckedChange={handleSelectAll}
+                                checked={selectedItems.length === filteredItems.length && filteredItems.length > 0}
+                                aria-label="Seleccionar todo"
+                            />
+                        </TableHead>
                         <TableHead>Producto</TableHead>
                         <TableHead>Categoría</TableHead>
                         <TableHead>Sub-Categoría</TableHead>
@@ -392,10 +406,17 @@ export default function InventoryPage() {
                     </TableRow>
                 </TableHeader>
                 <TableBody>
-                    {isLoadingItems && <TableRow><TableCell colSpan={7} className="h-24 text-center">Cargando inventario...</TableCell></TableRow>}
+                    {isLoadingItems && <TableRow><TableCell colSpan={8} className="h-24 text-center">Cargando inventario...</TableCell></TableRow>}
                     {!isLoadingItems && filteredItems.map((item) => {
                         return (
-                        <TableRow key={item.id}>
+                        <TableRow key={item.id} data-state={selectedItems.includes(item.id) && "selected"}>
+                            <TableCell>
+                                <Checkbox
+                                    checked={selectedItems.includes(item.id)}
+                                    onCheckedChange={(checked) => handleSelectItem(item.id, !!checked)}
+                                    aria-label={`Seleccionar ${item.nombre}`}
+                                />
+                            </TableCell>
                             <TableCell className="font-medium">{item.nombre}</TableCell>
                             <TableCell><Badge variant="secondary">{getCategoryName(item.categoriaId)}</Badge></TableCell>
                             <TableCell>{item.subCategoria || 'N/A'}</TableCell>
@@ -423,7 +444,7 @@ export default function InventoryPage() {
                     })}
                      {!isLoadingItems && filteredItems.length === 0 && (
                         <TableRow>
-                            <TableCell colSpan={7} className="h-24 text-center">No se encontraron artículos.</TableCell>
+                            <TableCell colSpan={8} className="h-24 text-center">No se encontraron artículos.</TableCell>
                         </TableRow>
                      )}
                 </TableBody>
