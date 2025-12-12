@@ -8,7 +8,7 @@ import {
   DialogDescription,
 } from '@/components/ui/dialog';
 import { MenuForm } from './menu-form';
-import type { Menu } from '@/lib/types';
+import type { Menu, InventoryItem } from '@/lib/types';
 
 interface MenuDialogProps {
   isOpen: boolean;
@@ -16,6 +16,8 @@ interface MenuDialogProps {
   menu: Menu | null;
   setEditingMenu: (menu: Menu | null) => void;
   currentWeekStart: Date;
+  inventoryItems: InventoryItem[];
+  isLoadingInventory: boolean;
 }
 
 export default function MenuDialog({
@@ -23,6 +25,8 @@ export default function MenuDialog({
   onOpenChange,
   menu,
   setEditingMenu,
+  inventoryItems,
+  isLoadingInventory,
 }: MenuDialogProps) {
   const handleClose = () => {
     onOpenChange(false);
@@ -45,6 +49,8 @@ export default function MenuDialog({
           isOpen={isOpen}
           onOpenChange={onOpenChange}
           editingMenu={menu}
+          inventoryItems={inventoryItems}
+          isLoadingInventory={isLoadingInventory}
         />
       </DialogContent>
     </Dialog>

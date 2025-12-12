@@ -379,6 +379,8 @@ export default function MenusPage() {
 				menu={editingMenu} 
 				setEditingMenu={setEditingMenu}
 				currentWeekStart={start}
+                inventoryItems={inventoryItems || []}
+                isLoadingInventory={isLoadingInventory}
 			/>
 
             <MenuImportDialog

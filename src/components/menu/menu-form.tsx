@@ -9,15 +9,14 @@ import * as z from "zod";
 import { useFirestore, addDocumentNonBlocking, updateDocumentNonBlocking } from "@/firebase";
 import { collection, doc, serverTimestamp, Timestamp } from "firebase/firestore";
 import { useToast } from "@/components/ui/toast";
-import type { Menu, MealType, MenuItem, MenuItemCategory } from "@/lib/types";
+import type { Menu, MealType, MenuItem, MenuItemCategory, InventoryItem } from "@/lib/types";
 import { useEffect, useState } from "react";
 import { DatePicker } from "../ui/datepicker";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "../ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select";
 import { Separator } from "../ui/separator";
-import { Edit } from "lucide-react";
+import { Edit, Loader2 } from "lucide-react";
 import { MealComponentForm } from "./meal-component-form";
-import { inventoryItems } from "@/lib/placeholder-data"; // Using placeholder for now
 
 const categoryOrder: MenuItemCategory[] = ['entrada', 'proteico', 'acompanante1', 'acompanante2', 'acompanante3', 'bebida', 'postre'];
 
@@ -35,6 +34,8 @@ interface MenuFormProps {
     isOpen: boolean;
     onOpenChange: (open: boolean) => void;
     editingMenu: Menu | null;
+    inventoryItems: InventoryItem[];
+    isLoadingInventory: boolean;
 }
 
 const mealTypeLabels: Record<MealType, string> = {
@@ -46,7 +47,7 @@ const mealTypeLabels: Record<MealType, string> = {
     otro: "Otro"
 };
 
-export function MenuForm({ isOpen, onOpenChange, editingMenu }: MenuFormProps) {
+export function MenuForm({ isOpen, onOpenChange, editingMenu, inventoryItems, isLoadingInventory }: MenuFormProps) {
     const firestore = useFirestore();
     const { toast } = useToast();
     const [editingComponent, setEditingComponent] = useState<{ category: MenuItemCategory, component: Partial<MenuItem> } | null>(null);
@@ -135,101 +136,98 @@ export function MenuForm({ isOpen, onOpenChange, editingMenu }: MenuFormProps) {
     
     return (
         <>
-            <Dialog open={isOpen} onOpenChange={onOpenChange}>
-                <DialogContent className="sm:max-w-2xl">
-                    <DialogHeader>
-                        <DialogTitle>{editingMenu ? 'Editar Menú Completo' : 'Nuevo Menú Completo'}</DialogTitle>
-                        <DialogDescription>
-                            Define el tipo de comida, los comensales y cada uno de los 7 componentes del menú.
-                        </DialogDescription>
-                    </DialogHeader>
-                    <Form {...form}>
-                        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 max-h-[70vh] overflow-y-auto pr-4">
-                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                <FormField
-                                    control={form.control}
-                                    name="date"
-                                    render={({ field }) => (
-                                        <FormItem className="flex flex-col">
-                                            <FormLabel>Fecha</FormLabel>
-                                            <DatePicker date={field.value} setDate={field.onChange} />
-                                            <FormMessage />
-                                        </FormItem>
-                                    )}
-                                />
-                                <FormField
-                                    control={form.control}
-                                    name="time"
-                                    render={({ field }) => (
-                                        <FormItem>
-                                            <FormLabel>Tipo de Comida</FormLabel>
-                                            <Select onValueChange={field.onChange} value={field.value}>
-                                                <FormControl><SelectTrigger><SelectValue/></SelectTrigger></FormControl>
-                                                <SelectContent>
-                                                    {Object.entries(mealTypeLabels).map(([key, label]) => (
-                                                        <SelectItem key={key} value={key}>{label}</SelectItem>
-                                                    ))}
-                                                </SelectContent>
-                                            </Select>
-                                            <FormMessage />
-                                        </FormItem>
-                                    )}
-                                />
-                                <FormField
-                                    control={form.control}
-                                    name="pax"
-                                    render={({ field }) => (
-                                        <FormItem>
-                                            <FormLabel>Comensales (PAX)</FormLabel>
-                                            <FormControl><Input type="number" {...field} /></FormControl>
-                                            <FormMessage />
-                                        </FormItem>
-                                    )}
-                                />
+            <Form {...form}>
+                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 max-h-[70vh] overflow-y-auto pr-4">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <FormField
+                            control={form.control}
+                            name="date"
+                            render={({ field }) => (
+                                <FormItem className="flex flex-col">
+                                    <FormLabel>Fecha</FormLabel>
+                                    <DatePicker date={field.value} setDate={field.onChange} />
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+                        <FormField
+                            control={form.control}
+                            name="time"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Tipo de Comida</FormLabel>
+                                    <Select onValueChange={field.onChange} value={field.value}>
+                                        <FormControl><SelectTrigger><SelectValue/></SelectTrigger></FormControl>
+                                        <SelectContent>
+                                            {Object.entries(mealTypeLabels).map(([key, label]) => (
+                                                <SelectItem key={key} value={key}>{label}</SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+                        <FormField
+                            control={form.control}
+                            name="pax"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Comensales (PAX)</FormLabel>
+                                    <FormControl><Input type="number" {...field} /></FormControl>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+                    </div>
+
+                     <FormField
+                        control={form.control}
+                        name="name"
+                        render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>Nombre del Menú (Opcional)</FormLabel>
+                                <FormControl><Input placeholder="Ej: Almuerzo Ejecutivo, Cena Navideña" {...field} /></FormControl>
+                                <FormMessage />
+                            </FormItem>
+                        )}
+                    />
+
+                    <Separator />
+                    <div className="space-y-2">
+                        <FormLabel>Componentes del Menú</FormLabel>
+                        {isLoadingInventory ? (
+                            <div className="flex items-center justify-center py-4">
+                                <Loader2 className="mr-2 h-4 w-4 animate-spin"/>
+                                <span>Cargando inventario...</span>
                             </div>
-
-                             <FormField
-                                control={form.control}
-                                name="name"
-                                render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel>Nombre del Menú (Opcional)</FormLabel>
-                                        <FormControl><Input placeholder="Ej: Almuerzo Ejecutivo, Cena Navideña" {...field} /></FormControl>
-                                        <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
-
-                            <Separator />
-                            <div className="space-y-2">
-                                <FormLabel>Componentes del Menú</FormLabel>
-                                {fields.map((item, index) => (
-                                    <div key={item.id} className="flex items-center justify-between p-2 rounded-md border bg-muted/50">
-                                        <div className="flex flex-col">
-                                            <span className="font-semibold capitalize text-sm text-muted-foreground">{(item as MenuItem).category.replace('acompanante', 'Acomp. ')}</span>
-                                            <span className="text-sm truncate">{(item as MenuItem).name || 'Sin definir'}</span>
-                                        </div>
-                                        <Button
-                                            type="button"
-                                            variant="outline"
-                                            size="sm"
-                                            onClick={() => setEditingComponent({ category: (item as MenuItem).category, component: item as MenuItem })}
-                                        >
-                                            <Edit className="mr-2 h-3 w-3" /> {(item as MenuItem).name ? 'Editar' : 'Definir'}
-                                        </Button>
+                        ) : (
+                            fields.map((item, index) => (
+                                <div key={item.id} className="flex items-center justify-between p-2 rounded-md border bg-muted/50">
+                                    <div className="flex flex-col">
+                                        <span className="font-semibold capitalize text-sm text-muted-foreground">{(item as MenuItem).category.replace('acompanante', 'Acomp. ')}</span>
+                                        <span className="text-sm truncate">{(item as MenuItem).name || 'Sin definir'}</span>
                                     </div>
-                                ))}
-                                <FormMessage>{form.formState.errors.items?.message}</FormMessage>
-                            </div>
+                                    <Button
+                                        type="button"
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={() => setEditingComponent({ category: (item as MenuItem).category, component: item as MenuItem })}
+                                    >
+                                        <Edit className="mr-2 h-3 w-3" /> {(item as MenuItem).name ? 'Editar' : 'Definir'}
+                                    </Button>
+                                </div>
+                            ))
+                        )}
+                        <FormMessage>{form.formState.errors.items?.message}</FormMessage>
+                    </div>
 
-                            <DialogFooter className="pt-4">
-                                <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
-                                <Button type="submit">Guardar Menú</Button>
-                            </DialogFooter>
-                        </form>
-                    </Form>
-                </DialogContent>
-            </Dialog>
+                    <DialogFooter className="pt-4">
+                        <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
+                        <Button type="submit">Guardar Menú</Button>
+                    </DialogFooter>
+                </form>
+            </Form>
 
             {editingComponent && (
                 <MealComponentForm 
