@@ -105,13 +105,65 @@ export default function InventoryPage() {
     }
   };
 
+  const handleDeleteAll = async () => {
+    if (!firestore || !items) return;
+    
+    const confirmation = window.prompt('Esta acción es irreversible y eliminará todos los artículos del inventario. Escribe "ELIMINAR" para confirmar.');
+    
+    if (confirmation !== 'ELIMINAR') {
+      toast({
+        title: 'Borrado cancelado',
+        description: 'La operación de borrado masivo ha sido cancelada.',
+        variant: 'default',
+      });
+      return;
+    }
+
+    try {
+      const batch = writeBatch(firestore);
+      const inventorySnapshot = await getDocs(collection(firestore, 'inventory'));
+      
+      if (inventorySnapshot.empty) {
+        toast({ title: 'Inventario ya vacío', description: 'No hay artículos que eliminar.' });
+        return;
+      }
+      
+      inventorySnapshot.forEach(doc => {
+        batch.delete(doc.ref);
+      });
+      
+      await batch.commit();
+      
+      toast({
+        title: 'Inventario Eliminado',
+        description: `Se han eliminado ${inventorySnapshot.size} artículos.`,
+      });
+      forceCollectionUpdate();
+    } catch (e) {
+      console.error("Error eliminando todos los artículos: ", e);
+      toast({ variant: 'destructive', title: 'Error', description: 'No se pudo completar el borrado masivo.' });
+    }
+  };
+
 
   const handleSaveItem = async (itemData: any, isNew: boolean) => {
     if (!firestore) return;
     
+    const inventoryCollection = collection(firestore, 'inventory');
+
+    if(isNew) {
+         // Check if code already exists
+        const q = query(inventoryCollection, where("codigo", "==", itemData.codigo));
+        const querySnapshot = await getDocs(q);
+        if (!querySnapshot.empty) {
+            toast({ variant: 'destructive', title: 'Error', description: `El código "${itemData.codigo}" ya existe.` });
+            return;
+        }
+    }
+    
     try {
         if (isNew) {
-            const newItemRef = doc(collection(firestore, 'inventory'));
+            const newItemRef = doc(inventoryCollection);
             await setDoc(newItemRef, {
                 ...itemData,
                 id: newItemRef.id,
@@ -317,6 +369,15 @@ export default function InventoryPage() {
 
       {/* Tabla de Inventario */}
       <Card>
+         <CardHeader>
+            <div className="flex justify-between items-center">
+              <CardTitle>Listado de Artículos</CardTitle>
+              <Button variant="destructive" size="sm" onClick={handleDeleteAll} disabled={!items || items.length === 0}>
+                <Trash2 className="mr-2 h-4 w-4" />
+                Eliminar Todo
+              </Button>
+            </div>
+          </CardHeader>
         <CardContent className="p-0">
             <Table>
                 <TableHeader>
