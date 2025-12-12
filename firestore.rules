@@ -83,7 +83,7 @@ service cloud.firestore {
     
     // --- Menu Rules ---
     match /menus/{menuId} {
-      allow read: if isActiveUser();
+      allow get, list: if isActiveUser();
       allow write: if isAdmin();
     }
 
