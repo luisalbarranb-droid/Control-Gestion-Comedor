@@ -1,3 +1,4 @@
+
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
@@ -74,6 +75,11 @@ service cloud.firestore {
       allow read: if isActiveUser();
       allow write: if isAdmin();
     }
+
+    match /inventoryTransactions/{transactionId} {
+      allow read: if isActiveUser();
+      allow write: if isAdmin();
+    }
     
     // --- Menu Rules ---
     match /menus/{menuId} {
@@ -114,3 +120,5 @@ service cloud.firestore {
     }
   }
 }
+
+    

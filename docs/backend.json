@@ -530,6 +530,22 @@
         "ultimaActualizacion"
       ]
     },
+    "InventoryTransaction": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Inventory Transaction",
+      "type": "object",
+      "description": "Records a movement (entry or exit) of an inventory item.",
+      "properties": {
+        "transactionId": { "type": "string", "description": "Unique identifier for the transaction." },
+        "itemId": { "type": "string", "description": "ID of the inventory item." },
+        "type": { "type": "string", "enum": ["entrada", "salida", "ajuste-positivo", "ajuste-negativo"], "description": "The type of transaction." },
+        "quantity": { "type": "number", "description": "The quantity of items moved, in 'unidadReceta'." },
+        "date": { "type": "string", "format": "date-time", "description": "Timestamp of the transaction." },
+        "reason": { "type": "string", "description": "Reason for the transaction (e.g., 'Uso en Producción', 'Vencimiento', 'Compra')." },
+        "destinationArea": { "type": "string", "description": "For 'salida', the area where the item was sent (e.g., 'cocina')." }
+      },
+      "required": ["transactionId", "itemId", "type", "quantity", "date"]
+    },
     "Menu": {
       "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "Menu",
@@ -912,6 +928,22 @@
         }
       },
       {
+        "path": "/inventoryTransactions/{transactionId}",
+        "definition": {
+          "entityName": "InventoryTransaction",
+          "schema": {
+            "$ref": "#/backend/entities/InventoryTransaction"
+          },
+          "description": "Stores inventory transaction records.",
+          "params": [
+            {
+              "name": "transactionId",
+              "description": "The unique identifier for the transaction."
+            }
+          ]
+        }
+      },
+      {
         "path": "/menus/{menuId}",
         "definition": {
           "entityName": "Menu",
@@ -1001,3 +1033,5 @@
     ]
   }
 }
+
+    
