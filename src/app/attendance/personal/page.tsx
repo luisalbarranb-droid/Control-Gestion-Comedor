@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState } from 'react';
@@ -7,7 +8,7 @@ import Link from 'next/link';
 import { Input } from '@/components/ui/input';
 import { EmployeeList } from '@/components/attendance/employee-list';
 import { EmployeeForm } from '@/components/attendance/employee-form';
-import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
+import { useCollection, useFirestore, useMemoFirebase, useUser } from '@/firebase';
 import { collection, query, orderBy, writeBatch, doc, serverTimestamp, Timestamp } from 'firebase/firestore';
 import type { User } from '@/lib/types';
 import { EmployeeImportDialog } from '@/components/attendance/employee-import-dialog';
@@ -22,13 +23,14 @@ export default function PersonalManagementPage() {
     const [searchTerm, setSearchTerm] = useState('');
     const firestore = useFirestore();
     const { toast } = useToast();
+    const { isUserLoading } = useUser();
 
     const usersQuery = useMemoFirebase(() => {
         if (!firestore) return null;
         return query(collection(firestore, 'users'), orderBy('name', 'asc'));
     }, [firestore]);
 
-    const { data: employees, isLoading } = useCollection<User>(usersQuery);
+    const { data: employees, isLoading } = useCollection<User>(usersQuery, { disabled: isUserLoading });
 
     const filteredEmployees = React.useMemo(() => {
         if (!employees) return [];
@@ -124,7 +126,7 @@ export default function PersonalManagementPage() {
                     <CardDescription>Un vistazo a los próximos cumpleaños del equipo.</CardDescription>
                 </CardHeader>
                 <CardContent>
-                    <BirthdayCalendar users={employees || []} isLoading={isLoading} />
+                    <BirthdayCalendar users={employees || []} isLoading={isLoading || isUserLoading} />
                 </CardContent>
             </Card>
 
@@ -154,7 +156,7 @@ export default function PersonalManagementPage() {
             
             <EmployeeList 
                 employees={filteredEmployees}
-                isLoading={isLoading}
+                isLoading={isLoading || isUserLoading}
                 onEdit={handleEdit}
             />
 

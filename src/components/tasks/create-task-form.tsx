@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useForm } from 'react-hook-form';
@@ -37,6 +38,7 @@ import { cn } from '@/lib/utils';
 import { areas } from '@/lib/placeholder-data';
 import type { User, TaskPeriodicity } from '@/lib/types';
 import { Textarea } from '../ui/textarea';
+import { useUser } from '@/firebase';
 
 const taskSchema = z.object({
   titulo: z.string().min(3, 'El título debe tener al menos 3 caracteres.'),
@@ -65,6 +67,7 @@ export function CreateTaskForm({
   isOpen,
   onOpenChange,
 }: CreateTaskFormProps) {
+  const { isUserLoading } = useUser();
   const form = useForm<TaskFormValues>({
     resolver: zodResolver(taskSchema),
     defaultValues: {
@@ -237,7 +240,7 @@ export function CreateTaskForm({
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Asignado a</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                  <Select onValueChange={field.onChange} defaultValue={field.value} disabled={isUserLoading}>
                     <FormControl>
                       <SelectTrigger>
                         <SelectValue placeholder="Selecciona responsable" />
@@ -252,7 +255,7 @@ export function CreateTaskForm({
                         ))
                       ) : (
                         <SelectItem value="no-users" disabled>
-                          No hay usuarios disponibles
+                          {isUserLoading ? 'Cargando usuarios...' : 'No hay usuarios disponibles'}
                         </SelectItem>
                       )}
                     </SelectContent>

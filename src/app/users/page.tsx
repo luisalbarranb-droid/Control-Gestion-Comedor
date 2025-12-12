@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState } from 'react';
@@ -11,7 +12,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { EmployeeList } from '@/components/attendance/employee-list';
 import { EmployeeForm } from '@/components/attendance/employee-form';
-import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
+import { useCollection, useFirestore, useMemoFirebase, useUser } from '@/firebase';
 import { collection, query, orderBy } from 'firebase/firestore';
 import type { User } from '@/lib/types';
 
@@ -21,13 +22,14 @@ export default function UsersManagementPage() {
     const [editingEmployee, setEditingEmployee] = useState<User | null>(null);
     const [searchTerm, setSearchTerm] = useState('');
     const firestore = useFirestore();
+    const { isUserLoading } = useUser();
 
     const usersQuery = useMemoFirebase(() => {
         if (!firestore) return null;
         return query(collection(firestore, 'users'), orderBy('name', 'asc'));
     }, [firestore]);
 
-    const { data: employees, isLoading } = useCollection<User>(usersQuery);
+    const { data: employees, isLoading } = useCollection<User>(usersQuery, { disabled: isUserLoading });
 
     const filteredEmployees = React.useMemo(() => {
         if (!employees) return [];
@@ -75,7 +77,7 @@ export default function UsersManagementPage() {
             
             <EmployeeList 
                 employees={filteredEmployees}
-                isLoading={isLoading}
+                isLoading={isLoading || isUserLoading}
                 onEdit={handleEdit}
             />
 

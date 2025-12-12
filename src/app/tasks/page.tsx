@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useMemo } from 'react';
@@ -117,7 +118,7 @@ export default function TasksPage() {
     () => (firestore ? collection(firestore, 'users') : null),
     [firestore]
   );
-  const { data: users, isLoading: isLoadingUsers } = useCollection<User>(usersCollectionRef);
+  const { data: users, isLoading: isLoadingUsers } = useCollection<User>(usersCollectionRef, { disabled: isAuthLoading });
 
   const getArea = (areaId: string) => areas.find((a) => a.id === areaId);
   const getUser = (userId: string) => users?.find((u) => u.id === userId);
@@ -276,5 +277,3 @@ export default function TasksPage() {
     </div>
   );
 }
-
-    
