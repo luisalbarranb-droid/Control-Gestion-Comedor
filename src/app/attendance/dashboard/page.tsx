@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useMemo, useState, useEffect } from 'react';
@@ -24,7 +25,7 @@ import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import Link from 'next/link';
 import { collection, query, where, Timestamp } from 'firebase/firestore';
-import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
+import { useCollection, useFirestore, useMemoFirebase, useUser } from '@/firebase';
 import type { AttendanceRecord, User } from '@/lib/types';
 import { cn } from '@/lib/utils';
 
@@ -54,6 +55,7 @@ const statusConfig = {
 
 export default function AttendanceDashboardPage() {
   const firestore = useFirestore();
+  const { isUserLoading } = useUser();
   const [currentDate, setCurrentDate] = useState<Date>(() => new Date());
   const [isClient, setIsClient] = useState(false);
 
@@ -83,7 +85,7 @@ export default function AttendanceDashboardPage() {
   }, [firestore]);
 
   const { data: attendanceRecords, isLoading: isLoadingAttendance } = useCollection<AttendanceRecord>(attendanceQuery);
-  const { data: users, isLoading: isLoadingUsers } = useCollection<User>(usersQuery);
+  const { data: users, isLoading: isLoadingUsers } = useCollection<User>(usersQuery, { disabled: isUserLoading });
 
   const stats = useMemo(() => {
     if (!attendanceRecords || !users) return { present: 0, late: 0, absent: 0, recent: [] };

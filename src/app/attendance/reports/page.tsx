@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useMemo, useEffect } from 'react';
@@ -6,7 +7,7 @@ import { es } from 'date-fns/locale';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, Download, Printer } from 'lucide-react';
 import Link from 'next/link';
-import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
+import { useCollection, useFirestore, useMemoFirebase, useUser } from '@/firebase';
 import { collection, query, where, Timestamp } from 'firebase/firestore';
 import type { User, AttendanceRecord, ConsolidatedRecord, DayOff } from '@/lib/types';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -31,6 +32,7 @@ function convertToDate(date: any): Date | null {
 
 export default function AttendanceReportPage() {
     const firestore = useFirestore();
+    const { isUserLoading } = useUser();
     const [dateRange, setDateRange] = useState<DateRange | undefined>();
     const [isClient, setIsClient] = useState(false);
 
@@ -66,7 +68,7 @@ export default function AttendanceReportPage() {
         );
     }, [firestore, dateRange]);
 
-    const { data: users, isLoading: isLoadingUsers } = useCollection<User>(usersQuery);
+    const { data: users, isLoading: isLoadingUsers } = useCollection<User>(usersQuery, { disabled: isUserLoading });
     const { data: attendance, isLoading: isLoadingAttendance } = useCollection<AttendanceRecord>(attendanceQuery);
     const { data: daysOff, isLoading: isLoadingDaysOff } = useCollection<DayOff>(daysOffQuery);
 
