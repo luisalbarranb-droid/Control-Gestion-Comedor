@@ -107,7 +107,7 @@ export function InventoryForm({ isOpen, onOpenChange, onSave, item }: InventoryF
       ...values,
       categoriaId: values.categoriaId as InventoryCategoryId,
       unidadReceta: values.unidadReceta as UnitOfMeasure,
-      unidadCompra: values.unidadCompra as UnitOfMeasure,
+      unidadCompra: values.unidadCompra as UnitOfMeasure | undefined,
     };
     onSave(dataToSave, !item);
   };
