@@ -9,7 +9,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel,
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { MoreVertical, Package, DollarSign, AlertCircle, TrendingDown, TrendingUp, Search, Filter, Plus, FileSpreadsheet, Upload, ShoppingCart } from 'lucide-react';
+import { MoreVertical, Package, DollarSign, AlertCircle, TrendingDown, TrendingUp, Search, Filter, Plus, FileSpreadsheet, Upload, ShoppingCart, Trash2 } from 'lucide-react';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
 import { format, isValid } from 'date-fns';
@@ -26,9 +26,10 @@ import {
   Timestamp,
   setDoc,
   getDocs,
-  where
+  where,
+  deleteDoc,
 } from 'firebase/firestore';
-import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
+import { useCollection, useFirestore, useMemoFirebase, deleteDocumentNonBlocking } from '@/firebase';
 
 import type { InventoryItem, InventoryCategoryId, InventoryTransaction, InventoryTransactionType, UnitOfMeasure } from '@/lib/types';
 import { InventoryForm } from '@/components/inventory/inventory-form';
@@ -86,6 +87,24 @@ export default function InventoryPage() {
     setEditingItem(null);
     setActiveForm(null);
   }
+  
+  const handleDeleteItem = async (itemId: string) => {
+    if (!firestore || !window.confirm('¿Estás seguro de que deseas eliminar este artículo? Esta acción no se puede deshacer.')) return;
+    
+    try {
+        const itemRef = doc(firestore, 'inventory', itemId);
+        await deleteDoc(itemRef);
+        toast({
+            title: 'Artículo Eliminado',
+            description: 'El artículo ha sido eliminado del inventario.',
+        });
+        forceCollectionUpdate(); // Forzar la actualización de la lista
+    } catch (e) {
+        console.error("Error eliminando artículo: ", e);
+        toast({ variant: 'destructive', title: 'Error', description: 'No se pudo eliminar el artículo.' });
+    }
+  };
+
 
   const handleSaveItem = async (itemData: any, isNew: boolean) => {
     if (!firestore) return;
@@ -330,6 +349,11 @@ export default function InventoryPage() {
                                     <DropdownMenuContent align="end">
                                         <DropdownMenuItem onClick={() => handleOpenForm('item', item)}>Editar</DropdownMenuItem>
                                         <DropdownMenuItem>Ver Historial</DropdownMenuItem>
+                                        <DropdownMenuSeparator />
+                                        <DropdownMenuItem onClick={() => handleDeleteItem(item.id)} className="text-destructive">
+                                          <Trash2 className="mr-2 h-4 w-4" />
+                                          Eliminar
+                                        </DropdownMenuItem>
                                     </DropdownMenuContent>
                                 </DropdownMenu>
                             </TableCell>
