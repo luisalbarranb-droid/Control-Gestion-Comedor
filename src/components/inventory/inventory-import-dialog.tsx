@@ -24,7 +24,9 @@ interface InventoryImportDialogProps {
   onImport: (data: any[]) => void;
 }
 
-const requiredColumns = ['nombre', 'descripcion', 'categoriaId', 'cantidad', 'unidad', 'stockMinimo', 'proveedor', 'costoUnitario'];
+const requiredColumns = ['nombre', 'categoriaId', 'cantidad', 'unidadReceta', 'stockMinimo'];
+const allColumns = ['nombre', 'descripcion', 'categoriaId', 'subCategoria', 'cantidad', 'unidadReceta', 'unidadCompra', 'factorConversion', 'stockMinimo', 'proveedor', 'costoUnitario'];
+
 
 export function InventoryImportDialog({ isOpen, onOpenChange, onImport }: InventoryImportDialogProps) {
   const { toast } = useToast();
@@ -117,21 +119,27 @@ export function InventoryImportDialog({ isOpen, onOpenChange, onImport }: Invent
         nombre: 'Ej: Pechuga de Pollo',
         descripcion: 'Ej: Fileteada y sin piel',
         categoriaId: 'carnes',
+        subCategoria: 'Aves',
         cantidad: 10,
-        unidad: 'kg',
+        unidadReceta: 'kg',
+        unidadCompra: 'caja',
+        factorConversion: 15,
         stockMinimo: 5,
         proveedor: 'Ej: Avícola Central',
-        costoUnitario: 5.50
+        costoUnitario: 80.50
       },
        {
         nombre: 'Ej: Arroz',
         descripcion: '',
         categoriaId: 'viveres',
+        subCategoria: 'Granos',
         cantidad: 100,
-        unidad: 'kg',
+        unidadReceta: 'kg',
+        unidadCompra: 'paquete',
+        factorConversion: 24,
         stockMinimo: 20,
         proveedor: 'Ej: Distribuidora ABC',
-        costoUnitario: 1.20
+        costoUnitario: 25.00
       }
     ];
 
@@ -140,7 +148,7 @@ export function InventoryImportDialog({ isOpen, onOpenChange, onImport }: Invent
     XLSX.utils.book_append_sheet(workbook, worksheet, 'Plantilla');
     
     // Auto-adjust column widths
-    worksheet["!cols"] = requiredColumns.map(col => ({ wch: col.length + 5 }));
+    worksheet["!cols"] = allColumns.map(col => ({ wch: col.length + 5 }));
 
     const excelBuffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
     const data = new Blob([excelBuffer], {type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;charset=UTF-8'});
@@ -187,7 +195,7 @@ export function InventoryImportDialog({ isOpen, onOpenChange, onImport }: Invent
                     Tu archivo de Excel debe contener las siguientes columnas (los nombres deben coincidir exactamente):
                 </p>
                 <div className="flex flex-wrap items-center gap-2">
-                    {requiredColumns.map(col => (
+                    {allColumns.map(col => (
                         <code key={col} className="text-xs font-mono bg-muted text-muted-foreground rounded px-2 py-1">{col}</code>
                     ))}
                      <Button variant="link" size="sm" onClick={handleDownloadTemplate} className="text-sm">

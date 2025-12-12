@@ -141,19 +141,25 @@ export default function InventoryPage() {
         const batch = writeBatch(firestore);
         importedData.forEach((row: any) => {
             const newItemRef = doc(collection(firestore, 'inventory'));
-            const newItem: Omit<InventoryItem, 'id'> = {
+            const newItem: Omit<InventoryItem, 'id' | 'fechaCreacion' | 'ultimaActualizacion'> = {
                 nombre: String(row.nombre),
                 descripcion: String(row.descripcion || ''),
                 categoriaId: row.categoriaId as InventoryCategoryId,
+                subCategoria: row.subCategoria || '',
                 cantidad: Number(row.cantidad),
-                unidadReceta: row.unidad as UnitOfMeasure,
+                unidadReceta: row.unidadReceta as UnitOfMeasure,
+                unidadCompra: row.unidadCompra as UnitOfMeasure,
+                factorConversion: Number(row.factorConversion || 1),
                 stockMinimo: Number(row.stockMinimo),
                 proveedor: String(row.proveedor || ''),
                 costoUnitario: Number(row.costoUnitario || 0),
+            };
+            batch.set(newItemRef, { 
+                ...newItem, 
+                id: newItemRef.id,
                 fechaCreacion: serverTimestamp(),
                 ultimaActualizacion: serverTimestamp(),
-            };
-            batch.set(newItemRef, { ...newItem, id: newItemRef.id });
+            });
         });
         
         await batch.commit();
