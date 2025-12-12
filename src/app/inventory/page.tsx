@@ -30,7 +30,7 @@ import {
   where,
   deleteDoc,
 } from 'firebase/firestore';
-import { useCollection, useFirestore, useMemoFirebase, deleteDocumentNonBlocking } from '@/firebase';
+import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
 
 import type { InventoryItem, InventoryCategoryId, InventoryTransaction, InventoryTransactionType, UnitOfMeasure } from '@/lib/types';
 import { InventoryForm } from '@/components/inventory/inventory-form';
@@ -101,7 +101,7 @@ export default function InventoryPage() {
             title: 'Artículo Eliminado',
             description: 'El artículo ha sido eliminado del inventario.',
         });
-        forceCollectionUpdate(); // Forzar la actualización de la lista
+        forceCollectionUpdate();
     } catch (e) {
         console.error("Error eliminando artículo: ", e);
         toast({ variant: 'destructive', title: 'Error', description: 'No se pudo eliminar el artículo.' });
@@ -129,7 +129,7 @@ export default function InventoryPage() {
         description: `Se han eliminado ${selectedItems.length} artículos.`,
       });
       setSelectedItems([]);
-      // forceCollectionUpdate is automatically called by the hook on deletion
+      forceCollectionUpdate();
     } catch (e) {
       console.error("Error eliminando los artículos seleccionados: ", e);
       toast({ variant: 'destructive', title: 'Error', description: 'No se pudo completar el borrado seleccionado.' });
@@ -157,7 +157,6 @@ export default function InventoryPage() {
     const inventoryCollection = collection(firestore, 'inventory');
 
     if(isNew) {
-         // Check if code already exists
         const q = query(inventoryCollection, where("codigo", "==", itemData.codigo));
         const querySnapshot = await getDocs(q);
         if (!querySnapshot.empty) {
@@ -233,14 +232,13 @@ export default function InventoryPage() {
     let updatedCount = 0;
     let createdCount = 0;
 
-    // Get all existing codes
     const existingCodes = (items || []).reduce((acc, item) => {
         if(item.codigo) acc[item.codigo] = item.id;
         return acc;
     }, {} as Record<string, string>);
 
     for (const row of importedData) {
-        if (!row.codigo) continue; // Skip rows without a code
+        if (!row.codigo) continue;
 
         const itemData = {
             nombre: String(row.nombre),
@@ -261,12 +259,10 @@ export default function InventoryPage() {
         const existingId = existingCodes[itemData.codigo];
 
         if (existingId) {
-            // Update existing item
             const itemRef = doc(inventoryRef, existingId);
             batch.update(itemRef, itemData);
             updatedCount++;
         } else {
-            // Create new item
             const newItemRef = doc(inventoryRef);
             batch.set(newItemRef, {
                 ...itemData,
@@ -280,7 +276,7 @@ export default function InventoryPage() {
     try {
         await batch.commit();
         handleCloseForm();
-        forceCollectionUpdate(); // Force a re-fetch of the data
+        forceCollectionUpdate();
         toast({
             title: "Importación Completada",
             description: `${createdCount} artículos creados y ${updatedCount} actualizados.`
@@ -294,7 +290,6 @@ export default function InventoryPage() {
 
   return (
     <div className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
-      {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <h1 className="font-headline text-2xl font-bold md:text-3xl">Gestión de Inventario</h1>
         <div className="flex flex-col gap-2 md:flex-row md:items-center">
@@ -340,7 +335,6 @@ export default function InventoryPage() {
         </div>
       </div>
 
-      {/* Resumen KPIs */}
       <div className="grid gap-4 md:grid-cols-4">
          <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -372,7 +366,6 @@ export default function InventoryPage() {
          </Card>
       </div>
 
-      {/* Tabla de Inventario */}
       <Card>
          <CardHeader>
             <div className="flex justify-between items-center">
@@ -452,7 +445,6 @@ export default function InventoryPage() {
         </CardContent>
       </Card>
       
-      {/* Forms */}
       {items && (
         <>
           <InventoryForm isOpen={activeForm === 'item'} onOpenChange={handleCloseForm} onSave={handleSaveItem} item={editingItem} />
@@ -465,5 +457,7 @@ export default function InventoryPage() {
     </div>
   );
 }
+
+    
 
     
