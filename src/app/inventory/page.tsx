@@ -414,12 +414,11 @@ export default function InventoryPage() {
                         <TableHead>Categoría</TableHead>
                         <TableHead className="text-center">Cant. (Un. Compra)</TableHead>
                         <TableHead className="text-center">Stock Mínimo (Un. Compra)</TableHead>
-                        <TableHead className="text-center">Cant. (Un. Receta)</TableHead>
                         <TableHead><span className="sr-only">Actions</span></TableHead>
                     </TableRow>
                 </TableHeader>
                 <TableBody>
-                    {isLoadingItems && <TableRow><TableCell colSpan={8} className="h-24 text-center">Cargando inventario...</TableCell></TableRow>}
+                    {isLoadingItems && <TableRow><TableCell colSpan={7} className="h-24 text-center">Cargando inventario...</TableCell></TableRow>}
                     {!isLoadingItems && filteredItems.map((item) => {
                         const factor = item.factorConversion || 1;
                         const quantityInPurchaseUnit = item.cantidad / factor;
@@ -445,10 +444,6 @@ export default function InventoryPage() {
                                 {minStockInPurchaseUnit.toFixed(2)}
                                 <span className="text-xs text-muted-foreground ml-1 uppercase">{item.unidadCompra || 'N/A'}</span>
                             </TableCell>
-                             <TableCell className="text-center">
-                                {item.cantidad.toFixed(2)}
-                                <span className="text-xs text-muted-foreground ml-1 uppercase">{item.unidadReceta}</span>
-                            </TableCell>
                             <TableCell className="text-right">
                                 <DropdownMenu>
                                     <DropdownMenuTrigger asChild>
@@ -470,7 +465,7 @@ export default function InventoryPage() {
                     })}
                      {!isLoadingItems && filteredItems.length === 0 && (
                         <TableRow>
-                            <TableCell colSpan={8} className="h-24 text-center">No se encontraron artículos.</TableCell>
+                            <TableCell colSpan={7} className="h-24 text-center">No se encontraron artículos.</TableCell>
                         </TableRow>
                      )}
                 </TableBody>
