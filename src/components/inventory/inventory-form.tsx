@@ -38,7 +38,7 @@ const formSchema = z.object({
   nombre: z.string().min(2, { message: 'El nombre debe tener al menos 2 caracteres.' }),
   codigo: z.string().min(1, 'El código es obligatorio.'),
   descripcion: z.string().optional(),
-  categoriaId: z.string({ required_error: 'Debes seleccionar una categoría.' }),
+  categoriaId: z.enum(['carnes', 'viveres', 'verduras', 'frutas', 'descartables', 'oficina']),
   subCategoria: z.string().optional(),
   cantidad: z.coerce.number().min(0, 'La cantidad no puede ser negativa.'),
   unidadReceta: z.string({ required_error: 'La unidad de receta es obligatoria.' }),
@@ -105,7 +105,6 @@ export function InventoryForm({ isOpen, onOpenChange, onSave, item }: InventoryF
   const onSubmit = (values: FormValues) => {
     const dataToSave = {
       ...values,
-      categoriaId: values.categoriaId as InventoryCategoryId,
       unidadReceta: values.unidadReceta as UnitOfMeasure,
       unidadCompra: values.unidadCompra as UnitOfMeasure | undefined,
     };
