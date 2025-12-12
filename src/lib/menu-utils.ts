@@ -29,22 +29,26 @@ export function calculateIngredientSummary(plan: WeeklyPlan, inventory: Inventor
         const inventoryItem = inventory.find(inv => inv.id === ingredient.inventoryItemId);
         if (!inventoryItem) return;
 
-        const netQuantity = ingredient.quantity * menu.pax;
-        const grossQuantity = netQuantity * (1 + ingredient.wasteFactor);
-        const cost = grossQuantity * (inventoryItem.costoUnitario || 0);
+        const wasteFactor = Math.max(0, Math.min(1, ingredient.wasteFactor || 0));
+        const netQuantityPerPax = ingredient.quantity;
+        const grossQuantityPerPax = wasteFactor === 1 ? netQuantityPerPax : netQuantityPerPax / (1-wasteFactor)
+        
+        const totalNetQuantity = netQuantityPerPax * menu.pax;
+        const totalGrossQuantity = grossQuantityPerPax * menu.pax;
+        const cost = totalGrossQuantity * (inventoryItem.costoUnitario || 0);
 
         const existing = summary.get(inventoryItem.id);
         if (existing) {
-          existing.netQuantity += netQuantity;
-          existing.grossQuantity += grossQuantity;
+          existing.netQuantity += totalNetQuantity;
+          existing.grossQuantity += totalGrossQuantity;
           existing.cost += cost;
         } else {
           summary.set(inventoryItem.id, {
             id: inventoryItem.id,
             name: inventoryItem.nombre,
-            unit: inventoryItem.unidad,
-            netQuantity,
-            grossQuantity,
+            unit: inventoryItem.unidadReceta,
+            netQuantity: totalNetQuantity,
+            grossQuantity: totalGrossQuantity,
             cost,
           });
         }

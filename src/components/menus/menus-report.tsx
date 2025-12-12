@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useMemo } from 'react';
@@ -76,8 +75,10 @@ export function MenusReport({ menus }: MenusReportProps) {
             if (!invItem) return;
 
             const netPerPax = ingredient.quantity;
-            const grossPerPax = netPerPax / (1 - ingredient.wasteFactor);
+            const wasteFactor = Math.max(0, Math.min(1, ingredient.wasteFactor || 0));
+            const grossPerPax = wasteFactor === 1 ? netPerPax : netPerPax / (1 - wasteFactor);
             const totalRequired = grossPerPax * selectedMenu.pax;
+
 
             reportData.push({
               'Fecha Menú': format(menuDate, 'yyyy-MM-dd'),
@@ -88,7 +89,7 @@ export function MenusReport({ menus }: MenusReportProps) {
               'Cant. Neta / Persona': netPerPax,
               'Cant. Bruta / Persona': grossPerPax,
               'Total Requerido': totalRequired,
-              Unidad: invItem.unidad,
+              Unidad: invItem.unidadReceta,
             });
           });
         } else {
@@ -200,9 +201,10 @@ export function MenusReport({ menus }: MenusReportProps) {
                         );
                         if (!invItem) return <TableRow key={idx}><TableCell colSpan={6} className="text-center text-red-500">Ingrediente no encontrado</TableCell></TableRow>;
                         const netPerPax = ingredient.quantity;
-                        const grossPerPax =
-                          netPerPax / (1 - ingredient.wasteFactor);
+                        const wasteFactor = Math.max(0, Math.min(1, ingredient.wasteFactor || 0));
+                        const grossPerPax = wasteFactor === 1 ? netPerPax : netPerPax / (1 - wasteFactor);
                         const totalRequired = grossPerPax * menu.pax;
+
 
                         return (
                           <TableRow key={idx}>
@@ -210,13 +212,13 @@ export function MenusReport({ menus }: MenusReportProps) {
                             <TableCell></TableCell>
                             <TableCell>{invItem.nombre}</TableCell>
                             <TableCell className="text-right font-mono">
-                              {netPerPax.toFixed(3)} {invItem.unidad}
+                              {netPerPax.toFixed(3)} {invItem.unidadReceta}
                             </TableCell>
                             <TableCell className="text-right font-mono">
-                              {grossPerPax.toFixed(3)} {invItem.unidad}
+                              {grossPerPax.toFixed(3)} {invItem.unidadReceta}
                             </TableCell>
                             <TableCell className="text-right font-mono font-bold">
-                              {totalRequired.toFixed(2)} {invItem.unidad}
+                              {totalRequired.toFixed(2)} {invItem.unidadReceta}
                             </TableCell>
                           </TableRow>
                         );
