@@ -20,14 +20,14 @@ export default function UsersManagementPage() {
     const [editingUser, setEditingUser] = useState<User | null>(null); // MODIFICADO: El tipo es User
     const [searchTerm, setSearchTerm] = useState('');
     const firestore = useFirestore();
-    const { isUserLoading } = useUser();
+    const { user: authUser, isUserLoading } = useUser();
 
     const usersQuery = useMemoFirebase(() => {
-        if (!firestore) return null;
+        if (!firestore || !authUser) return null; // No ejecutar si no hay usuario
         return query(collection(firestore, 'users'), orderBy('name', 'asc'));
-    }, [firestore]);
+    }, [firestore, authUser]);
 
-    const { data: users, isLoading } = useCollection<User>(usersQuery, { disabled: isUserLoading });
+    const { data: users, isLoading } = useCollection<User>(usersQuery, { disabled: isUserLoading || !authUser });
 
     const filteredUsers = React.useMemo(() => {
         if (!users) return [];
