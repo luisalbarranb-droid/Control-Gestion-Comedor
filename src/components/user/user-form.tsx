@@ -32,7 +32,7 @@ import {
 import { useToast } from '@/components/ui/toast';
 import { useFirestore, setDocumentNonBlocking, updateDocumentNonBlocking, useUser } from '@/firebase';
 import { collection, doc, serverTimestamp } from 'firebase/firestore';
-import type { User, ModuleId } from '@/lib/types';
+import type { User, ModuleId, AreaId } from '@/lib/types';
 import { areas } from '@/lib/placeholder-data';
 import { Checkbox } from '../ui/checkbox';
 import { navItems } from '../dashboard/main-nav';
@@ -100,25 +100,20 @@ export function UserForm({ isOpen, onOpenChange, editingUser }: UserFormProps) {
         return;
     }
     
-    // Construir el objeto base con campos que siempre están presentes.
-    const baseData = {
-        name: values.name,
-        email: values.email,
-        role: values.role,
+    let dataToSave: Partial<User> = {
+      name: values.name,
+      email: values.email,
+      role: values.role,
     };
 
-    // Añadir campos condicionalmente para evitar 'undefined'.
-    let dataToSave: Partial<User> = { ...baseData };
-
     if (values.role === 'admin') {
-        dataToSave.areas = values.areas || [];
-        dataToSave.modules = values.modules || [];
+        dataToSave.areas = values.areas as AreaId[] || [];
+        dataToSave.modules = values.modules as ModuleId[] || [];
     } else if (values.role === 'comun') {
         if (values.area) {
-            dataToSave.area = values.area;
+            dataToSave.area = values.area as AreaId;
         }
     }
-    // Para 'superadmin', no se necesitan campos adicionales de 'area', 'areas' o 'modules'.
 
     try {
       if (editingUser) {
@@ -131,9 +126,10 @@ export function UserForm({ isOpen, onOpenChange, editingUser }: UserFormProps) {
 
         const userRef = doc(firestore, 'users', newUserId);
         
-        const newUserData = {
+        const newUserData: Partial<User> = {
           ...dataToSave,
           id: newUserId,
+          userId: newUserId, // Ensure userId is also set
           isActive: true,
           creationDate: serverTimestamp(),
           createdBy: authUser.uid
@@ -159,9 +155,9 @@ export function UserForm({ isOpen, onOpenChange, editingUser }: UserFormProps) {
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-2xl">
         <DialogHeader>
-          <DialogTitle>{editingUser ? 'Editar Usuario' : 'Crear Nuevo Usuario'}</DialogTitle>
+          <DialogTitle>{editingUser ? 'Editar Usuario' : 'Crear Nuevo Usuario del Sistema'}</DialogTitle>
           <DialogDescription>
-            {editingUser ? 'Actualiza los datos y permisos del usuario.' : 'Completa el formulario para registrar un nuevo usuario.'}
+            {editingUser ? 'Actualiza los datos y permisos del usuario.' : 'Completa el formulario para registrar un nuevo usuario y su rol.'}
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>
@@ -208,13 +204,13 @@ export function UserForm({ isOpen, onOpenChange, editingUser }: UserFormProps) {
             
             {selectedRole === 'admin' && (
                 <div className="space-y-4 rounded-md border p-4">
-                    <h3 className="font-semibold">Configuración de Permisos de Administrador</h3>
+                    <h3 className="font-semibold">Permisos de Administrador</h3>
                            <FormField
                                 control={form.control}
                                 name="areas"
                                 render={() => (
                                     <FormItem>
-                                        <FormLabel className="text-base">Áreas de Trabajo Asignadas</FormLabel>
+                                        <FormLabel className="text-base">Áreas Asignadas</FormLabel>
                                         <div className="p-3 border rounded-md grid grid-cols-2 gap-2">
                                             {areas.map((area) => (
                                             <FormField
@@ -261,7 +257,7 @@ export function UserForm({ isOpen, onOpenChange, editingUser }: UserFormProps) {
                                     <FormItem>
                                         <FormLabel className="text-base">Acceso a Módulos</FormLabel>
                                         <div className="p-3 border rounded-md grid grid-cols-2 gap-2">
-                                            {navItems.filter(navItem => navItem.id).map((item) => (
+                                            {navItems.filter(navItem => navItem.id && navItem.id !== 'users').map((item) => (
                                             <FormField
                                                 key={item.id}
                                                 control={form.control}
@@ -312,7 +308,7 @@ export function UserForm({ isOpen, onOpenChange, editingUser }: UserFormProps) {
             <DialogFooter className="pt-4">
               <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
               <Button type="submit" disabled={form.formState.isSubmitting}>
-                {form.formState.isSubmitting ? 'Guardando...' : 'Guardar'}
+                {form.formState.isSubmitting ? 'Guardando...' : 'Guardar Usuario'}
               </Button>
             </DialogFooter>
           </form>

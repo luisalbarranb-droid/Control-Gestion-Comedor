@@ -67,6 +67,7 @@ export default function PersonalManagementPage() {
                     const newEmployeeRef = doc(collection(firestore, 'users'));
                     const newEmployee: Partial<User> = {
                         id: newEmployeeRef.id,
+                        userId: newEmployeeRef.id,
                         name: String(row.name),
                         cedula: String(row.cedula),
                         email: String(row.email),

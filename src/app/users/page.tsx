@@ -8,8 +8,8 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { EmployeeList } from '@/components/attendance/employee-list';
-import { UserForm } from '@/components/user/user-form'; // MODIFICADO: Usar el nuevo formulario
+import { UserList } from '@/components/user/user-list'; // Cambiado a UserList
+import { UserForm } from '@/components/user/user-form';
 import { useCollection, useFirestore, useMemoFirebase, useUser } from '@/firebase';
 import { collection, query, orderBy } from 'firebase/firestore';
 import type { User } from '@/lib/types';
@@ -17,13 +17,13 @@ import type { User } from '@/lib/types';
 
 export default function UsersManagementPage() {
     const [isFormOpen, setIsFormOpen] = useState(false);
-    const [editingUser, setEditingUser] = useState<User | null>(null); // MODIFICADO: El tipo es User
+    const [editingUser, setEditingUser] = useState<User | null>(null);
     const [searchTerm, setSearchTerm] = useState('');
     const firestore = useFirestore();
     const { user: authUser, isUserLoading } = useUser();
 
     const usersQuery = useMemoFirebase(() => {
-        if (!firestore || !authUser) return null; // No ejecutar si no hay usuario
+        if (!firestore || !authUser) return null;
         return query(collection(firestore, 'users'), orderBy('name', 'asc'));
     }, [firestore, authUser]);
 
@@ -38,7 +38,7 @@ export default function UsersManagementPage() {
     }, [users, searchTerm]);
 
 
-    const handleEdit = (user: User) => { // MODIFICADO: el tipo es User
+    const handleEdit = (user: User) => {
         setEditingUser(user);
         setIsFormOpen(true);
     }
@@ -72,8 +72,8 @@ export default function UsersManagementPage() {
                 </Button>
             </div>
             
-            <EmployeeList 
-                employees={filteredUsers}
+            <UserList 
+                users={filteredUsers}
                 isLoading={isLoading || isUserLoading}
                 onEdit={handleEdit}
             />
