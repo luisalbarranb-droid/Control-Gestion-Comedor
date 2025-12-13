@@ -13,16 +13,22 @@ service cloud.firestore {
       return request.auth.token.role;
     }
 
+    function getUserDoc(userId) {
+      return get(/databases/$(database)/documents/users/$(userId)).data;
+    }
+
     function hasRole(role) {
       return isAuthenticated() && getUserRole() == role;
     }
     
     function isAdmin() {
-      return hasRole('admin') || hasRole('superadmin');
+      let userDoc = getUserDoc(request.auth.uid);
+      return isAuthenticated() && (userDoc.role == 'admin' || userDoc.role == 'superadmin');
     }
     
     function isSuperAdmin() {
-        return hasRole('superadmin');
+      let userDoc = getUserDoc(request.auth.uid);
+      return isAuthenticated() && userDoc.role == 'superadmin';
     }
     
     function isOwner(userId) {
@@ -79,11 +85,11 @@ service cloud.firestore {
     // --- 3. Task Management (MEJORADO)---
     // ------------------------------------
     match /tasks/{taskId} {
-      // Lectura: Un usuario solo puede ver tareas asignadas a él, creadas por él, o si es Admin.
+      // Lectura: El asignado, el creador, o un admin cuyas áreas incluyan el área de la tarea.
       allow read: if isAuthenticated() && (
           resource.data.asignadoA == request.auth.uid ||
           resource.data.creadoPor == request.auth.uid ||
-          isAdmin()
+          (isAdmin() && (getUserDoc(request.auth.uid).areas.hasAny([resource.data.area]) || isSuperAdmin()))
       );
       
       // Creación: Cualquier usuario activo puede crear una tarea.
@@ -153,3 +159,5 @@ service cloud.firestore {
     }
   }
 }
+
+    

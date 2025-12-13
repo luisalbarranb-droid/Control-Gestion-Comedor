@@ -17,6 +17,7 @@ export interface User {
   name: string;
   role: Role;
   area?: AreaId;
+  areas?: AreaId[]; // Admins can have multiple areas
   isActive?: boolean;
   creationDate?: Timestamp | Date | string;
   createdBy?: string;
@@ -329,3 +330,5 @@ export interface MonthlyEvaluation {
     evaluatorId: string;
     evaluationDate: Timestamp | Date;
 }
+
+    

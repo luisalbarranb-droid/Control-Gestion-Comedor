@@ -24,9 +24,16 @@
           "type": "string",
           "description": "Role of the user (superadmin, admin, comun)."
         },
+        "areas": {
+          "type": "array",
+          "description": "List of areas the user belongs to. (Reference to Area). Required for admin role.",
+          "items": {
+            "type": "string"
+          }
+        },
         "area": {
           "type": "string",
-          "description": "Area the user belongs to. (Reference to Area)"
+          "description": "Area the user belongs to (for 'comun' role). (Reference to Area)"
         },
         "isActive": {
           "type": "boolean",
@@ -86,7 +93,6 @@
         "email",
         "name",
         "role",
-        "area",
         "isActive",
         "creationDate",
         "createdBy"

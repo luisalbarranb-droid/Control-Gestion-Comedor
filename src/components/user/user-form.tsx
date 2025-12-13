@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect } from 'react';
-import { useForm } from 'react-hook-form';
+import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { Button } from '@/components/ui/button';
@@ -34,12 +34,14 @@ import { useFirestore, addDocumentNonBlocking, updateDocumentNonBlocking } from 
 import { collection, doc, serverTimestamp } from 'firebase/firestore';
 import type { User, Role } from '@/lib/types';
 import { areas } from '@/lib/placeholder-data';
+import { Checkbox } from '../ui/checkbox';
 
 const userSchema = z.object({
   name: z.string().min(3, 'El nombre es requerido.'),
   email: z.string().email('Email no válido.'),
   role: z.enum(['comun', 'admin', 'superadmin']),
   area: z.string().optional(),
+  areas: z.array(z.string()).optional(),
 });
 
 type UserFormValues = z.infer<typeof userSchema>;
@@ -60,11 +62,11 @@ export function UserForm({ isOpen, onOpenChange, editingUser }: UserFormProps) {
       email: '',
       role: 'comun',
       area: undefined,
+      areas: [],
     },
   });
 
   const selectedRole = form.watch('role');
-  const isSuperAdmin = selectedRole === 'superadmin';
 
   useEffect(() => {
     if (editingUser) {
@@ -72,7 +74,8 @@ export function UserForm({ isOpen, onOpenChange, editingUser }: UserFormProps) {
         name: editingUser.name || '',
         email: editingUser.email || '',
         role: editingUser.role || 'comun',
-        area: editingUser.role === 'superadmin' ? undefined : editingUser.area || undefined,
+        area: editingUser.area || undefined,
+        areas: editingUser.areas || [],
       });
     } else {
       form.reset({
@@ -80,39 +83,44 @@ export function UserForm({ isOpen, onOpenChange, editingUser }: UserFormProps) {
         email: '',
         role: 'comun',
         area: undefined,
+        areas: [],
       });
     }
   }, [editingUser, isOpen, form]);
   
-  useEffect(() => {
-    if (isSuperAdmin) {
-      form.setValue('area', undefined);
-    }
-  }, [isSuperAdmin, form]);
-
   const onSubmit = async (values: UserFormValues) => {
     if (!firestore) return;
     
-    const dataToSave = {
-        ...values,
-        area: isSuperAdmin ? undefined : values.area,
+    let dataToSave: Partial<User> = {
+        name: values.name,
+        email: values.email,
+        role: values.role,
     };
+
+    if (values.role === 'admin') {
+        dataToSave.areas = values.areas;
+        dataToSave.area = undefined; // Clear single area field
+    } else if (values.role === 'comun') {
+        dataToSave.area = values.area;
+        dataToSave.areas = undefined; // Clear multiple areas field
+    } else { // superadmin
+        dataToSave.area = undefined;
+        dataToSave.areas = undefined;
+    }
 
     try {
       if (editingUser) {
-        // Update
         const userRef = doc(firestore, 'users', editingUser.id);
         updateDocumentNonBlocking(userRef, dataToSave);
         toast({ title: 'Usuario actualizado', description: `${values.name} ha sido actualizado.` });
       } else {
-        // Create
         const collectionRef = collection(firestore, 'users');
         const newUserData = {
           ...dataToSave,
           isActive: true,
           creationDate: serverTimestamp(),
         };
-        addDocumentNonBlocking(collectionRef, newUserData);
+        addDocumentNonBlocking(collectionRef, newUserData as any);
         toast({ title: 'Usuario creado', description: `${values.name} ha sido agregado.` });
       }
       onOpenChange(false);
@@ -153,22 +161,83 @@ export function UserForm({ isOpen, onOpenChange, editingUser }: UserFormProps) {
                 <FormMessage />
               </FormItem>
             )} />
-             <FormField name="area" control={form.control} render={({ field }) => (
-              <FormItem>
-                <FormLabel>Área de Trabajo</FormLabel>
-                 <Select onValueChange={field.onChange} value={field.value} disabled={isSuperAdmin}>
-                  <FormControl>
-                    <SelectTrigger>
-                        <SelectValue placeholder={isSuperAdmin ? "Acceso a todas las áreas" : "Seleccionar área..."} />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    {areas.map(area => <SelectItem key={area.id} value={area.id}>{area.nombre}</SelectItem>)}
-                  </SelectContent>
-                </Select>
-                <FormMessage />
-              </FormItem>
-            )} />
+
+            {selectedRole === 'comun' && (
+                 <FormField name="area" control={form.control} render={({ field }) => (
+                    <FormItem>
+                        <FormLabel>Área de Trabajo</FormLabel>
+                        <Select onValueChange={field.onChange} value={field.value}>
+                        <FormControl>
+                            <SelectTrigger>
+                                <SelectValue placeholder="Seleccionar área..." />
+                            </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                            {areas.map(area => <SelectItem key={area.id} value={area.id}>{area.nombre}</SelectItem>)}
+                        </SelectContent>
+                        </Select>
+                        <FormMessage />
+                    </FormItem>
+                )} />
+            )}
+
+            {selectedRole === 'admin' && (
+                <FormField
+                    control={form.control}
+                    name="areas"
+                    render={() => (
+                        <FormItem>
+                            <FormLabel>Áreas de Trabajo Asignadas</FormLabel>
+                            <div className="p-3 border rounded-md grid grid-cols-2 gap-2">
+                                {areas.map((area) => (
+                                <FormField
+                                    key={area.id}
+                                    control={form.control}
+                                    name="areas"
+                                    render={({ field }) => {
+                                    return (
+                                        <FormItem
+                                            key={area.id}
+                                            className="flex flex-row items-start space-x-3 space-y-0"
+                                        >
+                                        <FormControl>
+                                            <Checkbox
+                                                checked={field.value?.includes(area.id)}
+                                                onCheckedChange={(checked) => {
+                                                    return checked
+                                                    ? field.onChange([...(field.value || []), area.id])
+                                                    : field.onChange(
+                                                        field.value?.filter(
+                                                            (value) => value !== area.id
+                                                        )
+                                                        )
+                                                }}
+                                            />
+                                        </FormControl>
+                                        <FormLabel className="font-normal">
+                                            {area.nombre}
+                                        </FormLabel>
+                                        </FormItem>
+                                    )
+                                    }}
+                                />
+                                ))}
+                            </div>
+                            <FormMessage />
+                        </FormItem>
+                    )}
+                />
+            )}
+
+            {selectedRole === 'superadmin' && (
+                 <FormItem>
+                    <FormLabel>Área de Trabajo</FormLabel>
+                    <FormControl>
+                        <Input disabled value="Acceso a todas las áreas" />
+                    </FormControl>
+                </FormItem>
+            )}
+            
             <DialogFooter>
               <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
               <Button type="submit" disabled={form.formState.isSubmitting}>
@@ -181,3 +250,5 @@ export function UserForm({ isOpen, onOpenChange, editingUser }: UserFormProps) {
     </Dialog>
   );
 }
+
+    
