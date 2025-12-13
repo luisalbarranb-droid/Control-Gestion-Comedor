@@ -22,8 +22,8 @@ export type { User };
 // --- Main Provider and Hooks ---
 export * from './provider';
 
-// --- Non-blocking Firestore updates ---
-export * from './non-blocking-updates';
+// --- Firestore Operations ---
+export * from './firestore-operations';
 
 // --- Real-time Firestore hooks ---
 export * from './firestore/use-collection';
@@ -31,7 +31,8 @@ export * from './firestore/use-doc';
 
 // --- Authentication hooks and logic ---
 export * from './auth/use-user';
-export * from './non-blocking-login';
+export * from './auth-operations';
+
 
 // --- Error Handling ---
 export * from './errors';

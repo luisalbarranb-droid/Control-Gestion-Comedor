@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useEffect, useState } from 'react';
@@ -31,7 +30,8 @@ import {
 } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/ui/toast';
-import { useFirestore, setDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase';
+import { useAuth, useFirestore, setDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase';
+import { createUserAccount } from '@/firebase/auth-operations';
 import { collection, doc, serverTimestamp, Timestamp } from 'firebase/firestore';
 import type { User } from '@/lib/types';
 import { areas } from '@/lib/placeholder-data';
@@ -77,6 +77,7 @@ const getUserInitials = (name?: string) => name ? name.split(' ').map(n => n[0])
 
 
 export function EmployeeForm({ isOpen, onOpenChange, employee }: EmployeeFormProps) {
+  const auth = useAuth();
   const firestore = useFirestore();
   const { toast } = useToast();
   const [photoFile, setPhotoFile] = useState<File | null>(null);
@@ -151,50 +152,67 @@ export function EmployeeForm({ isOpen, onOpenChange, employee }: EmployeeFormPro
 
 
   const onSubmit = async (values: EmployeeFormValues) => {
-    if (!firestore) return;
+    if (!firestore || !auth) return;
     setIsUploading(true);
+    
     try {
+      let docId: string;
       let finalAvatarUrl = values.avatarUrl;
 
-      // Create a temporary ID for new users to use in the upload path
-      const docId = employee ? employee.id : doc(collection(firestore, 'users')).id;
-
-      if (photoFile) {
-        const { url, error } = await uploadProfilePicture(docId, photoFile);
-        if (error || !url) {
-          throw new Error(error || "No se pudo obtener la URL de la imagen.");
+      if (employee) { // --- UPDATE EXISTING USER ---
+        docId = employee.id;
+        if (photoFile) {
+          const { url, error } = await uploadProfilePicture(docId, photoFile);
+          if (error || !url) throw new Error(error || "No se pudo obtener la URL de la imagen.");
+          finalAvatarUrl = url;
         }
-        finalAvatarUrl = url;
-      }
 
-      const dataToSave = { 
-        ...values,
-        avatarUrl: finalAvatarUrl,
-      };
-
-      if (employee) {
-        // Update
-        const employeeRef = doc(firestore, 'users', employee.id);
-        updateDocumentNonBlocking(employeeRef, dataToSave);
+        const dataToUpdate = { ...values, avatarUrl: finalAvatarUrl };
+        const employeeRef = doc(firestore, 'users', docId);
+        await updateDocumentNonBlocking(employeeRef, dataToUpdate);
+        
         toast({ title: 'Empleado actualizado', description: `${values.name} ha sido actualizado.` });
-      } else {
-        // Create
-        const employeeRef = doc(firestore, 'users', docId); // Use the pre-generated ref
-        const newEmployeeData = {
-          ...dataToSave,
-          id: docId, // Save the ID in the document
+
+      } else { // --- CREATE NEW USER ---
+        // 1. Create authentication account first
+        const { user: newUserAuth, error: authError } = await createUserAccount(values.email);
+        if (authError || !newUserAuth) {
+            throw new Error(authError || 'No se pudo crear la cuenta de autenticación.');
+        }
+        docId = newUserAuth.uid;
+
+        // 2. Upload photo if it exists
+        if (photoFile) {
+          const { url, error } = await uploadProfilePicture(docId, photoFile);
+          if (error || !url) throw new Error(error || "No se pudo obtener la URL de la imagen.");
+          finalAvatarUrl = url;
+        }
+
+        // 3. Prepare Firestore document data
+        const newEmployeeData: User = {
+          ...values,
+          id: docId,
+          userId: docId,
+          avatarUrl: finalAvatarUrl,
           isActive: true, 
           creationDate: serverTimestamp(),
-          createdBy: 'system' // Add createdBy field
+          createdBy: auth.currentUser?.uid || 'system',
         };
-        // Use setDoc here since we have the full ref
-        setDocumentNonBlocking(employeeRef, newEmployeeData);
-        toast({ title: 'Empleado creado', description: `${values.name} ha sido agregado.` });
+
+        // 4. Save Firestore document
+        const employeeRef = doc(firestore, 'users', docId);
+        await setDocumentNonBlocking(employeeRef, newEmployeeData);
+        
+        toast({ 
+            title: 'Empleado Creado Exitosamente', 
+            description: `${values.name} ha sido agregado. La contraseña temporal es "password".`
+        });
       }
+
       onOpenChange(false);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error saving employee:', error);
-      toast({ variant: 'destructive', title: 'Error', description: 'No se pudo guardar el empleado.' });
+      toast({ variant: 'destructive', title: 'Error al Guardar', description: error.message || 'No se pudo completar la operación.' });
     } finally {
         setIsUploading(false);
     }
@@ -206,7 +224,7 @@ export function EmployeeForm({ isOpen, onOpenChange, employee }: EmployeeFormPro
         <DialogHeader>
           <DialogTitle>{employee ? 'Editar Empleado' : 'Agregar Nuevo Empleado'}</DialogTitle>
           <DialogDescription>
-            {employee ? 'Actualiza los datos del empleado.' : 'Completa el formulario para registrar un nuevo empleado.'}
+            {employee ? 'Actualiza los datos del empleado.' : 'Completa el formulario para registrar un nuevo empleado en el sistema.'}
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>
@@ -252,7 +270,7 @@ export function EmployeeForm({ isOpen, onOpenChange, employee }: EmployeeFormPro
             </div>
              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <FormField name="email" control={form.control} render={({ field }) => (
-                <FormItem><FormLabel>Email</FormLabel><FormControl><Input type="email" {...field} /></FormControl><FormMessage /></FormItem>
+                <FormItem><FormLabel>Email</FormLabel><FormControl><Input type="email" {...field} disabled={!!employee} /></FormControl><FormMessage /></FormItem>
               )} />
               <FormField name="phone" control={form.control} render={({ field }) => (
                 <FormItem><FormLabel>Teléfono</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
@@ -343,5 +361,3 @@ export function EmployeeForm({ isOpen, onOpenChange, employee }: EmployeeFormPro
     </Dialog>
   );
 }
-
-    
