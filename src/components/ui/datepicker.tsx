@@ -16,9 +16,12 @@ import {
 type DatePickerProps = {
   date: Date | undefined;
   setDate: (date: Date | undefined) => void;
+  captionLayout?: "dropdown-nav" | "buttons";
+  fromYear?: number;
+  toYear?: number;
 }
 
-export function DatePicker({ date, setDate }: DatePickerProps) {
+export function DatePicker({ date, setDate, captionLayout, fromYear, toYear }: DatePickerProps) {
   return (
     <Popover>
       <PopoverTrigger asChild>
@@ -39,6 +42,9 @@ export function DatePicker({ date, setDate }: DatePickerProps) {
           selected={date}
           onSelect={setDate}
           initialFocus
+          captionLayout={captionLayout}
+          fromYear={fromYear}
+          toYear={toYear}
         />
       </PopoverContent>
     </Popover>

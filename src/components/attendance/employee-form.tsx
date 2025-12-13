@@ -342,7 +342,7 @@ export function EmployeeForm({ isOpen, onOpenChange, employee }: EmployeeFormPro
                 <FormItem className="flex flex-col"><FormLabel>Fecha de Ingreso</FormLabel><DatePicker date={field.value} setDate={field.onChange} /><FormMessage /></FormItem>
               )} />
                <FormField name="fechaNacimiento" control={form.control} render={({ field }) => (
-                <FormItem className="flex flex-col"><FormLabel>Fecha de Nacimiento</FormLabel><DatePicker date={field.value} setDate={field.onChange} /><FormMessage /></FormItem>
+                <FormItem className="flex flex-col"><FormLabel>Fecha de Nacimiento</FormLabel><DatePicker date={field.value} setDate={field.onChange} captionLayout="dropdown-nav" fromYear={1950} toYear={new Date().getFullYear()} /><FormMessage /></FormItem>
               )} />
                <FormField name="diasContrato" control={form.control} render={({ field }) => (
                 <FormItem><FormLabel>Días de Contrato</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>
