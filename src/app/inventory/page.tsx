@@ -1,7 +1,7 @@
 
 'use client';
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -66,6 +66,11 @@ export default function InventoryPage() {
   const { toast } = useToast();
   const firestore = useFirestore();
   const { isUserLoading } = useUser();
+  const [isClient, setIsClient] = useState(false);
+
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
 
   const inventoryQuery = useMemoFirebase(() => {
     if (!firestore) return null;
@@ -301,6 +306,10 @@ export default function InventoryPage() {
   }, [items]);
 
 
+  if (!isClient) {
+    return null;
+  }
+
   return (
     <div className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -497,4 +506,3 @@ export default function InventoryPage() {
     </div>
   );
 }
-
