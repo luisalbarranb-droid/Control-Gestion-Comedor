@@ -75,7 +75,11 @@ export default function MenuPlannerPage() {
     });
   }
   
-  const ingredientSummary: IngredientSummary[] = activePlan ? calculateIngredientSummary(activePlan, inventory || []) : [];
+  const ingredientSummary: IngredientSummary[] = useMemo(() => {
+    if (!activePlan || !inventory) return [];
+    return calculateIngredientSummary(activePlan, inventory);
+  }, [activePlan, inventory]);
+  
   const isLoading = isUserLoading || isLoadingMenus || isLoadingInventory;
 
   return (
