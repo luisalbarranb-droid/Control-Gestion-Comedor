@@ -432,15 +432,18 @@ export default function InventoryPage() {
                         </TableHead>
                         <TableHead>Producto</TableHead>
                         <TableHead>Categoría</TableHead>
-                        <TableHead className="text-center">Cant. (Un. Receta)</TableHead>
-                        <TableHead className="text-center">Stock Mínimo (Un. Receta)</TableHead>
+                        <TableHead className="text-center">Cant. (Un. Compra)</TableHead>
+                        <TableHead className="text-center">Stock Mínimo (Un. Compra)</TableHead>
                         {isAdmin && <TableHead className="text-right">Acciones</TableHead>}
                     </TableRow>
                 </TableHeader>
                 <TableBody>
                     {isLoading && <TableRow><TableCell colSpan={isAdmin ? 6 : 5} className="h-24 text-center">Cargando inventario...</TableCell></TableRow>}
                     {!isLoading && filteredItems.map((item) => {
-                        const isLowStock = item.cantidad <= item.stockMinimo;
+                        const factor = item.factorConversion || 1;
+                        const quantityInPurchaseUnit = item.cantidad / factor;
+                        const minStockInPurchaseUnit = item.stockMinimo / factor;
+                        const isLowStock = quantityInPurchaseUnit <= minStockInPurchaseUnit;
 
                         return (
                         <TableRow key={item.id} data-state={selectedItems.includes(item.id) && "selected"}>
@@ -454,12 +457,12 @@ export default function InventoryPage() {
                             <TableCell className="font-medium">{item.nombre}</TableCell>
                             <TableCell><Badge variant="secondary">{getCategoryName(item.categoriaId)}</Badge></TableCell>
                             <TableCell className={cn("text-center font-bold", isLowStock ? 'text-red-500' : 'text-current')}>
-                                {item.cantidad.toFixed(2)}
-                                <span className="text-xs text-muted-foreground ml-1 uppercase">{item.unidadReceta}</span>
+                                {quantityInPurchaseUnit.toFixed(2)}
+                                <span className="text-xs text-muted-foreground ml-1 uppercase">{item.unidadCompra || item.unidadReceta}</span>
                             </TableCell>
                              <TableCell className="text-center">
-                                {item.stockMinimo.toFixed(2)}
-                                <span className="text-xs text-muted-foreground ml-1 uppercase">{item.unidadReceta}</span>
+                                {minStockInPurchaseUnit.toFixed(2)}
+                                <span className="text-xs text-muted-foreground ml-1 uppercase">{item.unidadCompra || item.unidadReceta}</span>
                             </TableCell>
                             {isAdmin && <TableCell className="text-right">
                                 <DropdownMenu>
