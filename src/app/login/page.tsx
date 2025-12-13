@@ -75,23 +75,16 @@ export default function LoginPage() {
   const onSubmit = async (values: LoginFormValues) => {
     setIsSubmitting(true);
     
+    // Contraseña por defecto para el superadmin en modo de prueba
+    const superAdminPassword = 'password';
+
     if (values.email === 'arvecladu@gmail.com') {
       try {
-        // En un entorno real, obtendrías un token para 'user-superadmin-1'
-        const superAdminUID = 'user-superadmin-1'; 
-        
-        // Simulación: Como no tenemos backend, no podemos llamar a signInWithCustomToken.
-        // Haremos un inicio de sesión normal y confiaremos en que el perfil se cargue.
-        // La clave es que el documento del usuario 'user-superadmin-1' en Firestore TENGA el rol.
-        await initiateEmailSignIn(auth, values.email, values.password || 'password'); // Usamos una contraseña dummy
+        await initiateEmailSignIn(auth, values.email, values.password || superAdminPassword);
         
         const unsubscribe = auth.onAuthStateChanged(async (firebaseUser) => {
           unsubscribe();
           if (firebaseUser) {
-              // Forzamos la actualización del perfil en el frontend para simular el rol
-              if (profile) {
-                (profile as any).role = 'superadmin';
-              }
               toast({
                 title: 'Inicio de Sesión de Superadmin',
                 description: 'Has ingresado como Super Administrador.',
@@ -105,8 +98,8 @@ export default function LoginPage() {
         setIsSubmitting(false);
         toast({
             variant: 'destructive',
-            title: 'Error en modo de prueba',
-            description: 'No se pudo simular el inicio de sesión. Asegúrate de que el usuario exista en Firebase Auth.',
+            title: 'Error de Superadmin',
+            description: 'Credenciales incorrectas o el usuario no existe. La contraseña por defecto es "password".',
         });
         console.error(error);
       }

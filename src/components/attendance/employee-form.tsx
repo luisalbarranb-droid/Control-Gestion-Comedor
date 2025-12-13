@@ -92,7 +92,7 @@ export function EmployeeForm({ isOpen, onOpenChange, employee }: EmployeeFormPro
       email: '',
       phone: '',
       address: '',
-      role: 'superadmin', // Default to superadmin for new users
+      role: 'comun',
       area: undefined,
       workerType: 'obrero',
       contractType: 'indeterminado',
@@ -128,7 +128,7 @@ export function EmployeeForm({ isOpen, onOpenChange, employee }: EmployeeFormPro
         email: '',
         phone: '',
         address: '',
-        role: 'superadmin', // Default to superadmin for new users
+        role: 'comun',
         area: undefined,
         workerType: 'obrero',
         contractType: 'indeterminado',
