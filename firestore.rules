@@ -69,16 +69,19 @@ service cloud.firestore {
 
     // --- Inventory Rules ---
     match /inventory/{itemId} {
-      allow read, write: if isAuthenticated();
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
     }
 
     match /inventoryTransactions/{transactionId} {
-      allow read, write: if isAuthenticated();
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
     }
     
     // --- Menu Rules ---
     match /menus/{menuId} {
-      allow read, write: if isAuthenticated();
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
     }
 
     // --- Attendance Rules ---
