@@ -1,0 +1,53 @@
+
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // --- FUNCIONES ---
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isSuperUserByEmail() {
+       return request.auth.token.email == 'arvecladu@gmail.com';
+    }
+
+    function isAdmin() {
+      if (isSuperUserByEmail()) {
+        return true;
+      }
+      let userData = get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+      return isAuthenticated() && (userData.role == 'admin' || userData.role == 'superadmin');
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    // --- REGLAS ---
+
+    // 1. USUARIOS
+    match /users/{userId} {
+      // Permitimos crear si eres SuperUser por email O si eres el dueño del ID (para setDoc)
+      allow create: if isSuperUserByEmail() || isOwner(userId);
+      allow update, delete: if isSuperUserByEmail() || isOwner(userId) || isAdmin();
+      allow read, list: if isAuthenticated(); 
+    }
+
+    // 2. TAREAS
+    match /tasks/{taskId} {
+      allow read, write: if isAuthenticated();
+    }
+
+    // 3. INVENTARIO
+    match /inventory/{itemId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+    
+    // Regla comodín para desbloquearte totalmente mientras desarrollas
+    match /{document=**} {
+       allow read, write: if isSuperUserByEmail() || isAdmin(); 
+    }
+  }
+}

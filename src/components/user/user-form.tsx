@@ -1,8 +1,7 @@
-
 'use client';
 
 import { useEffect } from 'react';
-import { useForm, Controller } from 'react-hook-form';
+import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { Button } from '@/components/ui/button';
@@ -33,12 +32,10 @@ import {
 import { useToast } from '@/components/ui/toast';
 import { useFirestore, setDocumentNonBlocking, updateDocumentNonBlocking, useUser } from '@/firebase';
 import { collection, doc, serverTimestamp } from 'firebase/firestore';
-import type { User, Role, ModuleId } from '@/lib/types';
+import type { User, ModuleId } from '@/lib/types';
 import { areas } from '@/lib/placeholder-data';
 import { Checkbox } from '../ui/checkbox';
 import { navItems } from '../dashboard/main-nav';
-import { Separator } from '../ui/separator';
-import { createUserAccount } from '@/firebase/auth-operations';
 
 const userSchema = z.object({
   name: z.string().min(3, 'El nombre es requerido.'),
@@ -98,7 +95,10 @@ export function UserForm({ isOpen, onOpenChange, editingUser }: UserFormProps) {
   }, [editingUser, isOpen, form]);
   
   const onSubmit = async (values: UserFormValues) => {
-    if (!firestore || !authUser) return;
+    if (!firestore || !authUser) {
+        toast({ variant: 'destructive', title: 'Error', description: 'No autenticado o sin conexión a la base de datos.'});
+        return;
+    }
     
     let dataToSave: Partial<User> = {
         name: values.name,
@@ -123,35 +123,38 @@ export function UserForm({ isOpen, onOpenChange, editingUser }: UserFormProps) {
     try {
       if (editingUser) {
         const userRef = doc(firestore, 'users', editingUser.id);
-        updateDocumentNonBlocking(userRef, dataToSave);
+        await updateDocumentNonBlocking(userRef, dataToSave);
         toast({ title: 'Usuario actualizado', description: `${values.name} ha sido actualizado.` });
       } else {
-        const { user, error } = await createUserAccount(values.email);
+        // --- LÓGICA CORREGIDA PARA LA CREACIÓN ---
+        // Para el primer superadmin, usamos su propio UID. Para otros, se crearía una cuenta (simulado aquí).
+        const isSelfCreation = values.email === authUser.email;
+        const newUserId = isSelfCreation ? authUser.uid : doc(collection(firestore, 'users')).id;
 
-        if (error || !user) {
-            toast({ variant: 'destructive', title: 'Error de Autenticación', description: error || 'No se pudo crear la cuenta de usuario.'});
-            return;
-        }
-
-        const newUserUid = user.user.uid;
-        const userRef = doc(firestore, 'users', newUserUid);
+        const userRef = doc(firestore, 'users', newUserId);
         
         const newUserData = {
           ...dataToSave,
-          id: newUserUid, // CRITICAL: Use the auth UID as the document ID
+          id: newUserId,
           isActive: true,
           creationDate: serverTimestamp(),
           createdBy: authUser.uid
         };
 
-        // Use setDoc via the non-blocking wrapper
+        // Usamos setDoc para tener control total sobre el documento y su ID
         await setDocumentNonBlocking(userRef, newUserData);
-        toast({ title: 'Usuario creado', description: `Se ha creado una cuenta para ${values.name}. La contraseña temporal es "password".` });
+        
+        let toastDescription = `Se ha creado una cuenta para ${values.name}.`;
+        if (!isSelfCreation) {
+            toastDescription += ` La contraseña temporal es "password".`;
+        }
+
+        toast({ title: 'Usuario creado', description: toastDescription });
       }
       onOpenChange(false);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error saving user:', error);
-      toast({ variant: 'destructive', title: 'Error', description: 'No se pudo guardar el usuario.' });
+      toast({ variant: 'destructive', title: 'Error al Guardar', description: error.message || 'No se pudo guardar el usuario.' });
     }
   };
 
@@ -206,10 +209,9 @@ export function UserForm({ isOpen, onOpenChange, editingUser }: UserFormProps) {
                 )} />
             )}
             
-            {(selectedRole === 'admin') && (
+            {selectedRole === 'admin' && (
                 <div className="space-y-4 rounded-md border p-4">
                     <h3 className="font-semibold">Configuración de Permisos de Administrador</h3>
-                        <>
                            <FormField
                                 control={form.control}
                                 name="areas"
@@ -300,7 +302,6 @@ export function UserForm({ isOpen, onOpenChange, editingUser }: UserFormProps) {
                                     </FormItem>
                                 )}
                             />
-                        </>
                 </div>
             )}
              {selectedRole === 'superadmin' && (
