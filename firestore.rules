@@ -18,8 +18,18 @@ service cloud.firestore {
       if (isSuperUserByEmail()) {
         return true;
       }
-      let userData = get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
-      return isAuthenticated() && (userData.role == 'admin' || userData.role == 'superadmin');
+      // Comprobamos que el usuario esté autenticado antes de intentar leer su documento
+      if (!isAuthenticated()) {
+        return false;
+      }
+      // El path al documento del usuario
+      let userPath = /databases/$(database)/documents/users/$(request.auth.uid);
+      // Verificamos si el documento existe y leemos el rol
+      if (exists(userPath)) {
+        let userData = get(userPath).data;
+        return userData.role == 'admin' || userData.role == 'superadmin';
+      }
+      return false;
     }
 
     function isOwner(userId) {
@@ -30,11 +40,11 @@ service cloud.firestore {
 
     // 1. USUARIOS
     match /users/{userId} {
-      // Permitimos crear si eres SuperUser O si eres el dueño del ID (para setDoc)
-      allow create: if isSuperUserByEmail() || isOwner(userId);
-      allow update, delete: if isSuperUserByEmail() || isOwner(userId) || isAdmin();
-      allow read: if isAuthenticated(); // Permitir leer usuarios para evitar errores de lista
-      allow list: if isAuthenticated(); // Permitir listar usuarios para la página de gestión
+      // Permitir crear si eres el dueño del ID (para que puedas crear tu propio perfil)
+      // O si eres superadmin por email.
+      allow create: if isOwner(userId) || isSuperUserByEmail();
+      allow update, delete: if isOwner(userId) || isAdmin();
+      allow read, list: if isAuthenticated(); 
     }
 
     // 2. TAREAS
@@ -48,7 +58,28 @@ service cloud.firestore {
       allow write: if isAdmin();
     }
     
+    // --- REGLAS EXPLÍCITAS ADICIONALES ---
+
+    // 4. Asistencia y Planificación
+    match /attendance/{recordId} {
+      allow read, write: if isAuthenticated();
+    }
+    
+    match /daysOff/{dayOffId} {
+      allow read, write: if isAuthenticated();
+    }
+
+    // 5. Evaluaciones
+    match /evaluationCriteria/{criterionId} {
+        allow read, write: if isAdmin();
+    }
+
+    match /monthlyEvaluations/{evaluationId} {
+        allow read, write: if isAuthenticated();
+    }
+    
     // Regla comodín para desbloquearte totalmente mientras desarrollas
+    // Esta es una última capa de seguridad.
     match /{document=**} {
        allow read, write: if isSuperUserByEmail() || isAdmin(); 
     }
