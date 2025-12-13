@@ -30,7 +30,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { DatePicker } from '@/components/ui/datepicker';
-import { PlusCircle, Trash2, BookOpen } from 'lucide-react';
+import { PlusCircle, Trash2, BookOpen, Loader2 } from 'lucide-react';
 import type { InventoryItem, AreaId, Menu } from '@/lib/types';
 import { Separator } from '../ui/separator';
 import { areas } from '@/lib/placeholder-data';
@@ -79,13 +79,14 @@ export function InventoryExitForm({ isOpen, onOpenChange, onSave, inventoryItems
   const { toast } = useToast();
   const [menuDate, setMenuDate] = useState<Date>();
   const firestore = useFirestore();
+  const { isUserLoading } = useUser();
 
   const menusQuery = useMemoFirebase(() => {
     if (!firestore) return null;
     return collection(firestore, 'menus');
   }, [firestore]);
 
-  const { data: menus, isLoading: isLoadingMenus } = useCollection<Menu>(menusQuery);
+  const { data: menus, isLoading: isLoadingMenus } = useCollection<Menu>(menusQuery, { disabled: isUserLoading });
   
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -247,9 +248,13 @@ export function InventoryExitForm({ isOpen, onOpenChange, onSave, inventoryItems
 
              <Popover>
                 <PopoverTrigger asChild>
-                    <Button type="button" variant="outline" disabled={isLoadingMenus}>
-                        <BookOpen className="mr-2 h-4 w-4" />
-                        {isLoadingMenus ? 'Cargando menús...' : 'Cargar desde Menú Planificado'}
+                    <Button type="button" variant="outline" disabled={isLoadingMenus || isUserLoading}>
+                        {isLoadingMenus || isUserLoading ? (
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        ) : (
+                          <BookOpen className="mr-2 h-4 w-4" />
+                        )}
+                        {isLoadingMenus || isUserLoading ? 'Cargando menús...' : 'Cargar desde Menú Planificado'}
                     </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-auto p-0">
@@ -282,7 +287,7 @@ export function InventoryExitForm({ isOpen, onOpenChange, onSave, inventoryItems
                             </FormControl>
                             <SelectContent>
                               {inventoryItems.map(item => (
-                                <SelectItem key={item.id} value={item.id}>{item.nombre} ({item.cantidad} {item.unidad})</SelectItem>
+                                <SelectItem key={item.id} value={item.id}>{item.nombre} ({item.cantidad} {item.unidadReceta})</SelectItem>
                               ))}
                             </SelectContent>
                           </Select>
