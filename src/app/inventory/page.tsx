@@ -30,7 +30,7 @@ import {
   where,
   deleteDoc,
 } from 'firebase/firestore';
-import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
+import { useCollection, useFirestore, useMemoFirebase, useUser } from '@/firebase';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -65,13 +65,14 @@ function convertToDate(date: any): Date | null {
 export default function InventoryPage() {
   const { toast } = useToast();
   const firestore = useFirestore();
+  const { isUserLoading } = useUser();
 
   const inventoryQuery = useMemoFirebase(() => {
     if (!firestore) return null;
     return query(collection(firestore, 'inventory'), orderBy('nombre', 'asc'));
   }, [firestore]);
 
-  const { data: items, isLoading: isLoadingItems } = useCollection<InventoryItem>(inventoryQuery);
+  const { data: items, isLoading: isLoadingItems } = useCollection<InventoryItem>(inventoryQuery, { disabled: isUserLoading });
   
   const [searchQuery, setSearchQuery] = useState('');
   const [categoryFilter, setCategoryFilter] = useState<InventoryCategoryId | 'all'>('all');
@@ -485,3 +486,5 @@ export default function InventoryPage() {
     </div>
   );
 }
+
+    
