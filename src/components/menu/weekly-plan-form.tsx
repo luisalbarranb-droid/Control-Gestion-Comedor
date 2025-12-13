@@ -18,6 +18,9 @@ import { cn } from '@/lib/utils';
 import { generateWeeklyPlanName } from '@/lib/menu-utils';
 import { DailyMenuForm } from './daily-menu-form';
 import type { InventoryItem, WeeklyPlan, Menu } from '@/lib/types';
+import { addDocumentNonBlocking, useFirestore } from '@/firebase';
+import { collection, Timestamp } from 'firebase/firestore';
+import { useToast } from '../ui/toast';
 
 const formSchema = z.object({
   startDate: z.date({ required_error: "La fecha de inicio es obligatoria." }),
@@ -35,6 +38,8 @@ interface WeeklyPlanFormProps {
 export function WeeklyPlanForm({ isOpen, onOpenChange, onSave, inventory }: WeeklyPlanFormProps) {
   const [currentPlan, setCurrentPlan] = useState<WeeklyPlan | null>(null);
   const [editingDayIndex, setEditingDayIndex] = useState<number | null>(null);
+  const firestore = useFirestore();
+  const { toast } = useToast();
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -71,25 +76,28 @@ export function WeeklyPlanForm({ isOpen, onOpenChange, onSave, inventory }: Week
   }, [startDate]);
   
   const handleSaveDailyMenu = (dailyMenu: Omit<Menu, 'id' | 'date'>) => {
-    if (editingDayIndex === null || !currentPlan) return;
-    
-    const newMenus = [...currentPlan.menus];
-    const date = addDays(currentPlan.startDate, editingDayIndex);
-    
-    const existingMenu = newMenus[editingDayIndex];
-    if (existingMenu) {
-        newMenus[editingDayIndex] = { ...existingMenu, ...dailyMenu };
-    } else {
-        newMenus[editingDayIndex] = { id: uuidv4(), date, ...dailyMenu };
-    }
+    if (editingDayIndex === null || !currentPlan || !firestore) return;
 
-    setCurrentPlan({ ...currentPlan, menus: newMenus });
+    const date = addDays(currentPlan.startDate, editingDayIndex);
+    const dataToSave = {
+      ...dailyMenu,
+      date: Timestamp.fromDate(date),
+    };
+    
+    addDocumentNonBlocking(collection(firestore, 'menus'), dataToSave);
+
+    toast({
+      title: "Menú Guardado",
+      description: `El menú para el ${format(date, 'dd/MM/yyyy')} ha sido guardado.`
+    });
+
     setEditingDayIndex(null);
+    onOpenChange(false); // Close main form after saving a day
   }
 
   const onSubmit = () => {
     if (currentPlan) {
-      onSave(currentPlan);
+      // Logic for saving the entire plan at once can be added here if needed
       onOpenChange(false);
     }
   };
@@ -105,7 +113,7 @@ export function WeeklyPlanForm({ isOpen, onOpenChange, onSave, inventory }: Week
             <DialogDescription>Selecciona la fecha de inicio (lunes) y completa los menús para cada día.</DialogDescription>
             </DialogHeader>
             <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+            <form className="space-y-4">
                 <FormField
                 control={form.control}
                 name="startDate"
@@ -145,13 +153,10 @@ export function WeeklyPlanForm({ isOpen, onOpenChange, onSave, inventory }: Week
                              <div key={index} className="flex items-center justify-between p-2 rounded-md border">
                                 <div>
                                     <p className="font-semibold capitalize">{format(day, 'EEEE dd', { locale: es })}</p>
-                                    <p className="text-xs text-muted-foreground">
-                                        {currentPlan.menus[index] ? `${currentPlan.menus[index]?.items.length} componentes` : 'No planificado'}
-                                    </p>
                                 </div>
                                 <Button type="button" variant="outline" size="sm" onClick={() => setEditingDayIndex(index)}>
                                     <Edit className="mr-2 h-3 w-3" />
-                                    {currentPlan.menus[index] ? 'Editar' : 'Crear'}
+                                    Crear Menú
                                 </Button>
                              </div>
                         ))}
@@ -159,8 +164,7 @@ export function WeeklyPlanForm({ isOpen, onOpenChange, onSave, inventory }: Week
                 )}
 
                 <DialogFooter>
-                <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>Cancelar</Button>
-                <Button type="button" onClick={onSubmit}>Guardar Plan</Button>
+                  <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>Cerrar</Button>
                 </DialogFooter>
             </form>
             </Form>
