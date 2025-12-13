@@ -446,18 +446,15 @@ export default function InventoryPage() {
                         </TableHead>
                         <TableHead>Producto</TableHead>
                         <TableHead>Categoría</TableHead>
-                        <TableHead className="text-center">Cant. (Un. Compra)</TableHead>
-                        <TableHead className="text-center">Stock Mínimo (Un. Compra)</TableHead>
-                        <TableHead><span className="sr-only">Actions</span></TableHead>
+                        <TableHead className="text-center">Cant. (Un. Receta)</TableHead>
+                        <TableHead className="text-center">Stock Mínimo (Un. Receta)</TableHead>
+                        {isAdmin && <TableHead className="text-right">Acciones</TableHead>}
                     </TableRow>
                 </TableHeader>
                 <TableBody>
-                    {isLoading && <TableRow><TableCell colSpan={7} className="h-24 text-center">Cargando inventario...</TableCell></TableRow>}
+                    {isLoading && <TableRow><TableCell colSpan={isAdmin ? 6 : 5} className="h-24 text-center">Cargando inventario...</TableCell></TableRow>}
                     {!isLoading && filteredItems.map((item) => {
-                        const factor = item.factorConversion || 1;
-                        const quantityInPurchaseUnit = item.cantidad / factor;
-                        const minStockInPurchaseUnit = item.stockMinimo / factor;
-                        const isLowStock = quantityInPurchaseUnit <= minStockInPurchaseUnit;
+                        const isLowStock = item.cantidad <= item.stockMinimo;
 
                         return (
                         <TableRow key={item.id} data-state={selectedItems.includes(item.id) && "selected"}>
@@ -471,35 +468,36 @@ export default function InventoryPage() {
                             <TableCell className="font-medium">{item.nombre}</TableCell>
                             <TableCell><Badge variant="secondary">{getCategoryName(item.categoriaId)}</Badge></TableCell>
                             <TableCell className={cn("text-center font-bold", isLowStock ? 'text-red-500' : 'text-current')}>
-                                {quantityInPurchaseUnit.toFixed(2)}
-                                <span className="text-xs text-muted-foreground ml-1 uppercase">{item.unidadCompra || 'N/A'}</span>
+                                {item.cantidad.toFixed(2)}
+                                <span className="text-xs text-muted-foreground ml-1 uppercase">{item.unidadReceta}</span>
                             </TableCell>
                              <TableCell className="text-center">
-                                {minStockInPurchaseUnit.toFixed(2)}
-                                <span className="text-xs text-muted-foreground ml-1 uppercase">{item.unidadCompra || 'N/A'}</span>
+                                {item.stockMinimo.toFixed(2)}
+                                <span className="text-xs text-muted-foreground ml-1 uppercase">{item.unidadReceta}</span>
                             </TableCell>
-                            <TableCell className="text-right">
-                                {isAdmin && <DropdownMenu>
+                            {isAdmin && <TableCell className="text-right">
+                                <DropdownMenu>
                                     <DropdownMenuTrigger asChild>
                                         <Button size="icon" variant="ghost"><MoreVertical className="h-4 w-4" /></Button>
                                     </DropdownMenuTrigger>
                                     <DropdownMenuContent align="end">
+                                        <DropdownMenuLabel>Acciones</DropdownMenuLabel>
                                         <DropdownMenuItem onClick={() => handleOpenForm('item', item)}>Editar</DropdownMenuItem>
                                         <DropdownMenuItem>Ver Historial</DropdownMenuItem>
                                         <DropdownMenuSeparator />
-                                        <DropdownMenuItem onClick={() => handleDeleteItem(item.id)} className="text-destructive">
+                                        <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleDeleteItem(item.id)}} className="text-destructive">
                                           <Trash2 className="mr-2 h-4 w-4" />
                                           Eliminar
                                         </DropdownMenuItem>
                                     </DropdownMenuContent>
-                                </DropdownMenu>}
-                            </TableCell>
+                                </DropdownMenu>
+                            </TableCell>}
                         </TableRow>
                         );
                     })}
                      {!isLoading && filteredItems.length === 0 && (
                         <TableRow>
-                            <TableCell colSpan={7} className="h-24 text-center">No se encontraron artículos.</TableCell>
+                            <TableCell colSpan={isAdmin ? 6 : 5} className="h-24 text-center">No se encontraron artículos.</TableCell>
                         </TableRow>
                      )}
                 </TableBody>
@@ -520,3 +518,5 @@ export default function InventoryPage() {
     </div>
   );
 }
+
+    
