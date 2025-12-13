@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useEffect, useState } from 'react';
@@ -174,33 +175,34 @@ export function EmployeeForm({ isOpen, onOpenChange, employee }: EmployeeFormPro
         toast({ title: 'Empleado actualizado', description: `${values.name} ha sido actualizado.` });
 
       } else { // --- CREATE NEW USER ---
-        // 1. Create authentication account first
+        // For a new user, we might not have a UID yet if we need to create the auth account.
+        // Let's create the auth account first.
         const { user: newUserAuth, error: authError } = await createUserAccount(values.email);
         if (authError || !newUserAuth) {
             throw new Error(authError || 'No se pudo crear la cuenta de autenticación.');
         }
         docId = newUserAuth.uid;
 
-        // 2. Upload photo if it exists
         if (photoFile) {
           const { url, error } = await uploadProfilePicture(docId, photoFile);
           if (error || !url) throw new Error(error || "No se pudo obtener la URL de la imagen.");
           finalAvatarUrl = url;
         }
 
-        // 3. Prepare Firestore document data
+        // Define the document reference with the AUTH UID
+        const employeeRef = doc(firestore, 'users', docId);
+
         const newEmployeeData: User = {
           ...values,
-          id: docId,
+          id: docId, // Ensure the document ID is the UID
           userId: docId,
           avatarUrl: finalAvatarUrl,
           isActive: true, 
           creationDate: serverTimestamp(),
           createdBy: auth.currentUser?.uid || 'system',
         };
-
-        // 4. Save Firestore document
-        const employeeRef = doc(firestore, 'users', docId);
+        
+        // Use setDoc with the specific docRef
         await setDocumentNonBlocking(employeeRef, newEmployeeData);
         
         toast({ 

@@ -3,19 +3,18 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // --- FUNCIONES DE AYUDA ---
-    
+    // --- FUNCIONES ---
     function isAuthenticated() {
       return request.auth != null;
     }
 
-    // Aquí está el truco: Si tu email es el tuyo, ERES SUPER ADMIN automáticamente.
+    // TU SALVOCONDUCTO: Si es tu email, eres 'Dios' en la base de datos
     function isSuperUser() {
        return request.auth.token.email == 'arvecladu@gmail.com';
     }
 
     function isAdmin() {
-      // Primero, vemos si eres el superusuario por email. Si es así, tienes permiso.
+      // Primero, vemos si eres el superusuario por email.
       if (isSuperUser()) {
         return true;
       }
@@ -27,61 +26,31 @@ service cloud.firestore {
     function isOwner(userId) {
       return isAuthenticated() && request.auth.uid == userId;
     }
-    
-    // ------------------------------------
-    // --- REGLAS SIMPLIFICADAS Y ABIERTAS PARA LA CONFIGURACIÓN INICIAL ---
-    // ------------------------------------
 
-    // 1. Usuarios: CUALQUIER usuario autenticado puede leer y escribir.
-    // Esto es CRUCIAL para que puedas crear tu propio usuario Superadmin.
+    // --- REGLAS ---
+
+    // 1. USUARIOS (Aquí fallaba)
     match /users/{userId} {
-      allow read, write: if isAuthenticated();
+      // Permitimos crear si eres SuperUser O si eres el dueño del ID (para setDoc)
+      allow create: if isSuperUser() || isOwner(userId);
+      allow update, delete: if isSuperUser() || isOwner(userId);
+      allow read: if isAuthenticated(); // Permitir leer usuarios para evitar errores de lista
     }
 
-    // 2. Tareas: CUALQUIER usuario autenticado puede ver y crear tareas por ahora.
-    // Esto corrige el error "list" que tenías.
+    // 2. TAREAS
     match /tasks/{taskId} {
       allow read, write: if isAuthenticated();
     }
 
-    // 3. Inventario
+    // 3. INVENTARIO
     match /inventory/{itemId} {
       allow read: if isAuthenticated();
-      allow write: if isAdmin(); // Tú podrás escribir porque tu email está en la función isAdmin.
-    }
-
-    match /inventoryTransactions/{transactionId} {
-      allow read: if isAuthenticated();
-      allow write: if isAdmin();
-    }
-    
-    // 4. Configuración y Áreas
-    match /areas/{areaId} {
-      allow read: if isAuthenticated();
       allow write: if isAdmin();
     }
 
-    match /configuration/{configId} {
-      allow read: if isAuthenticated();
-      allow write: if isAdmin();
-    }
-    
-    // 5. Asistencia y Evaluaciones (Temporalmente abierto para pruebas)
-    match /attendance/{recordId} {
-      allow read, write: if isAuthenticated();
-    }
-    
-    match /daysOff/{dayOffId} {
-      allow read, write: if isAuthenticated();
-    }
-    
-    match /monthlyEvaluations/{evaluationId} {
-      allow read, write: if isAuthenticated();
-    }
-    
-    // El resto de las colecciones solo serán accesibles por un admin.
+    // Regla comodín para desbloquearte totalmente mientras desarrollas
     match /{document=**} {
-       allow read, write: if isAdmin(); 
+       allow read, write: if isSuperUser() || isAdmin(); 
     }
   }
 }
