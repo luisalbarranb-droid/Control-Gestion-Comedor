@@ -29,7 +29,7 @@ export function useUser(): UseUserResult {
 
   const userDocRef = useMemoFirebase(() => {
     if (!firestore || !user) return null;
-    return doc(firestore, 'users', user.id);
+    return doc(firestore, 'users', user.uid);
   }, [firestore, user]);
 
   const { data: profile, isLoading: isProfileLoading } = useDoc<UserProfile>(userDocRef, { disabled: !user });
