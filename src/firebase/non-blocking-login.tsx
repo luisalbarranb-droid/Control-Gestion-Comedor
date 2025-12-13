@@ -1,17 +1,23 @@
+
 'use client';
 import {
   Auth, // Import Auth type for type hinting
-  signInAnonymously,
+  signInAnonymously as firebaseSignInAnonymously, // Renombrar para evitar conflicto
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
   // Assume getAuth and app are initialized elsewhere
 } from 'firebase/auth';
 
 /** Initiate anonymous sign-in (non-blocking). */
-export function initiateAnonymousSignIn(authInstance: Auth): void {
-  // CRITICAL: Call signInAnonymously directly. Do NOT use 'await signInAnonymously(...)'.
-  signInAnonymously(authInstance);
-  // Code continues immediately. Auth state change is handled by onAuthStateChanged listener.
+export async function initiateAnonymousSignIn(authInstance: Auth): Promise<void> {
+  // CRITICAL: We now await this to ensure sign-in completes for the mock login
+  try {
+    await firebaseSignInAnonymously(authInstance);
+  } catch (error) {
+    console.error("Anonymous sign-in failed:", error);
+    // Propagate the error to be caught by the caller
+    throw error;
+  }
 }
 
 /** Initiate email/password sign-up (non-blocking). */

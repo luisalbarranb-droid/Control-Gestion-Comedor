@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useForm } from 'react-hook-form';
@@ -21,14 +22,14 @@ import {
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/ui/toast';
-import { useAuth, useUser, initiateEmailSignIn } from '@/firebase';
+import { useAuth, useUser, initiateEmailSignIn, initiateAnonymousSignIn } from '@/firebase';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { Loader2, SquareCheck } from 'lucide-react';
 
 const loginSchema = z.object({
   email: z.string().email('Por favor, introduce un email válido.'),
-  password: z.string().min(6, 'La contraseña debe tener al menos 6 caracteres.'),
+  password: z.string().optional(),
 });
 
 type LoginFormValues = z.infer<typeof loginSchema>;
@@ -56,13 +57,48 @@ export default function LoginPage() {
 
   const onSubmit = async (values: LoginFormValues) => {
     setIsSubmitting(true);
+    
+    // MODO DE PRUEBA: Simular inicio de sesión para el superadmin
+    if (values.email === 'arvecladu@gmail.com') {
+      try {
+        // Usamos inicio de sesión anónimo como un truco para obtener un UID válido
+        await initiateAnonymousSignIn(auth);
+        
+        // Esperamos un momento para que el estado de autenticación se propague
+        setTimeout(() => {
+            toast({
+                title: 'Inicio de Sesión de Prueba',
+                description: 'Has ingresado como Super Administrador.',
+            });
+            router.push('/');
+            setIsSubmitting(false);
+        }, 1000);
+        return;
+
+      } catch (error) {
+        setIsSubmitting(false);
+        toast({
+            variant: 'destructive',
+            title: 'Error en modo de prueba',
+            description: 'No se pudo simular el inicio de sesión.',
+        });
+        console.error(error);
+        return;
+      }
+    }
+
+    // Lógica de inicio de sesión normal para otros usuarios
+    if (!values.password || values.password.length < 6) {
+        form.setError('password', { message: 'La contraseña debe tener al menos 6 caracteres.' });
+        setIsSubmitting(false);
+        return;
+    }
+    
     try {
-      // We are not awaiting this, the useUser hook will handle the redirect
       initiateEmailSignIn(auth, values.email, values.password);
       
-      // We add a listener to catch auth errors specifically for this form
       const unsubscribe = auth.onAuthStateChanged(firebaseUser => {
-        unsubscribe(); // Unsubscribe immediately after first trigger
+        unsubscribe();
         setIsSubmitting(false);
         if (firebaseUser) {
           toast({
@@ -70,9 +106,6 @@ export default function LoginPage() {
             description: 'Bienvenido de vuelta.',
           });
            router.push('/');
-        } else {
-          // This part might not be triggered if the error is caught by the catch block first.
-          // It's a fallback.
         }
       });
       
