@@ -48,8 +48,8 @@ service cloud.firestore {
       // MODIFICACIÓN TEMPORAL: Permitir a cualquier usuario logueado listar para poder asignar roles.
       allow list: if isAuthenticated();
       
-      // Creación: Solo SuperAdmin puede crear nuevas cuentas de usuario.
-      allow create: if isSuperAdmin();
+      // Creación: CUALQUIER USUARIO AUTENTICADO PUEDE CREAR para poder registrar el primer SuperAdmin.
+      allow create: if isAuthenticated();
       
       // Actualización: 
       // 1. Dueño: Solo puede actualizar sus propios datos (y no puede cambiar el rol).
@@ -82,7 +82,6 @@ service cloud.firestore {
     // --- 3. Task Management (MEJORADO)---
     // ------------------------------------
     match /tasks/{taskId} {
-      // Lectura: Creador, Asignado o Admin.
       allow read: if isAuthenticated() && (
           resource.data.asignadoA == request.auth.uid ||
           resource.data.creadoPor == request.auth.uid ||
