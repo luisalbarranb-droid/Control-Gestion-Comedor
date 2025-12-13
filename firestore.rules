@@ -9,16 +9,19 @@ service cloud.firestore {
       return request.auth != null;
     }
 
-    // Aquí está el truco: Si tu email es el tuyo, ERES ADMIN automáticamente.
+    // Aquí está el truco: Si tu email es el tuyo, ERES SUPER ADMIN automáticamente.
     function isSuperUser() {
        return request.auth.token.email == 'arvecladu@gmail.com';
     }
 
     function isAdmin() {
-      // Eres admin si tienes el rol en tu documento de usuario O si eres el SuperUsuario por email.
-      // Esta es la forma correcta de verificar roles almacenados en Firestore.
+      // Primero, vemos si eres el superusuario por email. Si es así, tienes permiso.
+      if (isSuperUser()) {
+        return true;
+      }
+      // Si no, verificamos si tienes el rol en tu documento de usuario en Firestore.
       let userData = get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
-      return isAuthenticated() && (userData.role == 'admin' || userData.role == 'superadmin' || isSuperUser());
+      return isAuthenticated() && (userData.role == 'admin' || userData.role == 'superadmin');
     }
 
     function isOwner(userId) {
@@ -26,16 +29,16 @@ service cloud.firestore {
     }
     
     // ------------------------------------
-    // --- REGLAS SIMPLIFICADAS ---
+    // --- REGLAS SIMPLIFICADAS Y ABIERTAS PARA LA CONFIGURACIÓN INICIAL ---
     // ------------------------------------
 
-    // 1. Usuarios
+    // 1. Usuarios: CUALQUIER usuario autenticado puede leer y escribir.
+    // Esto es CRUCIAL para que puedas crear tu propio usuario Superadmin.
     match /users/{userId} {
-      allow read, write: if isAuthenticated(); // Se mantiene abierto temporalmente para la configuración inicial
+      allow read, write: if isAuthenticated();
     }
 
-    // 2. Tareas (Aquí estaba el error principal)
-    // Lo hemos simplificado para que CUALQUIER usuario logueado pueda ver y crear tareas por ahora.
+    // 2. Tareas: CUALQUIER usuario autenticado puede ver y crear tareas por ahora.
     // Esto corrige el error "list" que tenías.
     match /tasks/{taskId} {
       allow read, write: if isAuthenticated();
@@ -44,7 +47,7 @@ service cloud.firestore {
     // 3. Inventario
     match /inventory/{itemId} {
       allow read: if isAuthenticated();
-      allow write: if isAdmin(); // Tú podrás escribir porque tu email está en la función isAdmin
+      allow write: if isAdmin(); // Tú podrás escribir porque tu email está en la función isAdmin.
     }
 
     match /inventoryTransactions/{transactionId} {
@@ -63,20 +66,20 @@ service cloud.firestore {
       allow write: if isAdmin();
     }
     
-    // 5. Asistencia y Evaluaciones
+    // 5. Asistencia y Evaluaciones (Temporalmente abierto para pruebas)
     match /attendance/{recordId} {
-      allow read, write: if isAdmin() || isAuthenticated(); // Temporalmente abierto para pruebas
+      allow read, write: if isAuthenticated();
     }
     
     match /daysOff/{dayOffId} {
-      allow read, write: if isAdmin() || isAuthenticated();
+      allow read, write: if isAuthenticated();
     }
     
     match /monthlyEvaluations/{evaluationId} {
-      allow read, write: if isAdmin() || isAuthenticated();
+      allow read, write: if isAuthenticated();
     }
     
-    // Regla genérica para atrapar colecciones no definidas (útil en desarrollo)
+    // El resto de las colecciones solo serán accesibles por un admin.
     match /{document=**} {
        allow read, write: if isAdmin(); 
     }
