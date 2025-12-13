@@ -67,7 +67,7 @@ export const dynamic = 'force-dynamic';
 export default function InventoryPage() {
   const { toast } = useToast();
   const firestore = useFirestore();
-  const { isUserLoading } = useUser();
+  const { isUserLoading, user } = useUser();
   const [isClient, setIsClient] = useState(false);
 
   useEffect(() => {
@@ -79,7 +79,7 @@ export default function InventoryPage() {
     return query(collection(firestore, 'inventory'), orderBy('nombre', 'asc'));
   }, [firestore]);
 
-  const { data: items, isLoading: isLoadingItems } = useCollection<InventoryItem>(inventoryQuery, { disabled: isUserLoading });
+  const { data: items, isLoading: isLoadingItems } = useCollection<InventoryItem>(inventoryQuery, { disabled: isUserLoading || !user });
   
   const [searchQuery, setSearchQuery] = useState('');
   const [categoryFilter, setCategoryFilter] = useState<InventoryCategoryId | 'all'>('all');
@@ -236,69 +236,76 @@ export default function InventoryPage() {
   };
   
   const handleImport = async (importedData: any[]) => {
-    if (!firestore) {
-        toast({ variant: 'destructive', title: 'Error de base de datos'});
+    if (!firestore || !user) {
+        toast({ variant: 'destructive', title: 'Error', description: 'No hay conexión o sesión activa.'});
         return;
     };
-
-    const batch = writeBatch(firestore);
-    const inventoryRef = collection(firestore, 'inventory');
-    let updatedCount = 0;
-    let createdCount = 0;
 
     const existingCodes = (items || []).reduce((acc, item) => {
         if(item.codigo) acc[item.codigo] = item.id;
         return acc;
     }, {} as Record<string, string>);
 
-    for (const row of importedData) {
-        if (!row.codigo) continue;
-
-        const itemData = {
-            nombre: String(row.nombre),
-            codigo: String(row.codigo),
-            descripcion: String(row.descripcion || ''),
-            categoriaId: row.categoriaId as InventoryCategoryId,
-            subCategoria: row.subCategoria || '',
-            cantidad: Number(row.cantidad || 0),
-            unidadReceta: (row.unidadReceta as UnitOfMeasure) || 'unidad',
-            unidadCompra: (row.unidadCompra as UnitOfMeasure) || undefined,
-            factorConversion: Number(row.factorConversion || 1),
-            stockMinimo: Number(row.stockMinimo || 0),
-            proveedor: String(row.proveedor || ''),
-            costoUnitario: Number(row.costoUnitario || 0),
-            ultimaActualizacion: serverTimestamp(),
-        };
-
-        const existingId = existingCodes[itemData.codigo];
-
-        if (existingId) {
-            const itemRef = doc(inventoryRef, existingId);
-            batch.update(itemRef, itemData);
-            updatedCount++;
-        } else {
-            const newItemRef = doc(inventoryRef);
-            batch.set(newItemRef, {
-                ...itemData,
-                id: newItemRef.id,
-                fechaCreacion: serverTimestamp(),
-            });
-            createdCount++;
-        }
-    }
+    const CHUNK_SIZE = 450;
+    let createdCount = 0;
+    let updatedCount = 0;
 
     try {
-        await batch.commit();
+        for (let i = 0; i < importedData.length; i += CHUNK_SIZE) {
+            const chunk = importedData.slice(i, i + CHUNK_SIZE);
+            const batch = writeBatch(firestore);
+            const inventoryRef = collection(firestore, 'inventory');
+
+            chunk.forEach((row) => {
+                if (!row.codigo) return;
+
+                const itemData = {
+                    nombre: String(row.nombre),
+                    codigo: String(row.codigo),
+                    descripcion: String(row.descripcion || ''),
+                    categoriaId: row.categoriaId as InventoryCategoryId,
+                    subCategoria: row.subCategoria || '',
+                    cantidad: Number(row.cantidad || 0),
+                    unidadReceta: (row.unidadReceta as UnitOfMeasure) || 'unidad',
+                    unidadCompra: (row.unidadCompra as UnitOfMeasure) || undefined,
+                    factorConversion: Number(row.factorConversion || 1),
+                    stockMinimo: Number(row.stockMinimo || 0),
+                    proveedor: String(row.proveedor || ''),
+                    costoUnitario: Number(row.costoUnitario || 0),
+                    ultimaActualizacion: serverTimestamp(),
+                };
+
+                const existingId = existingCodes[itemData.codigo];
+
+                if (existingId) {
+                    const itemRef = doc(inventoryRef, existingId);
+                    batch.update(itemRef, itemData);
+                    updatedCount++;
+                } else {
+                    const newItemRef = doc(inventoryRef);
+                    batch.set(newItemRef, {
+                        ...itemData,
+                        id: newItemRef.id,
+                        fechaCreacion: serverTimestamp(),
+                    });
+                    createdCount++;
+                }
+            });
+
+            await batch.commit();
+        }
+
         handleCloseForm();
         toast({
             title: "Importación Completada",
             description: `${createdCount} artículos creados y ${updatedCount} actualizados.`
         });
+
     } catch (e) {
         console.error("Error en la importación: ", e);
-        toast({ variant: 'destructive', title: 'Error de Importación', description: 'Ocurrió un error al guardar los datos.' });
+        toast({ variant: 'destructive', title: 'Error', description: 'Falló la importación por lotes.' });
     }
-}
+  }
 
   const isLoading = isLoadingItems || isUserLoading;
 
@@ -496,17 +503,16 @@ export default function InventoryPage() {
         </CardContent>
       </Card>
       
+      <InventoryForm isOpen={activeForm === 'item'} onOpenChange={handleCloseForm} onSave={handleSaveItem} item={editingItem} />
+      <InventoryImportDialog isOpen={activeForm === 'import'} onOpenChange={handleCloseForm} onImport={handleImport} />
+      
       {items && (
         <>
-          <InventoryForm isOpen={activeForm === 'item'} onOpenChange={handleCloseForm} onSave={handleSaveItem} item={editingItem} />
           <InventoryEntryForm isOpen={activeForm === 'entry'} onOpenChange={handleCloseForm} onSave={(data) => handleSaveTransaction(data, 'entrada')} inventoryItems={items} />
           <InventoryExitForm isOpen={activeForm === 'exit'} onOpenChange={handleCloseForm} onSave={(data) => handleSaveTransaction(data, 'salida')} inventoryItems={items} />
-          <InventoryImportDialog isOpen={activeForm === 'import'} onOpenChange={handleCloseForm} onImport={handleImport} />
         </>
       )}
 
     </div>
   );
 }
-
-    
