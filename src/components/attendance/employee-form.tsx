@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import { useEffect, useState } from 'react';
@@ -55,7 +54,7 @@ const employeeSchema = z.object({
   fechaIngreso: z.date().optional(),
   fechaNacimiento: z.date().optional(),
   diasContrato: z.coerce.number().optional(),
-  avatarUrl: z.string().url().optional(),
+  avatarUrl: z.string().url().optional().or(z.literal('')),
 });
 
 type EmployeeFormValues = z.infer<typeof employeeSchema>;
@@ -215,29 +214,32 @@ export function EmployeeForm({ isOpen, onOpenChange, employee }: EmployeeFormPro
             
             <div className="flex flex-col items-center gap-4">
                 <Avatar className="w-24 h-24 border-2 border-dashed">
-                    <AvatarImage src={previewUrl || employee?.avatarUrl} alt={form.getValues('name')} />
+                    <AvatarImage src={previewUrl || undefined} alt={form.getValues('name')} />
                     <AvatarFallback className="text-3xl">
                         {getUserInitials(form.getValues('name'))}
                     </AvatarFallback>
                 </Avatar>
-                <FormField
-                    name="avatarUrl"
-                    control={form.control}
-                    render={({ field }) => (
-                    <FormItem>
-                        <FormControl>
-                        <Button type="button" variant="outline" asChild>
-                            <label htmlFor="photo-upload" className="cursor-pointer">
-                                <Camera className="mr-2 h-4 w-4" />
-                                Cambiar Foto
-                                <input id="photo-upload" type="file" className="sr-only" accept="image/*" onChange={handlePhotoChange} />
-                            </label>
-                        </Button>
-                        </FormControl>
-                    <FormMessage />
-                    </FormItem>
-                )}
-                />
+                <div className="flex gap-4 items-center">
+                    <Button type="button" variant="outline" asChild>
+                        <label htmlFor="photo-upload" className="cursor-pointer">
+                            <Camera className="mr-2 h-4 w-4" />
+                            Subir Foto
+                            <input id="photo-upload" type="file" className="sr-only" accept="image/*" onChange={handlePhotoChange} />
+                        </label>
+                    </Button>
+                    <FormField
+                        name="avatarUrl"
+                        control={form.control}
+                        render={({ field }) => (
+                        <FormItem>
+                            <FormControl>
+                                <Input {...field} placeholder="O pega una URL de imagen" className="w-64"/>
+                            </FormControl>
+                        <FormMessage />
+                        </FormItem>
+                    )}
+                    />
+                </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -341,3 +343,5 @@ export function EmployeeForm({ isOpen, onOpenChange, employee }: EmployeeFormPro
     </Dialog>
   );
 }
+
+    
