@@ -31,13 +31,14 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { useToast } from '@/components/ui/toast';
-import { useFirestore, addDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase';
+import { useFirestore, setDocumentNonBlocking, updateDocumentNonBlocking, useUser } from '@/firebase';
 import { collection, doc, serverTimestamp } from 'firebase/firestore';
 import type { User, Role, ModuleId } from '@/lib/types';
 import { areas } from '@/lib/placeholder-data';
 import { Checkbox } from '../ui/checkbox';
 import { navItems } from '../dashboard/main-nav';
 import { Separator } from '../ui/separator';
+import { createUserAccount } from '@/firebase/auth-operations';
 
 const userSchema = z.object({
   name: z.string().min(3, 'El nombre es requerido.'),
@@ -58,6 +59,7 @@ interface UserFormProps {
 
 export function UserForm({ isOpen, onOpenChange, editingUser }: UserFormProps) {
   const firestore = useFirestore();
+  const { user: authUser } = useUser();
   const { toast } = useToast();
   const form = useForm<UserFormValues>({
     resolver: zodResolver(userSchema),
@@ -96,7 +98,7 @@ export function UserForm({ isOpen, onOpenChange, editingUser }: UserFormProps) {
   }, [editingUser, isOpen, form]);
   
   const onSubmit = async (values: UserFormValues) => {
-    if (!firestore) return;
+    if (!firestore || !authUser) return;
     
     let dataToSave: Partial<User> = {
         name: values.name,
@@ -107,15 +109,14 @@ export function UserForm({ isOpen, onOpenChange, editingUser }: UserFormProps) {
 
     if (values.role === 'admin') {
         dataToSave.areas = values.areas;
-        dataToSave.area = undefined; // Clear single area field
+        dataToSave.area = undefined; 
     } else if (values.role === 'comun') {
         dataToSave.area = values.area;
-        dataToSave.areas = undefined; // Clear multiple areas field
-        dataToSave.modules = undefined; // Comun users don't need module access list
-    } else { // superadmin
+        dataToSave.areas = undefined;
+        dataToSave.modules = undefined; 
+    } else { 
         dataToSave.area = undefined;
         dataToSave.areas = undefined;
-        // For superadmin, we let modules be undefined to signify full access
         dataToSave.modules = undefined; 
     }
 
@@ -125,18 +126,27 @@ export function UserForm({ isOpen, onOpenChange, editingUser }: UserFormProps) {
         updateDocumentNonBlocking(userRef, dataToSave);
         toast({ title: 'Usuario actualizado', description: `${values.name} ha sido actualizado.` });
       } else {
-        const collectionRef = collection(firestore, 'users');
-        // Cuando creamos, el ID del documento será el UID de auth.
-        // Aquí simulamos que ya tenemos ese UID.
-        // La lógica real estaría en `createUserAccount` que nos devolvería el UID.
-        // Por ahora, asumimos que addDocumentNonBlocking es suficiente para el prototipo.
+        const { user, error } = await createUserAccount(values.email);
+
+        if (error || !user) {
+            toast({ variant: 'destructive', title: 'Error de Autenticación', description: error || 'No se pudo crear la cuenta de usuario.'});
+            return;
+        }
+
+        const newUserUid = user.user.uid;
+        const userRef = doc(firestore, 'users', newUserUid);
+        
         const newUserData = {
           ...dataToSave,
+          id: newUserUid, // CRITICAL: Use the auth UID as the document ID
           isActive: true,
           creationDate: serverTimestamp(),
+          createdBy: authUser.uid
         };
-        addDocumentNonBlocking(collectionRef, newUserData as any);
-        toast({ title: 'Usuario creado', description: `Se ha enviado una invitación a ${values.name}.` });
+
+        // Use setDoc via the non-blocking wrapper
+        await setDocumentNonBlocking(userRef, newUserData);
+        toast({ title: 'Usuario creado', description: `Se ha creado una cuenta para ${values.name}. La contraseña temporal es "password".` });
       }
       onOpenChange(false);
     } catch (error) {
@@ -196,14 +206,9 @@ export function UserForm({ isOpen, onOpenChange, editingUser }: UserFormProps) {
                 )} />
             )}
             
-            {(selectedRole === 'admin' || selectedRole === 'superadmin') && (
+            {(selectedRole === 'admin') && (
                 <div className="space-y-4 rounded-md border p-4">
-                    <h3 className="font-semibold">Configuración de Permisos</h3>
-                    {selectedRole === 'superadmin' ? (
-                         <div className="text-sm text-muted-foreground p-4 bg-amber-50 border border-amber-200 rounded-lg">
-                            El rol de <strong>Superadmin</strong> tiene acceso completo a todas las áreas y módulos por defecto. No se requiere configuración adicional.
-                         </div>
-                    ) : (
+                    <h3 className="font-semibold">Configuración de Permisos de Administrador</h3>
                         <>
                            <FormField
                                 control={form.control}
@@ -296,7 +301,13 @@ export function UserForm({ isOpen, onOpenChange, editingUser }: UserFormProps) {
                                 )}
                             />
                         </>
-                    )}
+                </div>
+            )}
+             {selectedRole === 'superadmin' && (
+                 <div className="space-y-4 rounded-md border p-4 bg-amber-50 border-amber-200">
+                    <p className="text-sm text-amber-800">
+                        El rol de <strong>Superadmin</strong> tiene acceso completo a todas las áreas y módulos por defecto. No se requiere configuración de permisos.
+                    </p>
                 </div>
             )}
             

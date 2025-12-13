@@ -8,17 +8,16 @@ service cloud.firestore {
       return request.auth != null;
     }
 
-    // TU SALVOCONDUCTO: Si es tu email, eres 'Dios' en la base de datos (Respaldo)
+    // TU SALVOCONDUCTO: Si es tu email, eres 'Dios' en la base de datos
     function isSuperUserByEmail() {
        return request.auth.token.email == 'arvecladu@gmail.com';
     }
 
     function isAdmin() {
-      // Primero, vemos si eres el superusuario por email (llave maestra).
+      // Eres admin si eres el SuperUsuario por email O si tu rol en la BD es admin/superadmin.
       if (isSuperUserByEmail()) {
         return true;
       }
-      // Si no, verificamos si tienes el rol en tu documento de usuario en Firestore.
       let userData = get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
       return isAuthenticated() && (userData.role == 'admin' || userData.role == 'superadmin');
     }
@@ -29,12 +28,13 @@ service cloud.firestore {
 
     // --- REGLAS ---
 
-    // 1. USUARIOS (Permitimos que cualquier usuario autenticado pueda leer la lista y crear/editar su propio perfil)
+    // 1. USUARIOS
     match /users/{userId} {
+      // Permitimos crear si eres SuperUser O si eres el dueño del ID (para setDoc)
       allow create: if isSuperUserByEmail() || isOwner(userId);
-      allow update: if isOwner(userId) || isAdmin();
-      allow delete: if isAdmin();
-      allow read: if isAuthenticated(); 
+      allow update, delete: if isSuperUserByEmail() || isOwner(userId) || isAdmin();
+      allow read: if isAuthenticated(); // Permitir leer usuarios para evitar errores de lista
+      allow list: if isAuthenticated(); // Permitir listar usuarios para la página de gestión
     }
 
     // 2. TAREAS
