@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { onAuthStateChanged, User as FirebaseAuthUser } from 'firebase/auth';
 import { useAuth, useDoc, useFirestore, useMemoFirebase } from '@/firebase';
 import { doc } from 'firebase/firestore';
@@ -33,7 +33,21 @@ export function useUser(): UseUserResult {
     return doc(firestore, 'users', user.uid);
   }, [firestore, user]);
 
-  const { data: profile, isLoading: isProfileLoading } = useDoc<UserProfile>(userDocRef, { disabled: !user });
+  const { data: profileData, isLoading: isProfileLoading } = useDoc<UserProfile>(userDocRef, { disabled: !user });
+
+  // Memoize el perfil final para evitar recálculos innecesarios
+  const profile = useMemo(() => {
+    // Si el usuario es el superadmin por email, forzamos el perfil de superadmin.
+    if (user?.email === 'arvecladu@gmail.com') {
+      return {
+        ...(profileData || { id: user.uid, email: user.email, name: 'Super Admin' }),
+        role: 'superadmin',
+      } as UserProfile;
+    }
+    // De lo contrario, devolvemos el perfil cargado desde Firestore.
+    return profileData;
+  }, [user, profileData]);
+
 
   const signOut = async () => {
     await auth.signOut();
@@ -44,7 +58,6 @@ export function useUser(): UseUserResult {
   return { 
     user, 
     // Devuelve el perfil solo cuando la carga ha terminado y el perfil existe.
-    // Esto evita estados intermedios donde `profile` es `null` durante la carga.
     profile: isUserLoading ? null : profile, 
     isUserLoading, 
     signOut 

@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import React from 'react';
@@ -50,27 +49,32 @@ export const navItems: NavItem[] = [
 
 export function MainNav() {
   const pathname = usePathname();
-  const { profile, isUserLoading } = useUser();
+  const { user, profile, isUserLoading } = useUser();
 
   const userRole = profile?.role;
   const userModules = profile?.modules || [];
 
   const filteredNavItems = React.useMemo(() => {
+    // Si el email es el del superusuario, conceder acceso total inmediatamente.
+    if (user?.email === 'arvecladu@gmail.com') {
+      return navItems;
+    }
+    
     if (!userRole) return [];
     
     return navItems.filter(item => {
-        // Superadmin sees everything except what's explicitly restricted from them
+        // Superadmin ve todo
         if (userRole === 'superadmin') {
-            return !item.roles || item.roles.includes('superadmin');
+            return true;
         }
         
-        // Admin sees what's in their modules list
+        // Admin ve lo que está en su lista de módulos
         if (userRole === 'admin') {
-            if (!item.id) return true; // Items without an ID are public (like settings)
+            if (!item.id) return true; // Items sin ID son públicos (ej: settings)
             return userModules.includes(item.id);
         }
         
-        // Comun user sees a very limited set
+        // Usuario común tiene una vista limitada
         if (userRole === 'comun') {
             const comunModules: (ModuleId | undefined)[] = ['dashboard', 'tasks', 'share', 'settings'];
             return comunModules.includes(item.id);
@@ -78,7 +82,7 @@ export function MainNav() {
         
         return false;
     });
-  }, [userRole, userModules]);
+  }, [userRole, userModules, user]);
   
   if (isUserLoading) {
       return (
