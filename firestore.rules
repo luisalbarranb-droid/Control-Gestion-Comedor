@@ -113,12 +113,12 @@ service cloud.firestore {
     // ------------------------------
     match /inventory/{itemId} {
       allow read: if isAuthenticated();
-      allow write: if isAdmin(); 
+      allow write: if isSuperAdmin(); 
     }
 
     match /inventoryTransactions/{transactionId} {
       allow read: if isAuthenticated();
-      allow write: if isAdmin();
+      allow write: if isSuperAdmin();
     }
     
     match /menus/{menuId} {
