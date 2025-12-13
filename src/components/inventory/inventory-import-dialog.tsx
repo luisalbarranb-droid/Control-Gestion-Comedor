@@ -23,10 +23,7 @@ interface InventoryImportDialogProps {
   onImport: (data: any[]) => void;
 }
 
-// Columnas mínimas para que la importación funcione
 const requiredColumns = ['codigo', 'nombre', 'categoriaId', 'cantidad', 'unidadReceta', 'stockMinimo'];
-
-// Todas las columnas posibles para la validación y la plantilla
 const allColumns = ['codigo', 'nombre', 'descripcion', 'categoriaId', 'subCategoria', 'cantidad', 'unidadReceta', 'unidadCompra', 'factorConversion', 'stockMinimo', 'proveedor', 'costoUnitario'];
 
 export function InventoryImportDialog({ isOpen, onOpenChange, onImport }: InventoryImportDialogProps) {
@@ -40,7 +37,6 @@ export function InventoryImportDialog({ isOpen, onOpenChange, onImport }: Invent
     setParsedData([]);
     if (acceptedFiles.length > 0) {
       const selectedFile = acceptedFiles[0];
-      // Validar extensiones
       if (selectedFile.name.endsWith('.xlsx') || selectedFile.name.endsWith('.xls')) {
         setFile(selectedFile);
         parseFile(selectedFile);
@@ -66,7 +62,7 @@ export function InventoryImportDialog({ isOpen, onOpenChange, onImport }: Invent
       try {
         const data = new Uint8Array(e.target?.result as ArrayBuffer);
         const workbook = XLSX.read(data, { type: 'array' });
-        const sheetName = workbook.SheetNames[0]; // Leer la primera hoja
+        const sheetName = workbook.SheetNames[0];
         const worksheet = workbook.Sheets[sheetName];
         const json = XLSX.utils.sheet_to_json(worksheet);
 
@@ -75,7 +71,6 @@ export function InventoryImportDialog({ isOpen, onOpenChange, onImport }: Invent
             return;
         }
 
-        // Validar columnas requeridas
         const headers = Object.keys(json[0] as object);
         const missingColumns = requiredColumns.filter(col => !headers.includes(col));
 
@@ -101,7 +96,6 @@ export function InventoryImportDialog({ isOpen, onOpenChange, onImport }: Invent
   const handleImportClick = () => {
     if (parsedData.length > 0) {
       onImport(parsedData);
-      // Limpiar estado al terminar (opcional, depende de si el padre cierra el modal)
     } else {
       toast({
         variant: 'destructive',
@@ -118,7 +112,6 @@ export function InventoryImportDialog({ isOpen, onOpenChange, onImport }: Invent
     onOpenChange(false);
   }
 
-  // Lógica para descargar la plantilla de Excel
   const handleDownloadTemplate = () => {
     const templateData = [
       {
@@ -155,7 +148,6 @@ export function InventoryImportDialog({ isOpen, onOpenChange, onImport }: Invent
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, 'Plantilla');
     
-    // Ajustar ancho de columnas para que se vea bonito
     worksheet["!cols"] = allColumns.map(col => ({ wch: col.length + 5 }));
 
     const excelBuffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
@@ -165,16 +157,15 @@ export function InventoryImportDialog({ isOpen, onOpenChange, onImport }: Invent
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-4xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-4xl max-h-[90vh] flex flex-col">
         <DialogHeader>
           <DialogTitle>Importación Masiva de Inventario</DialogTitle>
           <DialogDescription>
-            Carga un archivo Excel para agregar múltiples productos a la vez.
+            Carga un archivo Excel para agregar o actualizar múltiples productos a la vez.
           </DialogDescription>
         </DialogHeader>
         
-        <div className="grid gap-6 py-4">
-            {/* Área de Dropzone */}
+        <div className="grid gap-6 py-4 flex-grow overflow-y-auto pr-2">
             {!file ? (
                 <div 
                     {...getRootProps()} 
@@ -204,7 +195,6 @@ export function InventoryImportDialog({ isOpen, onOpenChange, onImport }: Invent
                 </div>
             )}
 
-            {/* Mensajes de Error */}
             {error && (
                 <div className="flex items-center p-3 text-sm text-red-600 bg-red-50 border border-red-200 rounded-md">
                     <AlertCircle className="w-4 h-4 mr-2" />
@@ -212,13 +202,12 @@ export function InventoryImportDialog({ isOpen, onOpenChange, onImport }: Invent
                 </div>
             )}
             
-            {/* Instrucciones y Botón de Descarga */}
             <div className="space-y-3 bg-slate-50 p-4 rounded-lg border">
                 <div className="flex justify-between items-start">
                     <h4 className="font-medium text-sm">Instrucciones</h4>
                     <Button variant="outline" size="sm" onClick={handleDownloadTemplate} className="h-8 gap-2 text-blue-600 border-blue-200 hover:bg-blue-50">
                         <Download className="h-3.5 w-3.5" />
-                        Descargar Plantilla Excel
+                        Descargar Plantilla
                     </Button>
                 </div>
                 <p className="text-xs text-muted-foreground">
@@ -238,7 +227,6 @@ export function InventoryImportDialog({ isOpen, onOpenChange, onImport }: Invent
                 </div>
             </div>
 
-            {/* Vista Previa de Datos */}
             {parsedData.length > 0 && (
                 <div className="border rounded-md">
                     <div className="p-2 bg-muted border-b text-xs font-medium text-muted-foreground">
