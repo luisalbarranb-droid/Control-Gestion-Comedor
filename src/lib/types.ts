@@ -153,7 +153,7 @@ export interface InventoryTransaction {
   itemId: string;
   type: InventoryTransactionType;
   quantity: number;
-  date: Date;
+  date: Timestamp | Date;
   documentNumber?: string;
   supplier?: string;
   reason?: string; // e.g., 'Uso en Producción', 'Vencimiento'
