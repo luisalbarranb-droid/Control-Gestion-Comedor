@@ -18,13 +18,7 @@ export function useUser(): UseUserResult {
   const firestore = useFirestore();
   // Ensure the initial state for auth loading is true on both server and client
   const [isAuthLoading, setIsAuthLoading] = useState(true); 
-  const [user, setUser] = useState<FirebaseAuthUser | null>(() => {
-    // Set initial user from auth, but keep loading true until effect runs
-    const currentUser = auth.currentUser;
-    // This part runs only on the client initially, but we want to wait for the onAuthStateChanged listener
-    // to confirm the auth state to prevent hydration issues.
-    return currentUser;
-  });
+  const [user, setUser] = useState<FirebaseAuthUser | null>(null);
 
 
   useEffect(() => {
@@ -42,6 +36,7 @@ export function useUser(): UseUserResult {
     return doc(firestore, 'users', user.uid);
   }, [firestore, user]);
 
+  // The profile query is disabled if there's no authenticated user.
   const { data: profile, isLoading: isProfileLoading } = useDoc<UserProfile>(userDocRef, { disabled: !user });
 
 
