@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useMemo, useEffect } from 'react';
@@ -275,7 +274,7 @@ export default function InventoryPage() {
                     const newItemRef = doc(inventoryRef);
                     batch.set(newItemRef, {
                         ...itemData,
-                        id: newItemRef.id, // Firestore automatically assigns an ID to newItemRef, but we add it to the doc data for easier access
+                        id: newItemRef.id,
                         fechaCreacion: serverTimestamp(),
                     });
                     createdCount++;
