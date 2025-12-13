@@ -82,13 +82,17 @@ service cloud.firestore {
     // ------------------------------------
     match /tasks/{taskId} {
       // Lectura: Creador, Asignado o Admin.
-      allow read: if isAuthenticated() && (resource.data.assignedTo == request.auth.uid || resource.data.createdBy == request.auth.uid || isAdmin());
+      allow read: if isAuthenticated() && (
+          resource.data.asignadoA == request.auth.uid ||
+          resource.data.creadoPor == request.auth.uid ||
+          isAdmin()
+      );
       
-      // Creación: Cualquier usuario activo puede crear una tarea (asumiendo que tiene un campo createdBy).
+      // Creación: Cualquier usuario activo puede crear una tarea (asumiendo que tiene un campo creadoPor).
       allow create: if isAuthenticated();
       
       // Escritura (Update/Delete): Creador de la tarea o Admin.
-      allow update, delete: if isAuthenticated() && (resource.data.createdBy == request.auth.uid || isAdmin());
+      allow update, delete: if isAuthenticated() && (resource.data.creadoPor == request.auth.uid || isAdmin());
     }
 
     // ------------------------------
@@ -96,12 +100,12 @@ service cloud.firestore {
     // ------------------------------
     match /inventory/{itemId} {
       allow read: if isAuthenticated();
-      allow write: if isAdmin();
+      allow write: if isSuperAdmin(); 
     }
 
     match /inventoryTransactions/{transactionId} {
       allow read: if isAuthenticated();
-      allow write: if isAdmin();
+      allow write: if isSuperAdmin();
     }
     
     match /menus/{menuId} {
