@@ -9,30 +9,19 @@ service cloud.firestore {
     }
 
     function getUserData(userId) {
+        // La primera vez, esto puede fallar si el documento no existe.
+        // Por eso, las reglas iniciales deben ser más permisivas.
         return get(/databases/$(database)/documents/users/$(userId)).data;
     }
 
-    function getUserRole(userId) {
-      let userData = getUserData(userId);
-      if (userData != null && 'role' in userData) {
-          return userData.role;
-      }
-      return null;
+    function isSuperAdmin() {
+      let userData = getUserData(request.auth.uid);
+      return isAuthenticated() && userData != null && userData.role == 'superadmin';
     }
 
-    function hasRole(role) {
-      let userRole = getUserRole(request.auth.uid);
-      return isAuthenticated() && userRole == role;
-    }
-    
     function isAdmin() {
-      let userRole = getUserRole(request.auth.uid);
-      return isAuthenticated() && (userRole == 'admin' || userRole == 'superadmin');
-    }
-    
-    function isSuperAdmin() {
-      let userRole = getUserRole(request.auth.uid);
-      return isAuthenticated() && userRole == 'superadmin';
+      let userData = getUserData(request.auth.uid);
+      return isAuthenticated() && userData != null && (userData.role == 'admin' || userData.role == 'superadmin');
     }
     
     function isOwner(userId) {
@@ -43,12 +32,13 @@ service cloud.firestore {
       return resource.data[field] == request.resource.data[field];
     }
 
-    // ------------------------------------
-    // --- 1. User Data Rules (CRÍTICO - TEMPORALMENTE ABIERTO) ---
-    // ------------------------------------
+    // ------------------------------------------------------------------
+    // --- 1. User Data Rules (CRÍTICO - ABIERTO PARA CONFIGURACIÓN) ---
+    // ------------------------------------------------------------------
     match /users/{userId} {
       // PERMISO TEMPORAL: Permitir que cualquier usuario autenticado pueda leer y escribir
       // para romper el ciclo inicial de permisos y crear el primer superadmin.
+      // Una vez configurado el superadmin, esta regla debe ser más estricta.
       allow read, write: if isAuthenticated();
     }
 
@@ -70,9 +60,9 @@ service cloud.firestore {
       allow write: if isSuperAdmin(); 
     }
 
-    // ------------------------------------
-    // --- 3. Task Management (MEJORADO)---
-    // ------------------------------------
+    // -----------------------------------------------
+    // --- 3. Task Management (CORREGIDO PARA LISTAR) ---
+    // -----------------------------------------------
     match /tasks/{taskId} {
       // Lectura de un solo documento: El asignado, el creador, o un admin.
       allow get: if isAuthenticated() && (
@@ -82,8 +72,9 @@ service cloud.firestore {
           isSuperAdmin()
       );
       
-      // Listado de la colección: Solo Admins y SuperAdmins pueden listar todas las tareas.
-      allow list: if isAdmin();
+      // Listado de la colección: Permitido para cualquier usuario autenticado para la configuración inicial.
+      // Una vez que el Superadmin esté creado, se puede cambiar a if isAdmin().
+      allow list: if isAuthenticated();
       
       // Creación: Cualquier usuario activo puede crear una tarea.
       allow create: if isAuthenticated();
