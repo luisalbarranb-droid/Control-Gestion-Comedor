@@ -9,7 +9,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel,
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { MoreVertical, Package, DollarSign, AlertCircle, TrendingDown, TrendingUp, Search, Filter, Plus, FileSpreadsheet, Upload, ShoppingCart, Trash2 } from 'lucide-react';
+import { MoreVertical, Package, DollarSign, AlertCircle, TrendingDown, TrendingUp, Search, Filter, Plus, FileSpreadsheet, Upload, ShoppingCart, Trash2, Loader2 } from 'lucide-react';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
 import { format, isValid } from 'date-fns';
@@ -293,6 +293,13 @@ export default function InventoryPage() {
     }
 }
 
+  const isLoading = isLoadingItems || isUserLoading;
+
+  const totalInventoryValue = useMemo(() => {
+    if (!items) return 0;
+    return items.reduce((sum, item) => sum + item.cantidad * (item.costoUnitario || 0), 0);
+  }, [items]);
+
 
   return (
     <div className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
@@ -347,28 +354,32 @@ export default function InventoryPage() {
                 <CardTitle className="text-sm font-medium">Total Artículos</CardTitle>
                 <Package className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
-            <CardContent><div className="text-2xl font-bold">{items?.length || 0}</div></CardContent>
+            <CardContent><div className="text-2xl font-bold">{isLoading ? <Loader2 className="h-6 w-6 animate-spin" /> : items?.length || 0}</div></CardContent>
          </Card>
          <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">Valor Total</CardTitle>
                 <DollarSign className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
-            <CardContent><div className="text-2xl font-bold">${items?.reduce((sum, item) => sum + item.cantidad * (item.costoUnitario || 0), 0).toFixed(2) || '0.00'}</div></CardContent>
+            <CardContent>
+              <div className="text-2xl font-bold">
+                {isLoading ? <Loader2 className="h-6 w-6 animate-spin" /> : `$${totalInventoryValue.toFixed(2)}`}
+              </div>
+            </CardContent>
          </Card>
          <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">Bajo Stock</CardTitle>
                 <AlertCircle className="h-4 w-4 text-orange-500" />
             </CardHeader>
-            <CardContent><div className="text-2xl font-bold text-orange-600">{items?.filter(i => i.cantidad <= i.stockMinimo && i.cantidad > 0).length || 0}</div></CardContent>
+            <CardContent><div className="text-2xl font-bold text-orange-600">{isLoading ? <Loader2 className="h-6 w-6 animate-spin" /> : items?.filter(i => i.cantidad <= i.stockMinimo && i.cantidad > 0).length || 0}</div></CardContent>
          </Card>
          <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">Agotados</CardTitle>
                 <AlertCircle className="h-4 w-4 text-red-500" />
             </CardHeader>
-            <CardContent><div className="text-2xl font-bold text-red-600">{items?.filter(i => i.cantidad === 0).length || 0}</div></CardContent>
+            <CardContent><div className="text-2xl font-bold text-red-600">{isLoading ? <Loader2 className="h-6 w-6 animate-spin" /> : items?.filter(i => i.cantidad === 0).length || 0}</div></CardContent>
          </Card>
       </div>
 
@@ -419,8 +430,8 @@ export default function InventoryPage() {
                     </TableRow>
                 </TableHeader>
                 <TableBody>
-                    {isLoadingItems && <TableRow><TableCell colSpan={7} className="h-24 text-center">Cargando inventario...</TableCell></TableRow>}
-                    {!isLoadingItems && filteredItems.map((item) => {
+                    {isLoading && <TableRow><TableCell colSpan={7} className="h-24 text-center">Cargando inventario...</TableCell></TableRow>}
+                    {!isLoading && filteredItems.map((item) => {
                         const factor = item.factorConversion || 1;
                         const quantityInPurchaseUnit = item.cantidad / factor;
                         const minStockInPurchaseUnit = item.stockMinimo / factor;
@@ -464,7 +475,7 @@ export default function InventoryPage() {
                         </TableRow>
                         );
                     })}
-                     {!isLoadingItems && filteredItems.length === 0 && (
+                     {!isLoading && filteredItems.length === 0 && (
                         <TableRow>
                             <TableCell colSpan={7} className="h-24 text-center">No se encontraron artículos.</TableCell>
                         </TableRow>
@@ -487,4 +498,3 @@ export default function InventoryPage() {
   );
 }
 
-    
