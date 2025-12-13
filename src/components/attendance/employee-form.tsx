@@ -184,8 +184,8 @@ export function EmployeeForm({ isOpen, onOpenChange, employee }: EmployeeFormPro
         const newEmployeeData = {
           ...dataToSave,
           id: docId, // Save the ID in the document
-          isActive: true, // Campo requerido por las nuevas reglas
-          creationDate: serverTimestamp(), // Campo requerido por las nuevas reglas
+          isActive: true, 
+          creationDate: serverTimestamp(),
           createdBy: 'system' // Add createdBy field
         };
         // Use setDoc here since we have the full ref
