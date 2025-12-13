@@ -51,7 +51,7 @@ import { InventoryImportDialog } from '@/components/inventory/inventory-import-d
 import { inventoryCategories } from '@/lib/placeholder-data';
 
 
-type FormType = 'item' | 'entry' | 'exit' | 'import' | null;
+type FormType = 'item' | 'entry' | 'exit' | null;
 
 export const dynamic = 'force-dynamic';
 
@@ -77,6 +77,7 @@ export default function InventoryPage() {
   const [activeForm, setActiveForm] = useState<FormType>(null);
   const [editingItem, setEditingItem] = useState<InventoryItem | null>(null);
   const [selectedItems, setSelectedItems] = useState<string[]>([]);
+  const [isImportOpen, setIsImportOpen] = useState(false);
 
   const isAdmin = profile?.role === 'admin' || profile?.role === 'superadmin';
 
@@ -283,7 +284,7 @@ export default function InventoryPage() {
             await batch.commit();
         }
 
-        handleCloseForm();
+        setIsImportOpen(false);
         toast({
             title: "Importación Completada",
             description: `${createdCount} artículos creados y ${updatedCount} actualizados.`
@@ -299,7 +300,10 @@ export default function InventoryPage() {
 
   const totalInventoryValue = useMemo(() => {
     if (!items) return 0;
-    return items.reduce((sum, item) => sum + item.cantidad * (item.costoUnitario || 0), 0);
+    return items.reduce((sum, item) => {
+        const costPerRecipeUnit = (item.costoUnitario || 0) / (item.factorConversion || 1);
+        return sum + (item.cantidad * costPerRecipeUnit);
+    }, 0);
   }, [items]);
 
 
@@ -349,7 +353,7 @@ export default function InventoryPage() {
                         <DropdownMenuItem onClick={() => handleOpenForm('exit')}><TrendingDown className="mr-2 h-4 w-4" />Registrar Salida</DropdownMenuItem>
                         <DropdownMenuSeparator />
                         <DropdownMenuItem onClick={() => handleOpenForm('item')}><Package className="mr-2 h-4 w-4" />Nuevo Artículo</DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => handleOpenForm('import')}><Upload className="mr-2 h-4 w-4" />Importar desde Excel</DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => setIsImportOpen(true)}><Upload className="mr-2 h-4 w-4" />Importar desde Excel</DropdownMenuItem>
                     </DropdownMenuContent>
                 </DropdownMenu>
             )}
@@ -495,7 +499,7 @@ export default function InventoryPage() {
       </Card>
       
       <InventoryForm isOpen={activeForm === 'item'} onOpenChange={handleCloseForm} onSave={handleSaveItem} item={editingItem} />
-      <InventoryImportDialog isOpen={activeForm === 'import'} onOpenChange={handleCloseForm} onImport={handleImport} />
+      <InventoryImportDialog isOpen={isImportOpen} onOpenChange={setIsImportOpen} onImport={handleImport} />
       
       {items && (
         <>
