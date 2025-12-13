@@ -8,7 +8,7 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { UserList } from '@/components/user/user-list'; // Cambiado a UserList
+import { UserList } from '@/components/user/user-list';
 import { UserForm } from '@/components/user/user-form';
 import { useCollection, useFirestore, useMemoFirebase, useUser } from '@/firebase';
 import { collection, query, orderBy } from 'firebase/firestore';
@@ -31,9 +31,9 @@ export default function UsersManagementPage() {
 
     const filteredUsers = React.useMemo(() => {
         if (!users) return [];
-        return users.filter(emp =>
-            (emp.name?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
-            (emp.email?.toLowerCase() || '').includes(searchTerm.toLowerCase())
+        return users.filter(user =>
+            (user.name?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
+            (user.email?.toLowerCase() || '').includes(searchTerm.toLowerCase())
         );
     }, [users, searchTerm]);
 

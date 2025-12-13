@@ -39,7 +39,6 @@ export function UserList({ users, isLoading, onEdit }: UserListProps) {
                             </div>
                             <div className="space-y-3 text-sm">
                                 <Skeleton className="h-5 w-full" />
-                                <Skeleton className="h-5 w-full" />
                             </div>
                             <div className="flex gap-2 mt-4">
                                  <Skeleton className="h-9 w-full" />
@@ -68,7 +67,7 @@ export function UserList({ users, isLoading, onEdit }: UserListProps) {
                         <CardContent className="p-4">
                             <div className="flex items-center gap-4 mb-4">
                                 <Avatar className="h-12 w-12">
-                                    <AvatarFallback className="text-lg">{getUserInitials(user.name)}</AvatarFallback>
+                                    <AvatarFallback className="text-lg bg-muted">{getUserInitials(user.name)}</AvatarFallback>
                                 </Avatar>
                                 <div>
                                     <h3 className="font-semibold text-base leading-tight">{user.name}</h3>
