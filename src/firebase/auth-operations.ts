@@ -2,6 +2,7 @@
 
 import {
   createUserWithEmailAndPassword,
+  getAuth,
   UserCredential,
 } from 'firebase/auth';
 
@@ -26,26 +27,35 @@ export async function createUserAccount(email: string): Promise<{ user?: UserCre
     // NOTE: This will likely fail without proper Admin SDK setup or specific client-side permissions.
     // We are simulating the call and catching the expected error.
     
+    // In a real scenario, you would get the auth instance and call:
+    // const auth = getAuth();
     // const userCredential = await createUserWithEmailAndPassword(auth, email, tempPassword);
     
     // --- SIMULATION FOR PROTOTYPE ---
-    // In a real scenario, the above line would be used with a proper auth instance.
-    // To make the UI flow work without a backend, we'll simulate a successful response
-    // and log a warning. This part would be replaced by a call to a serverless function.
+    // To make the UI flow work without a backend, we simulate a successful response.
     console.warn("SIMULATION: User creation in Firebase Auth is simulated. A real implementation would use a backend function.");
     
+    // The error was happening because the previous simulation was trying to read properties
+    // from an `auth` object that wasn't being passed. This version is self-contained.
     const simulatedUser = {
-        uid: `simulated_${Date.now()}`,
+        uid: `simulated_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`,
         email: email,
+        // Add other properties that UserCredential expects
+        emailVerified: false,
+        isAnonymous: false,
+        metadata: {},
+        providerData: [],
+        tenantId: null,
+        displayName: null,
+        photoURL: null,
+        phoneNumber: null,
     };
     
-    // We return a structure that mimics UserCredential
     const simulatedUserCredential = {
         user: simulatedUser,
         providerId: "password",
         operationType: "signIn",
     } as unknown as UserCredential;
-
 
     return { user: simulatedUserCredential };
     // --- END SIMULATION ---
