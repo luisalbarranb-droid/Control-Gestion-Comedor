@@ -9,6 +9,8 @@ export type TaskPriority = 'baja' | 'media' | 'alta' | 'urgente';
 export type TaskPeriodicity = 'diaria' | 'semanal' | 'quincenal' | 'mensual' | 'unica';
 export type WorkerType = 'obrero' | 'empleado';
 export type ContractType = 'determinado' | 'indeterminado' | 'prueba';
+export type ModuleId = 'dashboard' | 'tasks' | 'menus' | 'daily-closing' | 'inventory' | 'attendance' | 'recognition' | 'reports' | 'stats' | 'users' | 'share' | 'settings';
+
 
 export interface User {
   id: string;
@@ -18,6 +20,7 @@ export interface User {
   role: Role;
   area?: AreaId;
   areas?: AreaId[]; // Admins can have multiple areas
+  modules?: ModuleId[]; // Admins can have access to specific modules
   isActive?: boolean;
   creationDate?: Timestamp | Date | string;
   createdBy?: string;
@@ -330,5 +333,3 @@ export interface MonthlyEvaluation {
     evaluatorId: string;
     evaluationDate: Timestamp | Date;
 }
-
-    

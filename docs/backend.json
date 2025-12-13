@@ -31,6 +31,14 @@
             "type": "string"
           }
         },
+        "modules": {
+          "type": "array",
+          "description": "List of modules the admin user has access to.",
+          "items": {
+            "type": "string",
+            "enum": ["dashboard", "tasks", "menus", "daily-closing", "inventory", "attendance", "recognition", "reports", "stats", "users", "settings"]
+          }
+        },
         "area": {
           "type": "string",
           "description": "Area the user belongs to (for 'comun' role). (Reference to Area)"
@@ -1039,5 +1047,3 @@
     ]
   }
 }
-
-    
