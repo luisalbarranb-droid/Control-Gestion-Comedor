@@ -1,3 +1,4 @@
+
 'use client';
 
 import {
@@ -18,12 +19,12 @@ import {
 import { Badge } from '@/components/ui/badge';
 import type { MenuItem, InventoryItem as TInventoryItem } from '@/lib/types';
 import { cn } from '@/lib/utils';
-import { useCollection, useFirestore, useMemoFirebase, useUser } from '@/firebase';
-import { collection } from 'firebase/firestore';
+import { useMemo } from 'react';
 
 interface MenuItemCardProps {
   menuItem: MenuItem;
   pax: number;
+  inventoryItems: TInventoryItem[];
 }
 
 const categoryDisplay: Record<string, { label: string; className: string }> = {
@@ -36,17 +37,10 @@ const categoryDisplay: Record<string, { label: string; className: string }> = {
     postre: { label: 'Postre', className: 'bg-pink-100 text-pink-800' },
 }
 
-export function MenuItemCard({ menuItem, pax }: MenuItemCardProps) {
-  const firestore = useFirestore();
-  const { user: authUser } = useUser();
-  const inventoryCollectionRef = useMemoFirebase(
-    () => (firestore && authUser ? collection(firestore, 'inventory') : null),
-    [firestore, authUser]
-  );
-  const { data: inventoryItems, isLoading } = useCollection<TInventoryItem>(inventoryCollectionRef);
-
+export function MenuItemCard({ menuItem, pax, inventoryItems }: MenuItemCardProps) {
   const getInventoryItem = (id: string) => inventoryItems?.find(i => i.id === id);
   const { label, className } = categoryDisplay[menuItem.category];
+  const isLoading = !inventoryItems;
 
   return (
     <Card>
@@ -78,18 +72,16 @@ export function MenuItemCard({ menuItem, pax }: MenuItemCardProps) {
                   </TableRow>
               );
               
-              // Cantidad neta requerida por persona
               const netQuantityPerPax = ingredient.quantity;
-              // Cantidad bruta (considerando desperdicio)
-              const grossQuantityPerPax = netQuantityPerPax / (1 - ingredient.wasteFactor);
-              // Cantidad total requerida del almacén
+              const wasteFactor = Math.max(0, Math.min(1, ingredient.wasteFactor || 0));
+              const grossQuantityPerPax = wasteFactor === 1 ? netQuantityPerPax : netQuantityPerPax / (1 - wasteFactor);
               const totalRequired = grossQuantityPerPax * pax;
               
               return (
                 <TableRow key={index}>
                   <TableCell className="font-medium">{itemInfo.nombre}</TableCell>
                   <TableCell className="text-right font-mono">
-                    {totalRequired.toFixed(2)} <span className="uppercase text-muted-foreground">{itemInfo.unidad}</span>
+                    {totalRequired.toFixed(2)} <span className="uppercase text-muted-foreground">{itemInfo.unidadReceta}</span>
                   </TableCell>
                 </TableRow>
               );

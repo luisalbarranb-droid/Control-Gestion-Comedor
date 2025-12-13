@@ -43,6 +43,7 @@ import { MenuImportDialog } from '@/components/menus/menu-import-dialog';
 import { useToast } from '@/components/ui/toast';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { MenuSummaryCard } from '@/components/menus/menu-summary-card';
+import { MenuCard } from '@/components/menus/menu-card';
 
 
 function convertToDate(date: Date | Timestamp | undefined): Date | undefined {
@@ -63,14 +64,12 @@ export default function MenusPage() {
     const [importDialogOpen, setImportDialogOpen] = useState(false);
 	const [editingMenu, setEditingMenu] = useState<Menu | null>(null);
 
-	const { start, end, startTime, endTime } = useMemo(() => {
+	const { start, end } = useMemo(() => {
 		const start = startOfWeek(currentWeek, { weekStartsOn: 1 });
 		const end = endOfWeek(currentWeek, { weekStartsOn: 1 });
 		return { 
 			start, 
 			end,
-			startTime: start.getTime(),
-			endTime: end.getTime()
 		};
 	}, [currentWeek]);
 
@@ -85,21 +84,14 @@ export default function MenusPage() {
 	}, [firestore, isUserLoading, start, end]);
 
 
-	const { data: menus, isLoading } = useCollection<Menu>(menuQuery);
-
-	const usersQuery = useMemoFirebase(() => {
-		if (!firestore) return null;
-		return collection(firestore, 'users');
-	}, [firestore]);
+	const { data: menus, isLoading: isLoadingMenus } = useCollection<Menu>(menuQuery);
     
     const inventoryQuery = useMemoFirebase(() => {
-        if (!firestore) return null;
+        if (!firestore || isUserLoading) return null;
         return collection(firestore, 'inventory');
-    }, [firestore]);
+    }, [firestore, isUserLoading]);
 
-
-	const { data: users, isLoading: isLoadingUsers } = useCollection<User>(usersQuery);
-    const { data: inventoryItems, isLoading: isLoadingInventory } = useCollection<InventoryItem>(inventoryQuery, { disabled: isUserLoading });
+    const { data: inventoryItems, isLoading: isLoadingInventory } = useCollection<InventoryItem>(inventoryQuery);
 
 	const handleNextWeek = useCallback(() => {
 		setCurrentWeek(prev => addWeeks(prev, 1));
@@ -276,6 +268,8 @@ export default function MenusPage() {
 
 		return { menusByDay: dailyData, weekStats: { totalMenus, totalPax } };
 	}, [menus, weekDays]);
+    
+    const isLoading = isUserLoading || isLoadingMenus || isLoadingInventory;
 
 	return (
 		<div className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
@@ -348,7 +342,7 @@ export default function MenusPage() {
                             {menus.length > 0 ? (
                                 menus.map(menu => (
                                     <div key={menu.id}>
-                                        <MenuSummaryCard menu={menu} />
+                                        <MenuCard menu={menu} inventoryItems={inventoryItems || []} />
                                         <DropdownMenu>
                                             <DropdownMenuTrigger asChild>
                                                 <Button variant="ghost" className="h-8 w-full mt-2 text-xs">
@@ -381,7 +375,7 @@ export default function MenusPage() {
 				setEditingMenu={setEditingMenu}
 				currentWeekStart={start}
                 inventoryItems={inventoryItems || []}
-                isLoadingInventory={isLoadingInventory || isUserLoading}
+                isLoadingInventory={isLoadingInventory}
 			/>
 
             <MenuImportDialog

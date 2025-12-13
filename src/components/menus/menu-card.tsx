@@ -22,11 +22,10 @@ import {
 import { Button } from '@/components/ui/button';
 import type { Menu, MenuItemCategory, InventoryItem as TInventoryItem } from '@/lib/types';
 import { MenuItemCard } from './menu-item-card';
-import { useCollection, useFirestore, useUser, useMemoFirebase } from '@/firebase';
-import { collection } from 'firebase/firestore';
 
 interface MenuCardProps {
   menu: Menu;
+  inventoryItems: TInventoryItem[];
 }
 
 const categoryOrder: MenuItemCategory[] = [
@@ -39,19 +38,11 @@ const categoryOrder: MenuItemCategory[] = [
     'postre'
 ];
 
-export function MenuCard({ menu }: MenuCardProps) {
+export function MenuCard({ menu, inventoryItems }: MenuCardProps) {
   const sortedItems = [...menu.items].sort((a, b) => categoryOrder.indexOf(a.category) - categoryOrder.indexOf(b.category));
   const menuDateObj = menu.date.toDate ? menu.date.toDate() : new Date(menu.date as any);
   const menuDate = format(menuDateObj, 'yyyy-MM-dd');
   
-  const firestore = useFirestore();
-  const { user: authUser } = useUser();
-  const inventoryCollectionRef = useMemoFirebase(
-    () => (firestore && authUser ? collection(firestore, 'inventory') : null),
-    [firestore, authUser]
-  );
-  const { isLoading } = useCollection<TInventoryItem>(inventoryCollectionRef);
-
   return (
     <Card className="flex flex-col">
       <CardHeader>
@@ -85,7 +76,7 @@ export function MenuCard({ menu }: MenuCardProps) {
       <CardContent className="flex-grow">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
           {sortedItems.map(item => (
-            <MenuItemCard key={item.id} menuItem={item} pax={menu.pax} />
+            <MenuItemCard key={item.id} menuItem={item} pax={menu.pax} inventoryItems={inventoryItems} />
           ))}
           {sortedItems.length === 0 && (
             <div className="col-span-full flex items-center justify-center h-40 border-2 border-dashed rounded-md">
@@ -106,5 +97,3 @@ export function MenuCard({ menu }: MenuCardProps) {
     </Card>
   );
 }
-
-    
