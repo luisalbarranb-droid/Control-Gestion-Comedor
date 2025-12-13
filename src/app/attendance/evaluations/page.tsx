@@ -18,9 +18,8 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
-import { useCollection, useFirestore, useMemoFirebase, useUser } from '@/firebase';
+import { useCollection, useFirestore, useMemoFirebase, useUser, addDocumentNonBlocking } from '@/firebase';
 import { collection, query, where, orderBy, doc } from 'firebase/firestore';
-import { addDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import type { User, EvaluationCriterion } from '@/lib/types';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
