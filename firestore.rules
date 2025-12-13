@@ -134,7 +134,7 @@ service cloud.firestore {
     match /monthlyEvaluations/{evaluationId} {
       allow get: if isOwner(resource.data.userId) || isAdmin();
       allow list: if isAdmin();
-      create: if isAdmin(); 
+      allow create: if isAdmin(); 
       update, delete: if isAdmin();
     }
     
