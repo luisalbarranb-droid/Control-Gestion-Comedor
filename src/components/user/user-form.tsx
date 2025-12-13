@@ -63,13 +63,16 @@ export function UserForm({ isOpen, onOpenChange, editingUser }: UserFormProps) {
     },
   });
 
+  const selectedRole = form.watch('role');
+  const isSuperAdmin = selectedRole === 'superadmin';
+
   useEffect(() => {
     if (editingUser) {
       form.reset({
         name: editingUser.name || '',
         email: editingUser.email || '',
         role: editingUser.role || 'comun',
-        area: editingUser.area || undefined,
+        area: editingUser.role === 'superadmin' ? undefined : editingUser.area || undefined,
       });
     } else {
       form.reset({
@@ -80,20 +83,32 @@ export function UserForm({ isOpen, onOpenChange, editingUser }: UserFormProps) {
       });
     }
   }, [editingUser, isOpen, form]);
+  
+  useEffect(() => {
+    if (isSuperAdmin) {
+      form.setValue('area', undefined);
+    }
+  }, [isSuperAdmin, form]);
 
   const onSubmit = async (values: UserFormValues) => {
     if (!firestore) return;
+    
+    const dataToSave = {
+        ...values,
+        area: isSuperAdmin ? undefined : values.area,
+    };
+
     try {
       if (editingUser) {
         // Update
         const userRef = doc(firestore, 'users', editingUser.id);
-        updateDocumentNonBlocking(userRef, values);
+        updateDocumentNonBlocking(userRef, dataToSave);
         toast({ title: 'Usuario actualizado', description: `${values.name} ha sido actualizado.` });
       } else {
         // Create
         const collectionRef = collection(firestore, 'users');
         const newUserData = {
-          ...values,
+          ...dataToSave,
           isActive: true,
           creationDate: serverTimestamp(),
         };
@@ -141,8 +156,12 @@ export function UserForm({ isOpen, onOpenChange, editingUser }: UserFormProps) {
              <FormField name="area" control={form.control} render={({ field }) => (
               <FormItem>
                 <FormLabel>Área de Trabajo</FormLabel>
-                 <Select onValueChange={field.onChange} value={field.value}>
-                  <FormControl><SelectTrigger><SelectValue placeholder="Seleccionar área..." /></SelectTrigger></FormControl>
+                 <Select onValueChange={field.onChange} value={field.value} disabled={isSuperAdmin}>
+                  <FormControl>
+                    <SelectTrigger>
+                        <SelectValue placeholder={isSuperAdmin ? "Acceso a todas las áreas" : "Seleccionar área..."} />
+                    </SelectTrigger>
+                  </FormControl>
                   <SelectContent>
                     {areas.map(area => <SelectItem key={area.id} value={area.id}>{area.nombre}</SelectItem>)}
                   </SelectContent>
