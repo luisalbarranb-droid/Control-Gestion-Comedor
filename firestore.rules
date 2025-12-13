@@ -3,12 +3,13 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // --- Helper Functions ---
+    // --- Funciones de Ayuda (Helpers) ---
     function isAuthenticated() {
       return request.auth != null;
     }
 
     function getUserRole() {
+      // Asume que el rol se establece como un Custom Claim en el token.
       return request.auth.token.role;
     }
 
@@ -21,7 +22,7 @@ service cloud.firestore {
     }
     
     function isSuperAdmin() {
-       return hasRole('superadmin');
+        return hasRole('superadmin');
     }
     
     function isOwner(userId) {
@@ -32,88 +33,120 @@ service cloud.firestore {
       return isAuthenticated();
     }
     
-    function hasRequiredFields(fields) {
-      return request.resource.data.keys().hasAll(fields);
+    // Función para validar que un campo crítico no ha sido modificado
+    function cannotChange(field) {
+      return resource.data[field] == request.resource.data[field];
     }
 
-    // --- User Data Rules ---
+
+    // ------------------------------------
+    // --- 1. User Data Rules (CRÍTICO) ---
+    // ------------------------------------
     match /users/{userId} {
-      allow get: if isAuthenticated() && (isOwner(userId) || isAdmin());
+      // Lectura: Dueño del perfil o Admin.
+      allow get: if isOwner(userId) || isAdmin();
       allow list: if isAdmin();
-      allow create: if isSuperAdmin(); // Only superadmins can create users directly.
-      allow update: if isOwner(userId) || isAdmin();
+      
+      // Creación: Solo SuperAdmin puede crear nuevas cuentas de usuario.
+      allow create: if isSuperAdmin();
+      
+      // Actualización: 
+      // 1. Dueño: Solo puede actualizar sus propios datos (y no puede cambiar el rol).
+      // 2. Admin: Puede actualizar todo, incluyendo el rol.
+      allow update: if (isOwner(userId) && cannotChange('role')) || isAdmin();
+      
+      // Eliminación: Solo SuperAdmin.
       allow delete: if isSuperAdmin();
     }
 
-    // --- Area Management Rules ---
+    // ----------------------------------
+    // --- 2. Configuration & Control ---
+    // ----------------------------------
     match /areas/{areaId} {
       allow read: if isActiveUser();
-      allow write: if isAdmin();
+      allow write: if isAdmin(); // Creación, actualización y eliminación de áreas.
     }
 
-    // --- Task Management Rules ---
-    match /tasks/{taskId} {
-      allow read, write: if isAuthenticated();
-    }
-
-    // --- Statistics Rules ---
-    match /statistics/{period} {
-      allow read, write: if isAdmin();
-    }
-    
-    // --- Configuration Rules ---
     match /configuration/{configId} {
       allow read: if isActiveUser();
-      allow write: if isSuperAdmin();
+      allow write: if isSuperAdmin(); // Configuración global, solo SuperAdmin.
+    }
+    
+    match /statistics/{period} {
+      allow read: if isAdmin();
+      allow write: if isSuperAdmin(); // Evitar escritura accidental en estadísticas.
     }
 
-    // --- Inventory Rules ---
+    // ------------------------------------
+    // --- 3. Task Management (MEJORADO)---
+    // ------------------------------------
+    match /tasks/{taskId} {
+      // Lectura: Creador, Asignado o Admin.
+      allow read: if isAuthenticated() && (resource.data.assignedTo == request.auth.uid || resource.data.createdBy == request.auth.uid || isAdmin());
+      
+      // Creación: Cualquier usuario activo puede crear una tarea (asumiendo que tiene un campo createdBy).
+      allow create: if isAuthenticated();
+      
+      // Escritura (Update/Delete): Creador de la tarea o Admin.
+      allow update, delete: if isAuthenticated() && (resource.data.createdBy == request.auth.uid || isAdmin());
+    }
+
+    // ------------------------------
+    // --- 4. Inventory & Menus ---
+    // ------------------------------
     match /inventory/{itemId} {
       allow read: if isAuthenticated();
-      allow write: if isSuperAdmin();
+      allow write: if isAdmin();
     }
 
     match /inventoryTransactions/{transactionId} {
       allow read: if isAuthenticated();
-      allow write: if isSuperAdmin();
-    }
-    
-    // --- Menu Rules ---
-    match /menus/{menuId} {
-      allow read: if isAuthenticated();
       allow write: if isAdmin();
     }
+    
+    match /menus/{menuId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin(); // Permiso de escritura a Admins.
+    }
 
-    // --- Attendance Rules ---
+    // --------------------------------------
+    // --- 5. Attendance & Evaluation ---
+    // --------------------------------------
+    
+    // Registros de Asistencia
     match /attendance/{recordId} {
-      allow get: if isAdmin() || (isActiveUser() && resource.data.userId == request.auth.uid);
+      // Lectura: Admin o el dueño del registro.
+      allow get: if isAdmin() || (isOwner(resource.data.userId));
       allow list: if isAdmin();
-      allow create, update, delete: if isAdmin();
+      allow create, update, delete: if isAdmin(); // Solo Admin puede manipular la asistencia.
     }
     
+    // Solicitudes de Días Libres
     match /daysOff/{dayOffId} {
-      allow get: if isAdmin() || (isActiveUser() && resource.data.userId == request.auth.uid);
+      // Lectura: Admin o el dueño de la solicitud.
+      allow get: if isAdmin() || (isOwner(resource.data.userId));
       allow list: if isAdmin();
-      allow create, update, delete: if isAdmin();
+      allow create, update, delete: if isAdmin(); // Solo Admin puede aprobar/manipular.
     }
     
-    // --- Evaluation Criteria Rules ---
+    // Criterios de Evaluación (Configuración)
     match /evaluationCriteria/{criterionId} {
       allow get, list: if isAdmin();
-      allow write: if isSuperAdmin();
+      allow write: if isSuperAdmin(); // Solo SuperAdmin puede definir los criterios.
     }
 
-    // --- Monthly Evaluation Rules ---
+    // Evaluaciones Mensuales (Resultado)
     match /monthlyEvaluations/{evaluationId} {
-      allow get: if isActiveUser() && (resource.data.userId == request.auth.uid || isAdmin());
+      // Lectura: Dueño de la evaluación o Admin.
+      allow get: if isOwner(resource.data.userId) || isAdmin();
       allow list: if isAdmin();
-      allow create, update, delete: if isAdmin();
+      allow create, update, delete: if isAdmin(); // Solo Admin puede crear/modificar resultados.
     }
     
-    // --- Peer Review Rules ---
+    // Revisiones de Pares
     match /peer-reviews/{reviewId} {
-      allow read, create: if isActiveUser();
-      allow update, delete: if isAdmin();
+      allow read, create: if isActiveUser(); // Todos pueden leer y crear (submit) reviews.
+      allow update, delete: if isAdmin(); // Solo Admins pueden modificar o eliminar una review enviada.
     }
   }
 }
