@@ -97,12 +97,12 @@ service cloud.firestore {
     // ------------------------------
     match /inventory/{itemId} {
       allow read: if isAuthenticated();
-      allow write: if isSuperAdmin(); 
+      allow write: if isAdmin();
     }
 
     match /inventoryTransactions/{transactionId} {
       allow read: if isAuthenticated();
-      allow write: if isSuperAdmin();
+      allow write: if isAdmin();
     }
     
     match /menus/{menuId} {
