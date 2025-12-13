@@ -28,12 +28,13 @@ import type { InventoryItem, InventoryReportData, InventoryCategoryId, Inventory
 import { cn } from '@/lib/utils';
 import { useToast } from '@/components/ui/toast';
 import Link from 'next/link';
-import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
+import { useCollection, useFirestore, useMemoFirebase, useUser } from '@/firebase';
 import { collection, query, orderBy } from 'firebase/firestore';
 
 export default function InventoryReportsPage() {
   const { toast } = useToast();
   const firestore = useFirestore();
+  const { isUserLoading } = useUser();
 
   const inventoryQuery = useMemoFirebase(() => {
     if (!firestore) return null;
@@ -45,8 +46,8 @@ export default function InventoryReportsPage() {
     return query(collection(firestore, 'inventoryTransactions'), orderBy('date', 'desc'));
   }, [firestore]);
 
-  const { data: items, isLoading: isLoadingItems } = useCollection<InventoryItem>(inventoryQuery);
-  const { data: transactions, isLoading: isLoadingTransactions } = useCollection<InventoryTransaction>(transactionsQuery);
+  const { data: items, isLoading: isLoadingItems } = useCollection<InventoryItem>(inventoryQuery, { disabled: isUserLoading });
+  const { data: transactions, isLoading: isLoadingTransactions } = useCollection<InventoryTransaction>(transactionsQuery, { disabled: isUserLoading });
 
   const getCategoryName = (categoryId: InventoryCategoryId) => {
     return inventoryCategories.find(cat => cat.id === categoryId)?.nombre || 'Categoría Desconocida';
@@ -120,7 +121,7 @@ export default function InventoryReportsPage() {
     });
   };
   
-  const isLoading = isLoadingItems || isLoadingTransactions;
+  const isLoading = isLoadingItems || isLoadingTransactions || isUserLoading;
 
   const KPI_CARDS = [
     { title: 'Valor Total del Inventario', value: `$${reportStats.totalInventoryValue.toFixed(2)}`, icon: DollarSign },
@@ -255,5 +256,3 @@ export default function InventoryReportsPage() {
       </main>
   );
 }
-
-    
