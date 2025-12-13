@@ -1,3 +1,4 @@
+
 import { initializeApp, getApps, getApp, FirebaseApp } from 'firebase/app';
 import { getAuth, Auth, onAuthStateChanged, User } from 'firebase/auth';
 import { getFirestore, Firestore } from 'firebase/firestore';
@@ -15,7 +16,7 @@ if (!getApps().length) {
 const auth: Auth = getAuth(firebaseApp);
 const firestore: Firestore = getFirestore(firebaseApp);
 
-export { firebaseApp, auth, firestore, onAuthStateChanged };
+export { firebaseApp, auth, firestore, onAuthStateChanged, getApps, getApp };
 export type { User };
 
 // --- Main Provider and Hooks ---

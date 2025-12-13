@@ -12,7 +12,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { MoreVertical, Package, DollarSign, AlertCircle, TrendingDown, TrendingUp, Search, Filter, Plus, FileSpreadsheet, Upload, ShoppingCart, Trash2, Loader2 } from 'lucide-react';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
-import { format, isValid } from 'date-fns';
 import { useToast } from '@/components/ui/toast';
 import { Checkbox } from '@/components/ui/checkbox';
 import {
@@ -53,14 +52,6 @@ import { inventoryCategories } from '@/lib/placeholder-data';
 
 
 type FormType = 'item' | 'entry' | 'exit' | 'import' | null;
-
-function convertToDate(date: any): Date | null {
-    if (!date) return null;
-    if (date instanceof Date && isValid(date)) return date;
-    if (date instanceof Timestamp) return date.toDate();
-    const parsed = new Date(date);
-    return isValid(parsed) ? parsed : null;
-}
 
 export const dynamic = 'force-dynamic';
 
@@ -243,11 +234,7 @@ export default function InventoryPage() {
         return;
     };
 
-    const existingCodes = (items || []).reduce((acc, item) => {
-        if(item.codigo) acc[item.codigo] = item.id;
-        return acc;
-    }, {} as Record<string, string>);
-
+    const existingItems = items || [];
     const CHUNK_SIZE = 450;
     let createdCount = 0;
     let updatedCount = 0;
@@ -260,7 +247,7 @@ export default function InventoryPage() {
 
             chunk.forEach((row) => {
                 if (!row.codigo) return;
-
+                
                 const itemData = {
                     nombre: String(row.nombre),
                     codigo: String(row.codigo),
@@ -276,20 +263,19 @@ export default function InventoryPage() {
                     costoUnitario: Number(row.costoUnitario || 0),
                     ultimaActualizacion: serverTimestamp(),
                 };
+                
+                const existingItem = existingItems.find(item => item.codigo === itemData.codigo);
 
-                const existingId = existingCodes[itemData.codigo];
-
-                if (existingId) {
-                    const itemRef = doc(inventoryRef, existingId);
+                if (existingItem) {
+                    const itemRef = doc(inventoryRef, existingItem.id);
                     batch.update(itemRef, itemData);
                     updatedCount++;
                 } else {
                     const newItemRef = doc(inventoryRef);
-                    const newArticleData = {
+                    batch.set(newItemRef, {
                         ...itemData,
                         fechaCreacion: serverTimestamp(),
-                    };
-                    batch.set(newItemRef, newArticleData);
+                    });
                     createdCount++;
                 }
             });
@@ -518,5 +504,3 @@ export default function InventoryPage() {
     </div>
   );
 }
-
-    
