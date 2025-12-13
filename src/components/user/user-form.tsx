@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useEffect } from 'react';
@@ -114,7 +115,8 @@ export function UserForm({ isOpen, onOpenChange, editingUser }: UserFormProps) {
     } else { // superadmin
         dataToSave.area = undefined;
         dataToSave.areas = undefined;
-        dataToSave.modules = undefined; // Superadmin has access to all
+        // For superadmin, we let modules be undefined to signify full access
+        dataToSave.modules = undefined; 
     }
 
     try {
@@ -124,13 +126,17 @@ export function UserForm({ isOpen, onOpenChange, editingUser }: UserFormProps) {
         toast({ title: 'Usuario actualizado', description: `${values.name} ha sido actualizado.` });
       } else {
         const collectionRef = collection(firestore, 'users');
+        // Cuando creamos, el ID del documento será el UID de auth.
+        // Aquí simulamos que ya tenemos ese UID.
+        // La lógica real estaría en `createUserAccount` que nos devolvería el UID.
+        // Por ahora, asumimos que addDocumentNonBlocking es suficiente para el prototipo.
         const newUserData = {
           ...dataToSave,
           isActive: true,
           creationDate: serverTimestamp(),
         };
         addDocumentNonBlocking(collectionRef, newUserData as any);
-        toast({ title: 'Usuario creado', description: `${values.name} ha sido agregado.` });
+        toast({ title: 'Usuario creado', description: `Se ha enviado una invitación a ${values.name}.` });
       }
       onOpenChange(false);
     } catch (error) {
@@ -154,7 +160,7 @@ export function UserForm({ isOpen, onOpenChange, editingUser }: UserFormProps) {
               <FormItem><FormLabel>Nombre Completo</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
             )} />
             <FormField name="email" control={form.control} render={({ field }) => (
-              <FormItem><FormLabel>Email</FormLabel><FormControl><Input type="email" {...field} /></FormControl><FormMessage /></FormItem>
+              <FormItem><FormLabel>Email</FormLabel><FormControl><Input type="email" {...field} disabled={!!editingUser} /></FormControl><FormMessage /></FormItem>
             )} />
             <FormField name="role" control={form.control} render={({ field }) => (
               <FormItem>
@@ -189,110 +195,109 @@ export function UserForm({ isOpen, onOpenChange, editingUser }: UserFormProps) {
                     </FormItem>
                 )} />
             )}
-
-            {selectedRole === 'admin' && (
-                <div className="space-y-4">
-                    <Separator />
-                    <FormField
-                        control={form.control}
-                        name="areas"
-                        render={() => (
-                            <FormItem>
-                                <FormLabel className="text-base">Áreas de Trabajo Asignadas</FormLabel>
-                                <div className="p-3 border rounded-md grid grid-cols-2 gap-2">
-                                    {areas.map((area) => (
-                                    <FormField
-                                        key={area.id}
-                                        control={form.control}
-                                        name="areas"
-                                        render={({ field }) => {
-                                        return (
-                                            <FormItem
+            
+            {(selectedRole === 'admin' || selectedRole === 'superadmin') && (
+                <div className="space-y-4 rounded-md border p-4">
+                    <h3 className="font-semibold">Configuración de Permisos</h3>
+                    {selectedRole === 'superadmin' ? (
+                         <div className="text-sm text-muted-foreground p-4 bg-amber-50 border border-amber-200 rounded-lg">
+                            El rol de <strong>Superadmin</strong> tiene acceso completo a todas las áreas y módulos por defecto. No se requiere configuración adicional.
+                         </div>
+                    ) : (
+                        <>
+                           <FormField
+                                control={form.control}
+                                name="areas"
+                                render={() => (
+                                    <FormItem>
+                                        <FormLabel className="text-base">Áreas de Trabajo Asignadas</FormLabel>
+                                        <div className="p-3 border rounded-md grid grid-cols-2 gap-2">
+                                            {areas.map((area) => (
+                                            <FormField
                                                 key={area.id}
-                                                className="flex flex-row items-start space-x-3 space-y-0"
-                                            >
-                                            <FormControl>
-                                                <Checkbox
-                                                    checked={field.value?.includes(area.id)}
-                                                    onCheckedChange={(checked) => {
-                                                        return checked
-                                                        ? field.onChange([...(field.value || []), area.id])
-                                                        : field.onChange(
-                                                            field.value?.filter(
-                                                                (value) => value !== area.id
-                                                            )
-                                                            )
-                                                    }}
-                                                />
-                                            </FormControl>
-                                            <FormLabel className="font-normal">
-                                                {area.nombre}
-                                            </FormLabel>
-                                            </FormItem>
-                                        )
-                                        }}
-                                    />
-                                    ))}
-                                </div>
-                                <FormMessage />
-                            </FormItem>
-                        )}
-                    />
-                    <FormField
-                        control={form.control}
-                        name="modules"
-                        render={() => (
-                            <FormItem>
-                                <FormLabel className="text-base">Acceso a Módulos</FormLabel>
-                                <div className="p-3 border rounded-md grid grid-cols-2 gap-2">
-                                    {navItems.filter(navItem => navItem.id).map((item) => (
-                                    <FormField
-                                        key={item.id}
-                                        control={form.control}
-                                        name="modules"
-                                        render={({ field }) => {
-                                        return (
-                                            <FormItem
+                                                control={form.control}
+                                                name="areas"
+                                                render={({ field }) => {
+                                                return (
+                                                    <FormItem
+                                                        key={area.id}
+                                                        className="flex flex-row items-start space-x-3 space-y-0"
+                                                    >
+                                                    <FormControl>
+                                                        <Checkbox
+                                                            checked={field.value?.includes(area.id)}
+                                                            onCheckedChange={(checked) => {
+                                                                return checked
+                                                                ? field.onChange([...(field.value || []), area.id])
+                                                                : field.onChange(
+                                                                    field.value?.filter(
+                                                                        (value) => value !== area.id
+                                                                    )
+                                                                    )
+                                                            }}
+                                                        />
+                                                    </FormControl>
+                                                    <FormLabel className="font-normal">
+                                                        {area.nombre}
+                                                    </FormLabel>
+                                                    </FormItem>
+                                                )
+                                                }}
+                                            />
+                                            ))}
+                                        </div>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+                            <FormField
+                                control={form.control}
+                                name="modules"
+                                render={() => (
+                                    <FormItem>
+                                        <FormLabel className="text-base">Acceso a Módulos</FormLabel>
+                                        <div className="p-3 border rounded-md grid grid-cols-2 gap-2">
+                                            {navItems.filter(navItem => navItem.id).map((item) => (
+                                            <FormField
                                                 key={item.id}
-                                                className="flex flex-row items-start space-x-3 space-y-0"
-                                            >
-                                            <FormControl>
-                                                <Checkbox
-                                                    checked={field.value?.includes(item.id as ModuleId)}
-                                                    onCheckedChange={(checked) => {
-                                                        return checked
-                                                        ? field.onChange([...(field.value || []), item.id])
-                                                        : field.onChange(
-                                                            field.value?.filter(
-                                                                (value) => value !== item.id
-                                                            )
-                                                            )
-                                                    }}
-                                                />
-                                            </FormControl>
-                                            <FormLabel className="font-normal">
-                                                {item.label}
-                                            </FormLabel>
-                                            </FormItem>
-                                        )
-                                        }}
-                                    />
-                                    ))}
-                                </div>
-                                <FormMessage />
-                            </FormItem>
-                        )}
-                    />
+                                                control={form.control}
+                                                name="modules"
+                                                render={({ field }) => {
+                                                return (
+                                                    <FormItem
+                                                        key={item.id}
+                                                        className="flex flex-row items-start space-x-3 space-y-0"
+                                                    >
+                                                    <FormControl>
+                                                        <Checkbox
+                                                            checked={field.value?.includes(item.id as ModuleId)}
+                                                            onCheckedChange={(checked) => {
+                                                                return checked
+                                                                ? field.onChange([...(field.value || []), item.id])
+                                                                : field.onChange(
+                                                                    field.value?.filter(
+                                                                        (value) => value !== item.id
+                                                                    )
+                                                                    )
+                                                            }}
+                                                        />
+                                                    </FormControl>
+                                                    <FormLabel className="font-normal">
+                                                        {item.label}
+                                                    </FormLabel>
+                                                    </FormItem>
+                                                )
+                                                }}
+                                            />
+                                            ))}
+                                        </div>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+                        </>
+                    )}
                 </div>
-            )}
-
-            {selectedRole === 'superadmin' && (
-                 <FormItem>
-                    <FormLabel>Permisos</FormLabel>
-                    <FormControl>
-                        <Input disabled value="Acceso total a todas las áreas y módulos" />
-                    </FormControl>
-                </FormItem>
             )}
             
             <DialogFooter className="pt-4">

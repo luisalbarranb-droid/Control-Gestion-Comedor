@@ -37,10 +37,11 @@ export function useUser(): UseUserResult {
 
   // Memoize el perfil final para evitar recálculos innecesarios
   const profile = useMemo(() => {
-    // Si el usuario es el superadmin por email, forzamos el perfil de superadmin.
+    // Si el email es el del superusuario, forzamos el perfil de superadmin.
     if (user?.email === 'arvecladu@gmail.com') {
+      const baseProfile = profileData || { id: user.uid, email: user.email, name: 'Super Admin' };
       return {
-        ...(profileData || { id: user.uid, email: user.email, name: 'Super Admin' }),
+        ...baseProfile,
         role: 'superadmin',
       } as UserProfile;
     }

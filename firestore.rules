@@ -8,14 +8,14 @@ service cloud.firestore {
       return request.auth != null;
     }
 
-    // TU SALVOCONDUCTO: Si es tu email, eres 'Dios' en la base de datos
-    function isSuperUser() {
+    // TU SALVOCONDUCTO: Si es tu email, eres 'Dios' en la base de datos (Respaldo)
+    function isSuperUserByEmail() {
        return request.auth.token.email == 'arvecladu@gmail.com';
     }
 
     function isAdmin() {
-      // Primero, vemos si eres el superusuario por email.
-      if (isSuperUser()) {
+      // Primero, vemos si eres el superusuario por email (llave maestra).
+      if (isSuperUserByEmail()) {
         return true;
       }
       // Si no, verificamos si tienes el rol en tu documento de usuario en Firestore.
@@ -29,12 +29,12 @@ service cloud.firestore {
 
     // --- REGLAS ---
 
-    // 1. USUARIOS (Aquí fallaba)
+    // 1. USUARIOS (Permitimos que cualquier usuario autenticado pueda leer la lista y crear/editar su propio perfil)
     match /users/{userId} {
-      // Permitimos crear si eres SuperUser O si eres el dueño del ID (para setDoc)
-      allow create: if isSuperUser() || isOwner(userId);
-      allow update, delete: if isSuperUser() || isOwner(userId);
-      allow read: if isAuthenticated(); // Permitir leer usuarios para evitar errores de lista
+      allow create: if isSuperUserByEmail() || isOwner(userId);
+      allow update: if isOwner(userId) || isAdmin();
+      allow delete: if isAdmin();
+      allow read: if isAuthenticated(); 
     }
 
     // 2. TAREAS
@@ -47,10 +47,10 @@ service cloud.firestore {
       allow read: if isAuthenticated();
       allow write: if isAdmin();
     }
-
+    
     // Regla comodín para desbloquearte totalmente mientras desarrollas
     match /{document=**} {
-       allow read, write: if isSuperUser() || isAdmin(); 
+       allow read, write: if isSuperUserByEmail() || isAdmin(); 
     }
   }
 }
