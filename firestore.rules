@@ -29,10 +29,6 @@ service cloud.firestore {
       return isAuthenticated() && request.auth.uid == userId;
     }
     
-    function isActiveUser() {
-      return isAuthenticated();
-    }
-    
     // Función para validar que un campo crítico no ha sido modificado
     function cannotChange(field) {
       return resource.data[field] == request.resource.data[field];
@@ -64,34 +60,36 @@ service cloud.firestore {
     // --- 2. Configuration & Control ---
     // ----------------------------------
     match /areas/{areaId} {
-      allow read: if isActiveUser();
+      allow read: if isAuthenticated();
       allow write: if isAdmin(); // Creación, actualización y eliminación de áreas.
     }
 
     match /configuration/{configId} {
-      allow read: if isActiveUser();
+      allow read: if isAuthenticated();
       allow write: if isSuperAdmin(); // Configuración global, solo SuperAdmin.
     }
     
     match /statistics/{period} {
       allow read: if isAdmin();
-      allow write: if isSuperAdmin(); // Evitar escritura accidental en estadísticas.
+      // La escritura debe ser desde un backend seguro, pero por ahora solo SuperAdmin.
+      allow write: if isSuperAdmin(); 
     }
 
     // ------------------------------------
     // --- 3. Task Management (MEJORADO)---
     // ------------------------------------
     match /tasks/{taskId} {
+      // Lectura: Un usuario solo puede ver tareas asignadas a él, creadas por él, o si es Admin.
       allow read: if isAuthenticated() && (
           resource.data.asignadoA == request.auth.uid ||
           resource.data.creadoPor == request.auth.uid ||
           isAdmin()
       );
       
-      // Creación: Cualquier usuario activo puede crear una tarea (asumiendo que tiene un campo creadoPor).
+      // Creación: Cualquier usuario activo puede crear una tarea.
       allow create: if isAuthenticated();
       
-      // Escritura (Update/Delete): Creador de la tarea o Admin.
+      // Escritura (Update/Delete): Solo el creador de la tarea o un Admin.
       allow update, delete: if isAuthenticated() && (resource.data.creadoPor == request.auth.uid || isAdmin());
     }
 
@@ -100,24 +98,27 @@ service cloud.firestore {
     // ------------------------------
     match /inventory/{itemId} {
       allow read: if isAuthenticated();
+      // Escritura en inventario solo para el rol más alto.
       allow write: if isSuperAdmin(); 
     }
 
     match /inventoryTransactions/{transactionId} {
       allow read: if isAuthenticated();
-      allow write: if isSuperAdmin();
+      // Admin puede registrar movimientos, pero SuperAdmin puede corregir/borrar.
+      allow create: if isAdmin();
+      allow update, delete: if isSuperAdmin();
     }
     
     match /menus/{menuId} {
       allow read: if isAuthenticated();
-      allow write: if isAdmin(); // Permiso de escritura a Admins.
+      // Admins pueden planificar menús.
+      allow write: if isAdmin();
     }
 
     // --------------------------------------
     // --- 5. Attendance & Evaluation ---
     // --------------------------------------
     
-    // Registros de Asistencia
     match /attendance/{recordId} {
       // Lectura: Admin o el dueño del registro.
       allow get: if isAdmin() || (isOwner(resource.data.userId));
@@ -125,32 +126,30 @@ service cloud.firestore {
       allow create, update, delete: if isAdmin(); // Solo Admin puede manipular la asistencia.
     }
     
-    // Solicitudes de Días Libres
     match /daysOff/{dayOffId} {
       // Lectura: Admin o el dueño de la solicitud.
       allow get: if isAdmin() || (isOwner(resource.data.userId));
       allow list: if isAdmin();
-      allow create, update, delete: if isAdmin(); // Solo Admin puede aprobar/manipular.
+      // Solo Admins pueden gestionar días libres.
+      allow create, update, delete: if isAdmin();
     }
     
-    // Criterios de Evaluación (Configuración)
     match /evaluationCriteria/{criterionId} {
       allow get, list: if isAdmin();
       allow write: if isSuperAdmin(); // Solo SuperAdmin puede definir los criterios.
     }
 
-    // Evaluaciones Mensuales (Resultado)
     match /monthlyEvaluations/{evaluationId} {
       // Lectura: Dueño de la evaluación o Admin.
       allow get: if isOwner(resource.data.userId) || isAdmin();
       allow list: if isAdmin();
-      allow create, update, delete: if isAdmin(); // Solo Admin puede crear/modificar resultados.
+      // Solo Admin puede crear/modificar resultados.
+      allow create, update, delete: if isAdmin(); 
     }
     
-    // Revisiones de Pares
     match /peer-reviews/{reviewId} {
-      allow read, create: if isActiveUser(); // Todos pueden leer y crear (submit) reviews.
-      allow update, delete: if isAdmin(); // Solo Admins pueden modificar o eliminar una review enviada.
+      allow read, create: if isAuthenticated();
+      allow update, delete: if isAdmin();
     }
   }
 }
