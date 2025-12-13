@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useMemo, useEffect } from 'react';
@@ -48,6 +49,7 @@ import { InventoryEntryForm } from '@/components/inventory/inventory-entry-form'
 import { InventoryExitForm } from '@/components/inventory/inventory-exit-form';
 import { InventoryImportDialog } from '@/components/inventory/inventory-import-dialog';
 import { inventoryCategories } from '@/lib/placeholder-data';
+import { Skeleton } from '@/components/ui/skeleton';
 
 
 type FormType = 'item' | 'entry' | 'exit' | null;
@@ -300,7 +302,7 @@ export default function InventoryPage() {
     }
   }
 
-  const isLoading = isLoadingItems || isUserLoading;
+  const isLoading = isLoadingItems || isUserLoading || !isClient;
 
   const totalInventoryValue = useMemo(() => {
     if (!items) return 0;
@@ -310,9 +312,22 @@ export default function InventoryPage() {
     }, 0);
   }, [items]);
 
-
-  if (!isClient) {
-    return null;
+  if (isLoading) {
+    return (
+      <div className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
+        <Skeleton className="h-10 w-1/3" />
+        <div className="grid gap-4 md:grid-cols-4">
+          <Card><CardHeader><Skeleton className="h-5 w-2/3" /></CardHeader><CardContent><Skeleton className="h-8 w-1/2" /></CardContent></Card>
+          <Card><CardHeader><Skeleton className="h-5 w-2/3" /></CardHeader><CardContent><Skeleton className="h-8 w-1/2" /></CardContent></Card>
+          <Card><CardHeader><Skeleton className="h-5 w-2/3" /></CardHeader><CardContent><Skeleton className="h-8 w-1/2" /></CardContent></Card>
+          <Card><CardHeader><Skeleton className="h-5 w-2/3" /></CardHeader><CardContent><Skeleton className="h-8 w-1/2" /></CardContent></Card>
+        </div>
+        <Card>
+          <CardHeader><Skeleton className="h-8 w-1/4" /></CardHeader>
+          <CardContent><Skeleton className="h-64 w-full" /></CardContent>
+        </Card>
+      </div>
+    );
   }
 
   return (
@@ -348,7 +363,6 @@ export default function InventoryPage() {
                 <Link href="/inventory/reports"><FileSpreadsheet className="mr-2 h-4 w-4" />Reportes</Link>
             </Button>
             
-            {/* EL BOTÓN DE ACCIONES AHORA SIEMPRE APARECERÁ */}
             {isAdmin && (
                 <DropdownMenu>
                     <DropdownMenuTrigger asChild>
@@ -372,7 +386,7 @@ export default function InventoryPage() {
                 <CardTitle className="text-sm font-medium">Total Artículos</CardTitle>
                 <Package className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
-            <CardContent><div className="text-2xl font-bold">{isLoading ? <Loader2 className="h-6 w-6 animate-spin" /> : items?.length || 0}</div></CardContent>
+            <CardContent><div className="text-2xl font-bold">{items?.length || 0}</div></CardContent>
          </Card>
          <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -381,7 +395,7 @@ export default function InventoryPage() {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">
-                {isLoading ? <Loader2 className="h-6 w-6 animate-spin" /> : `$${totalInventoryValue.toFixed(2)}`}
+                {`$${totalInventoryValue.toFixed(2)}`}
               </div>
             </CardContent>
          </Card>
@@ -390,14 +404,14 @@ export default function InventoryPage() {
                 <CardTitle className="text-sm font-medium">Bajo Stock</CardTitle>
                 <AlertCircle className="h-4 w-4 text-orange-500" />
             </CardHeader>
-            <CardContent><div className="text-2xl font-bold text-orange-600">{isLoading ? <Loader2 className="h-6 w-6 animate-spin" /> : items?.filter(i => i.cantidad <= i.stockMinimo && i.cantidad > 0).length || 0}</div></CardContent>
+            <CardContent><div className="text-2xl font-bold text-orange-600">{items?.filter(i => i.cantidad <= i.stockMinimo && i.cantidad > 0).length || 0}</div></CardContent>
          </Card>
          <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">Agotados</CardTitle>
                 <AlertCircle className="h-4 w-4 text-red-500" />
             </CardHeader>
-            <CardContent><div className="text-2xl font-bold text-red-600">{isLoading ? <Loader2 className="h-6 w-6 animate-spin" /> : items?.filter(i => i.cantidad === 0).length || 0}</div></CardContent>
+            <CardContent><div className="text-2xl font-bold text-red-600">{items?.filter(i => i.cantidad === 0).length || 0}</div></CardContent>
          </Card>
       </div>
 
@@ -448,8 +462,7 @@ export default function InventoryPage() {
                     </TableRow>
                 </TableHeader>
                 <TableBody>
-                    {isLoading && <TableRow><TableCell colSpan={isAdmin ? 6 : 5} className="h-24 text-center">Cargando inventario...</TableCell></TableRow>}
-                    {!isLoading && filteredItems.map((item) => {
+                    {filteredItems.map((item) => {
                         const factor = item.factorConversion || 1;
                         const quantityInPurchaseUnit = item.cantidad / factor;
                         const minStockInPurchaseUnit = item.stockMinimo / factor;
@@ -494,7 +507,7 @@ export default function InventoryPage() {
                         </TableRow>
                         );
                     })}
-                     {!isLoading && filteredItems.length === 0 && (
+                     {filteredItems.length === 0 && (
                         <TableRow>
                             <TableCell colSpan={isAdmin ? 6 : 5} className="h-24 text-center">No se encontraron artículos.</TableCell>
                         </TableRow>
@@ -506,9 +519,6 @@ export default function InventoryPage() {
       
       <InventoryForm isOpen={activeForm === 'item'} onOpenChange={handleCloseForm} onSave={handleSaveItem} item={editingItem} />
       
-      {/* NOTA: Si no te aparece el botón de "Descargar Plantilla", 
-        el problema está dentro de este componente: InventoryImportDialog
-      */}
       <InventoryImportDialog isOpen={isImportOpen} onOpenChange={setIsImportOpen} onImport={handleImport} />
       
       {items && (
