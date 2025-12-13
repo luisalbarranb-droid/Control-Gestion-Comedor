@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useCallback, useMemo, useState, useEffect } from 'react';
@@ -53,7 +54,7 @@ function convertToDate(date: Date | Timestamp | undefined): Date | undefined {
 }
 
 export default function MenusPage() {
-	const { user: authUser, profile: currentUser } = useUser();
+	const { user: authUser, profile: currentUser, isUserLoading } = useUser();
 	const firestore = useFirestore();
     const { toast } = useToast();
 
@@ -74,14 +75,14 @@ export default function MenusPage() {
 	}, [currentWeek]);
 
 	const menuQuery = useMemoFirebase(() => {
-		if (!firestore) return null;
+		if (!firestore || isUserLoading) return null;
 		return query(
 			collection(firestore, 'menus'),
 			where('date', '>=', start),
 			where('date', '<=', end),
 			orderBy('date', 'asc'),
 		);
-	}, [firestore, startTime, endTime]);
+	}, [firestore, isUserLoading, start, end]);
 
 
 	const { data: menus, isLoading } = useCollection<Menu>(menuQuery);
@@ -98,7 +99,7 @@ export default function MenusPage() {
 
 
 	const { data: users, isLoading: isLoadingUsers } = useCollection<User>(usersQuery);
-    const { data: inventoryItems, isLoading: isLoadingInventory } = useCollection<InventoryItem>(inventoryQuery);
+    const { data: inventoryItems, isLoading: isLoadingInventory } = useCollection<InventoryItem>(inventoryQuery, { disabled: isUserLoading });
 
 	const handleNextWeek = useCallback(() => {
 		setCurrentWeek(prev => addWeeks(prev, 1));
@@ -380,7 +381,7 @@ export default function MenusPage() {
 				setEditingMenu={setEditingMenu}
 				currentWeekStart={start}
                 inventoryItems={inventoryItems || []}
-                isLoadingInventory={isLoadingInventory}
+                isLoadingInventory={isLoadingInventory || isUserLoading}
 			/>
 
             <MenuImportDialog

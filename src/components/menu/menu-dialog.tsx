@@ -1,3 +1,4 @@
+
 'use client';
 
 import {
@@ -25,6 +26,7 @@ export default function MenuDialog({
   onOpenChange,
   menu,
   setEditingMenu,
+  currentWeekStart,
   inventoryItems,
   isLoadingInventory,
 }: MenuDialogProps) {
