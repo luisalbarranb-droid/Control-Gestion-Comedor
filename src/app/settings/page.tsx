@@ -1,4 +1,3 @@
-
 'use client';
 
 import { Settings, ShieldCheck } from 'lucide-react';
@@ -33,6 +32,11 @@ export default function SettingsPage() {
                     </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-2">
+                     <Button variant="outline" className="w-full justify-start" asChild>
+                       <Link href="/users">
+                        Gestionar Usuarios
+                       </Link>
+                    </Button>
                      <Button variant="outline" className="w-full justify-start" asChild>
                        <Link href="/settings/areas">
                         Gestionar Áreas

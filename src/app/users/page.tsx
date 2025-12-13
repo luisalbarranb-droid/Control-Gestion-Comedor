@@ -1,11 +1,8 @@
-
-
 'use client';
 
 import React, { useState } from 'react';
 import { 
   Users, 
-  Plus, 
   Search,
   UserPlus
 } from 'lucide-react';
@@ -56,7 +53,7 @@ export default function UsersManagementPage() {
         <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
             <div className="flex items-center gap-4">
                  <Users className="h-6 w-6" />
-                <h1 className="text-xl font-semibold md:text-2xl">Gestión de Personal</h1>
+                <h1 className="text-xl font-semibold md:text-2xl">Gestión de Usuarios y Personal</h1>
             </div>
 
             <div className="flex flex-col md:flex-row items-center justify-between gap-4">
