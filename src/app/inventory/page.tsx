@@ -62,6 +62,8 @@ function convertToDate(date: any): Date | null {
     return isValid(parsed) ? parsed : null;
 }
 
+export const dynamic = 'force-dynamic';
+
 export default function InventoryPage() {
   const { toast } = useToast();
   const firestore = useFirestore();
@@ -506,3 +508,5 @@ export default function InventoryPage() {
     </div>
   );
 }
+
+    
