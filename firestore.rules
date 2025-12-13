@@ -45,7 +45,8 @@ service cloud.firestore {
     match /users/{userId} {
       // Lectura: Dueño del perfil o Admin.
       allow get: if isOwner(userId) || isAdmin();
-      allow list: if isAdmin();
+      // MODIFICACIÓN TEMPORAL: Permitir a cualquier usuario logueado listar para poder asignar roles.
+      allow list: if isAuthenticated();
       
       // Creación: Solo SuperAdmin puede crear nuevas cuentas de usuario.
       allow create: if isSuperAdmin();
