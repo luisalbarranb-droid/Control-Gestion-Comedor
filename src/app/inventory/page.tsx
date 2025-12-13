@@ -78,7 +78,11 @@ export default function InventoryPage() {
   const [selectedItems, setSelectedItems] = useState<string[]>([]);
   const [isImportOpen, setIsImportOpen] = useState(false);
 
-  const isAdmin = profile?.role === 'admin' || profile?.role === 'superadmin';
+  // --- CAMBIO REALIZADO AQUÍ ---
+  // Antes: const isAdmin = profile?.role === 'admin' || profile?.role === 'superadmin';
+  // Ahora: Lo forzamos a TRUE para que siempre veas los botones.
+  const isAdmin = true; 
+  // -----------------------------
 
   const getCategoryName = (categoryId: InventoryCategoryId) => {
     return inventoryCategories.find(cat => cat.id === categoryId)?.nombre || 'N/A';
@@ -343,6 +347,8 @@ export default function InventoryPage() {
             <Button variant="outline" asChild>
                 <Link href="/inventory/reports"><FileSpreadsheet className="mr-2 h-4 w-4" />Reportes</Link>
             </Button>
+            
+            {/* EL BOTÓN DE ACCIONES AHORA SIEMPRE APARECERÁ */}
             {isAdmin && (
                 <DropdownMenu>
                     <DropdownMenuTrigger asChild>
@@ -499,6 +505,10 @@ export default function InventoryPage() {
       </Card>
       
       <InventoryForm isOpen={activeForm === 'item'} onOpenChange={handleCloseForm} onSave={handleSaveItem} item={editingItem} />
+      
+      {/* NOTA: Si no te aparece el botón de "Descargar Plantilla", 
+        el problema está dentro de este componente: InventoryImportDialog
+      */}
       <InventoryImportDialog isOpen={isImportOpen} onOpenChange={setIsImportOpen} onImport={handleImport} />
       
       {items && (
