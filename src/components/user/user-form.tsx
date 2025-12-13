@@ -100,25 +100,25 @@ export function UserForm({ isOpen, onOpenChange, editingUser }: UserFormProps) {
         return;
     }
     
-    let dataToSave: Partial<User> = {
+    // Construir el objeto base con campos que siempre están presentes.
+    const baseData = {
         name: values.name,
         email: values.email,
         role: values.role,
-        modules: values.modules,
     };
 
+    // Añadir campos condicionalmente para evitar 'undefined'.
+    let dataToSave: Partial<User> = { ...baseData };
+
     if (values.role === 'admin') {
-        dataToSave.areas = values.areas;
-        dataToSave.area = undefined; 
+        dataToSave.areas = values.areas || [];
+        dataToSave.modules = values.modules || [];
     } else if (values.role === 'comun') {
-        dataToSave.area = values.area;
-        dataToSave.areas = undefined;
-        dataToSave.modules = undefined; 
-    } else { 
-        dataToSave.area = undefined;
-        dataToSave.areas = undefined;
-        dataToSave.modules = undefined; 
+        if (values.area) {
+            dataToSave.area = values.area;
+        }
     }
+    // Para 'superadmin', no se necesitan campos adicionales de 'area', 'areas' o 'modules'.
 
     try {
       if (editingUser) {
@@ -126,8 +126,6 @@ export function UserForm({ isOpen, onOpenChange, editingUser }: UserFormProps) {
         await updateDocumentNonBlocking(userRef, dataToSave);
         toast({ title: 'Usuario actualizado', description: `${values.name} ha sido actualizado.` });
       } else {
-        // --- LÓGICA CORREGIDA PARA LA CREACIÓN ---
-        // Para el primer superadmin, usamos su propio UID. Para otros, se crearía una cuenta (simulado aquí).
         const isSelfCreation = values.email === authUser.email;
         const newUserId = isSelfCreation ? authUser.uid : doc(collection(firestore, 'users')).id;
 
@@ -141,7 +139,6 @@ export function UserForm({ isOpen, onOpenChange, editingUser }: UserFormProps) {
           createdBy: authUser.uid
         };
 
-        // Usamos setDoc para tener control total sobre el documento y su ID
         await setDocumentNonBlocking(userRef, newUserData);
         
         let toastDescription = `Se ha creado una cuenta para ${values.name}.`;
