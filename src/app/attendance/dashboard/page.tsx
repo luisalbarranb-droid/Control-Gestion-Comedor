@@ -84,7 +84,7 @@ export default function AttendanceDashboardPage() {
     return collection(firestore, 'users');
   }, [firestore]);
 
-  const { data: attendanceRecords, isLoading: isLoadingAttendance } = useCollection<AttendanceRecord>(attendanceQuery);
+  const { data: attendanceRecords, isLoading: isLoadingAttendance } = useCollection<AttendanceRecord>(attendanceQuery, { disabled: isUserLoading });
   const { data: users, isLoading: isLoadingUsers } = useCollection<User>(usersQuery, { disabled: isUserLoading });
 
   const stats = useMemo(() => {
