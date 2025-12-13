@@ -283,11 +283,12 @@ export default function InventoryPage() {
                     updatedCount++;
                 } else {
                     const newItemRef = doc(inventoryRef);
-                    batch.set(newItemRef, {
+                    const newArticleData = {
                         ...itemData,
                         id: newItemRef.id,
                         fechaCreacion: serverTimestamp(),
-                    });
+                    };
+                    batch.set(newItemRef, newArticleData);
                     createdCount++;
                 }
             });
