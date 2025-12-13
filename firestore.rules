@@ -74,13 +74,16 @@ service cloud.firestore {
     // --- 3. Task Management (MEJORADO)---
     // ------------------------------------
     match /tasks/{taskId} {
-      // Lectura: El asignado, el creador, o un admin cuyas áreas incluyan el área de la tarea.
-      allow read: if isAuthenticated() && (
+      // Lectura de un solo documento: El asignado, el creador, o un admin.
+      allow get: if isAuthenticated() && (
           resource.data.assignedTo == request.auth.uid ||
           resource.data.createdBy == request.auth.uid ||
           (hasRole('admin') && getUserData(request.auth.uid).areas.hasAny([resource.data.area])) ||
           isSuperAdmin()
       );
+      
+      // Listado de la colección: Solo Admins y SuperAdmins pueden listar todas las tareas.
+      allow list: if isAdmin();
       
       // Creación: Cualquier usuario activo puede crear una tarea.
       allow create: if isAuthenticated();
