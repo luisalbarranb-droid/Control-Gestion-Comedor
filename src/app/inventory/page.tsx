@@ -9,7 +9,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel,
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { MoreVertical, Package, DollarSign, AlertCircle, TrendingDown, TrendingUp, Search, Filter, Plus, FileSpreadsheet, Upload, ShoppingCart, Trash2, Loader2 } from 'lucide-react';
+import { MoreVertical, Package, DollarSign, AlertCircle, TrendingDown, TrendingUp, Search, Plus, FileSpreadsheet, Upload, ShoppingCart, Trash2, Loader2 } from 'lucide-react';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/components/ui/toast';
@@ -275,6 +275,7 @@ export default function InventoryPage() {
                     const newItemRef = doc(inventoryRef);
                     batch.set(newItemRef, {
                         ...itemData,
+                        id: newItemRef.id, // Firestore automatically assigns an ID to newItemRef, but we add it to the doc data for easier access
                         fechaCreacion: serverTimestamp(),
                     });
                     createdCount++;
@@ -337,10 +338,10 @@ export default function InventoryPage() {
                     ))}
                 </SelectContent>
             </Select>
-            <Button variant="secondary" asChild>
+            <Button variant="outline" asChild>
                 <Link href="/inventory/orders"><ShoppingCart className="mr-2 h-4 w-4"/> Pedidos</Link>
             </Button>
-            <Button variant="secondary" asChild>
+            <Button variant="outline" asChild>
                 <Link href="/inventory/reports"><FileSpreadsheet className="mr-2 h-4 w-4" />Reportes</Link>
             </Button>
             {isAdmin && (
