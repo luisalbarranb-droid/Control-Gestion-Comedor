@@ -22,11 +22,11 @@ import {
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/ui/toast';
-import { useAuth, useUser, initiateEmailSignIn } from '@/firebase';
+import { useAuth, useUser } from '@/firebase';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { Loader2, SquareCheck } from 'lucide-react';
-import { signInWithCustomToken } from 'firebase/auth';
+import { signInWithEmailAndPassword } from 'firebase/auth';
 
 const loginSchema = z.object({
   email: z.string().email('Por favor, introduce un email válido.'),
@@ -34,21 +34,6 @@ const loginSchema = z.object({
 });
 
 type LoginFormValues = z.infer<typeof loginSchema>;
-
-// Función para simular la obtención de un token personalizado desde un backend
-// En un entorno real, esto sería una llamada a un endpoint seguro.
-const getMockSuperAdminToken = async (auth: any, uid: string) => {
-    // Esta es una simulación. En producción, NUNCA expongas tu clave de servicio.
-    // Aquí solo simulamos que el backend nos da un token para el UID del superadmin.
-    // Como no podemos generar un token real en el cliente, usamos un truco:
-    // iniciamos sesión anónimamente para obtener un estado de auth válido y luego
-    // navegamos, asumiendo que el perfil se cargará con el rol correcto.
-    console.warn("MODO DE SIMULACIÓN: No se está generando un token de superadmin real.");
-    
-    // Para que el frontend se comporte como si tuviera el rol, lo "inyectamos"
-    // en el perfil del usuario después del login.
-    return { mockRole: 'superadmin' };
-};
 
 
 export default function LoginPage() {
@@ -73,68 +58,36 @@ export default function LoginPage() {
   }, [user, isUserLoading, router]);
 
   const onSubmit = async (values: LoginFormValues) => {
+    if (!auth) return;
     setIsSubmitting(true);
     
-    // Contraseña por defecto para el superadmin en modo de prueba
     const superAdminPassword = 'password';
+    const password = values.email === 'arvecladu@gmail.com' ? (values.password || superAdminPassword) : values.password;
 
-    if (values.email === 'arvecladu@gmail.com') {
-      try {
-        await initiateEmailSignIn(auth, values.email, values.password || superAdminPassword);
-        
-        const unsubscribe = auth.onAuthStateChanged(async (firebaseUser) => {
-          unsubscribe();
-          if (firebaseUser) {
-              toast({
-                title: 'Inicio de Sesión de Superadmin',
-                description: 'Has ingresado como Super Administrador.',
-              });
-              router.push('/');
-          }
-           setIsSubmitting(false);
-        });
-
-      } catch (error) {
-        setIsSubmitting(false);
-        toast({
-            variant: 'destructive',
-            title: 'Error de Superadmin',
-            description: 'Credenciales incorrectas o el usuario no existe. La contraseña por defecto es "password".',
-        });
-        console.error(error);
-      }
-      return;
-    }
-
-    if (!values.password || values.password.length < 6) {
+    if (!password || password.length < 6) {
         form.setError('password', { message: 'La contraseña debe tener al menos 6 caracteres.' });
         setIsSubmitting(false);
         return;
     }
     
     try {
-      await initiateEmailSignIn(auth, values.email, values.password);
-      
-      const unsubscribe = auth.onAuthStateChanged(firebaseUser => {
-        unsubscribe();
-        setIsSubmitting(false);
-        if (firebaseUser) {
-          toast({
-            title: 'Inicio de sesión exitoso',
-            description: 'Bienvenido de vuelta.',
-          });
-           router.push('/');
-        }
+      await signInWithEmailAndPassword(auth, values.email, password);
+      // El listener onAuthStateChanged en useUser se encargará de la redirección
+       toast({
+        title: 'Inicio de sesión exitoso',
+        description: 'Bienvenido de vuelta.',
       });
-      
+       // No es necesario llamar a router.push('/') aquí, el useEffect lo maneja.
+
     } catch (error: any) {
-        setIsSubmitting(false);
+        console.error("Login error:", error);
         toast({
             variant: 'destructive',
             title: 'Error de autenticación',
-            description: 'Credenciales incorrectas. Por favor, inténtalo de nuevo.',
+            description: 'Credenciales incorrectas o el usuario no existe. Por favor, inténtalo de nuevo.',
         });
-        console.error(error);
+    } finally {
+        setIsSubmitting(false);
     }
   };
   
