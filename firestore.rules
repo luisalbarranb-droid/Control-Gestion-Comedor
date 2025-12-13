@@ -8,23 +8,34 @@ service cloud.firestore {
       return request.auth != null;
     }
 
-    function getUserRole() {
-      // Asume que el rol se establece como un Custom Claim en el token, pero si no, lo busca en el documento.
-      // OJO: La lectura del documento en reglas no es siempre la mejor práctica por costos, pero es útil.
-      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role;
+    function getUserData(userId) {
+        return get(/databases/$(database)/documents/users/$(userId)).data;
+    }
+
+    function getUserRole(userId) {
+      // Primero intenta leer desde el documento del usuario.
+      // Esto es crucial para el arranque inicial.
+      let userData = getUserData(userId);
+      if (userData != null && 'role' in userData) {
+          return userData.role;
+      }
+      // Como fallback, podría leer de claims, pero el documento es más confiable para este flujo.
+      return null;
     }
 
     function hasRole(role) {
-      return isAuthenticated() && getUserRole() == role;
+      let userRole = getUserRole(request.auth.uid);
+      return isAuthenticated() && userRole == role;
     }
     
     function isAdmin() {
-      let userRole = getUserRole();
+      let userRole = getUserRole(request.auth.uid);
       return isAuthenticated() && (userRole == 'admin' || userRole == 'superadmin');
     }
     
     function isSuperAdmin() {
-      return isAuthenticated() && getUserRole() == 'superadmin';
+      let userRole = getUserRole(request.auth.uid);
+      return isAuthenticated() && userRole == 'superadmin';
     }
     
     function isOwner(userId) {
@@ -35,7 +46,6 @@ service cloud.firestore {
       return resource.data[field] == request.resource.data[field];
     }
 
-
     // ------------------------------------
     // --- 1. User Data Rules (CRÍTICO) ---
     // ------------------------------------
@@ -43,18 +53,17 @@ service cloud.firestore {
       // Lectura: Dueño del perfil o Admin.
       allow get: if isOwner(userId) || isAdmin();
       
-      // MODIFICACIÓN TEMPORAL: Permitir a cualquier usuario logueado listar para poder asignar roles.
+      // MODIFICACIÓN TEMPORAL: Permitir a cualquier usuario logueado listar.
       // Esto es crucial para romper el ciclo inicial de permisos.
-      // Una vez que el SuperAdmin esté configurado, se puede cambiar de nuevo a `if isAdmin()`.
       allow list: if isAuthenticated();
       
-      // MODIFICACIÓN TEMPORAL: Permitir a CUALQUIER USUARIO AUTENTICADO CREAR para poder registrar el primer SuperAdmin.
-      // Una vez creado, esto DEBERÍA cambiar a `if isSuperAdmin()`.
+      // MODIFICACIÓN TEMPORAL: Permitir a CUALQUIER USUARIO AUTENTICADO CREAR.
+      // Esto es para poder registrar el primer SuperAdmin.
       allow create: if isAuthenticated();
       
       // Actualización: 
       // 1. Dueño: Solo puede actualizar sus propios datos (y no puede cambiar el rol).
-      // 2. Admin/SuperAdmin: Puede actualizar todo, incluyendo el rol.
+      // 2. Admin/SuperAdmin: Puede actualizar todo.
       allow update: if (isOwner(userId) && cannotChange('role')) || isAdmin();
       
       // Eliminación: Solo SuperAdmin.
@@ -88,8 +97,8 @@ service cloud.firestore {
       allow read: if isAuthenticated() && (
           resource.data.assignedTo == request.auth.uid ||
           resource.data.createdBy == request.auth.uid ||
-          (hasRole('admin') && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.areas.hasAny([resource.data.area])) ||
-          hasRole('superadmin')
+          (hasRole('admin') && getUserData(request.auth.uid).areas.hasAny([resource.data.area])) ||
+          isSuperAdmin()
       );
       
       // Creación: Cualquier usuario activo puede crear una tarea.
@@ -104,7 +113,6 @@ service cloud.firestore {
     // ------------------------------
     match /inventory/{itemId} {
       allow read: if isAuthenticated();
-      // Escritura en inventario solo para administradores.
       allow write: if isAdmin(); 
     }
 
@@ -115,7 +123,6 @@ service cloud.firestore {
     
     match /menus/{menuId} {
       allow read: if isAuthenticated();
-      // Admins pueden planificar menús.
       allow write: if isAdmin();
     }
 
@@ -124,30 +131,25 @@ service cloud.firestore {
     // --------------------------------------
     
     match /attendance/{recordId} {
-      // Lectura: Admin o el dueño del registro.
-      allow get: if isAdmin() || (isOwner(resource.data.userId));
+      allow get: if isAdmin() || isOwner(resource.data.userId);
       allow list: if isAdmin();
-      allow create, update, delete: if isAdmin(); // Solo Admin puede manipular la asistencia.
+      allow create, update, delete: if isAdmin();
     }
     
     match /daysOff/{dayOffId} {
-      // Lectura: Admin o el dueño de la solicitud.
-      allow get: if isAdmin() || (isOwner(resource.data.userId));
+      allow get: if isAdmin() || isOwner(resource.data.userId);
       allow list: if isAdmin();
-      // Solo Admins pueden gestionar días libres.
       allow create, update, delete: if isAdmin();
     }
     
     match /evaluationCriteria/{criterionId} {
       allow get, list: if isAdmin();
-      allow write: if isSuperAdmin(); // Solo SuperAdmin puede definir los criterios.
+      allow write: if isSuperAdmin();
     }
 
     match /monthlyEvaluations/{evaluationId} {
-      // Lectura: Dueño de la evaluación o Admin.
       allow get: if isOwner(resource.data.userId) || isAdmin();
       allow list: if isAdmin();
-      // Solo Admin puede crear/modificar resultados.
       allow create, update, delete: if isAdmin(); 
     }
     
