@@ -112,7 +112,7 @@ export default function TasksPage() {
   );
   
   // Añadimos manejo seguro para cuando tasksQuery es null
-  const { data: tasks, isLoading: isLoadingTasks } = useCollection<Task>(tasksQuery);
+  const { data: tasks, isLoading: isLoadingTasks } = useCollection<Task>(tasksQuery, { disabled: isAuthLoading });
 
   const usersCollectionRef = useMemoFirebase(
     () => (firestore ? collection(firestore, 'users') : null),
