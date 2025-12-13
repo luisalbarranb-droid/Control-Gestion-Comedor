@@ -42,7 +42,7 @@ service cloud.firestore {
     // --- User Data Rules ---
     match /users/{userId} {
       allow get: if isAuthenticated() && (isOwner(userId) || isAdmin());
-      allow list: if isAuthenticated(); // ANY authenticated user can list users
+      allow list: if isAdmin(); // ANY authenticated user can list users
       allow create: if isSuperAdmin(); // Only superadmins can create users directly.
       allow update: if isOwner(userId) || isAdmin();
       allow delete: if isSuperAdmin();
