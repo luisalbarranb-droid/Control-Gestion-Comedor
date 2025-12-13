@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState } from 'react';
@@ -33,7 +34,7 @@ import {
 import Link from 'next/link';
 import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
 import { collection, doc, query, orderBy } from 'firebase/firestore';
-import { addDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase/non-blocking-updates';
+import { addDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase/firestore-operations';
 import type { EvaluationCriterion } from '@/lib/types';
 import { CriterionForm } from '@/components/settings/criterion-form';
 import { useToast } from '@/components/ui/toast';
