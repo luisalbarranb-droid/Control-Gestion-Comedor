@@ -283,9 +283,9 @@ export default function InventoryPage() {
                     updatedCount++;
                 } else {
                     const newItemRef = doc(inventoryRef);
+                    // Corrected data object for new documents
                     const newArticleData = {
                         ...itemData,
-                        id: newItemRef.id,
                         fechaCreacion: serverTimestamp(),
                     };
                     batch.set(newItemRef, newArticleData);
