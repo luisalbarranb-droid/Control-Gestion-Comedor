@@ -67,7 +67,7 @@ export const dynamic = 'force-dynamic';
 export default function InventoryPage() {
   const { toast } = useToast();
   const firestore = useFirestore();
-  const { isUserLoading, user } = useUser();
+  const { isUserLoading, user, profile } = useUser();
   const [isClient, setIsClient] = useState(false);
 
   useEffect(() => {
@@ -87,6 +87,7 @@ export default function InventoryPage() {
   const [editingItem, setEditingItem] = useState<InventoryItem | null>(null);
   const [selectedItems, setSelectedItems] = useState<string[]>([]);
 
+  const isAdmin = profile?.role === 'admin' || profile?.role === 'superadmin';
 
   const getCategoryName = (categoryId: InventoryCategoryId) => {
     return inventoryCategories.find(cat => cat.id === categoryId)?.nombre || 'N/A';
@@ -184,12 +185,13 @@ export default function InventoryPage() {
     try {
         if (isNew) {
             const newItemRef = doc(inventoryCollection);
-            await setDoc(newItemRef, {
+            const newArticleData = {
                 ...itemData,
                 id: newItemRef.id,
                 fechaCreacion: serverTimestamp(),
                 ultimaActualizacion: serverTimestamp(),
-            });
+            };
+            await setDoc(newItemRef, newArticleData);
             toast({ title: 'Artículo Creado', description: `El artículo "${itemData.nombre}" ha sido creado.`});
         } else if (editingItem) {
             const itemRef = doc(firestore, 'inventory', editingItem.id);
@@ -283,7 +285,6 @@ export default function InventoryPage() {
                     updatedCount++;
                 } else {
                     const newItemRef = doc(inventoryRef);
-                    // Corrected data object for new documents
                     const newArticleData = {
                         ...itemData,
                         fechaCreacion: serverTimestamp(),
@@ -352,18 +353,20 @@ export default function InventoryPage() {
             <Button variant="secondary" asChild>
                 <Link href="/inventory/reports"><FileSpreadsheet className="mr-2 h-4 w-4" />Reportes</Link>
             </Button>
-            <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                    <Button><Plus className="mr-2 h-4 w-4" /> Acciones</Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                    <DropdownMenuItem onClick={() => handleOpenForm('entry')}><TrendingUp className="mr-2 h-4 w-4" />Registrar Entrada</DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => handleOpenForm('exit')}><TrendingDown className="mr-2 h-4 w-4" />Registrar Salida</DropdownMenuItem>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem onClick={() => handleOpenForm('item')}><Package className="mr-2 h-4 w-4" />Nuevo Artículo</DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => handleOpenForm('import')}><Upload className="mr-2 h-4 w-4" />Importar desde Excel</DropdownMenuItem>
-                </DropdownMenuContent>
-            </DropdownMenu>
+            {isAdmin && (
+                <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                        <Button><Plus className="mr-2 h-4 w-4" /> Acciones</Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                        <DropdownMenuItem onClick={() => handleOpenForm('entry')}><TrendingUp className="mr-2 h-4 w-4" />Registrar Entrada</DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => handleOpenForm('exit')}><TrendingDown className="mr-2 h-4 w-4" />Registrar Salida</DropdownMenuItem>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem onClick={() => handleOpenForm('item')}><Package className="mr-2 h-4 w-4" />Nuevo Artículo</DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => handleOpenForm('import')}><Upload className="mr-2 h-4 w-4" />Importar desde Excel</DropdownMenuItem>
+                    </DropdownMenuContent>
+                </DropdownMenu>
+            )}
         </div>
       </div>
 
@@ -406,7 +409,7 @@ export default function InventoryPage() {
          <CardHeader>
             <div className="flex justify-between items-center">
               <CardTitle>Listado de Artículos</CardTitle>
-              {selectedItems.length > 0 && (
+              {selectedItems.length > 0 && isAdmin && (
                  <AlertDialog>
                     <AlertDialogTrigger asChild>
                         <Button variant="destructive" size="sm">
@@ -435,11 +438,11 @@ export default function InventoryPage() {
                 <TableHeader>
                     <TableRow>
                         <TableHead className="w-10">
-                            <Checkbox
+                            {isAdmin && <Checkbox
                                 onCheckedChange={handleSelectAll}
                                 checked={selectedItems.length > 0 && selectedItems.length === filteredItems.length ? true : selectedItems.length > 0 ? 'indeterminate' : false}
                                 aria-label="Seleccionar todo"
-                            />
+                            />}
                         </TableHead>
                         <TableHead>Producto</TableHead>
                         <TableHead>Categoría</TableHead>
@@ -459,11 +462,11 @@ export default function InventoryPage() {
                         return (
                         <TableRow key={item.id} data-state={selectedItems.includes(item.id) && "selected"}>
                             <TableCell>
-                                <Checkbox
+                                {isAdmin && <Checkbox
                                     checked={selectedItems.includes(item.id)}
                                     onCheckedChange={(checked) => handleSelectItem(item.id, !!checked)}
                                     aria-label={`Seleccionar ${item.nombre}`}
-                                />
+                                />}
                             </TableCell>
                             <TableCell className="font-medium">{item.nombre}</TableCell>
                             <TableCell><Badge variant="secondary">{getCategoryName(item.categoriaId)}</Badge></TableCell>
@@ -476,7 +479,7 @@ export default function InventoryPage() {
                                 <span className="text-xs text-muted-foreground ml-1 uppercase">{item.unidadCompra || 'N/A'}</span>
                             </TableCell>
                             <TableCell className="text-right">
-                                <DropdownMenu>
+                                {isAdmin && <DropdownMenu>
                                     <DropdownMenuTrigger asChild>
                                         <Button size="icon" variant="ghost"><MoreVertical className="h-4 w-4" /></Button>
                                     </DropdownMenuTrigger>
@@ -489,7 +492,7 @@ export default function InventoryPage() {
                                           Eliminar
                                         </DropdownMenuItem>
                                     </DropdownMenuContent>
-                                </DropdownMenu>
+                                </DropdownMenu>}
                             </TableCell>
                         </TableRow>
                         );

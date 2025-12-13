@@ -22,10 +22,11 @@ import {
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/ui/toast';
-import { useAuth, useUser, initiateEmailSignIn, initiateAnonymousSignIn } from '@/firebase';
+import { useAuth, useUser, initiateEmailSignIn } from '@/firebase';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { Loader2, SquareCheck } from 'lucide-react';
+import { signInWithCustomToken } from 'firebase/auth';
 
 const loginSchema = z.object({
   email: z.string().email('Por favor, introduce un email válido.'),
@@ -34,9 +35,25 @@ const loginSchema = z.object({
 
 type LoginFormValues = z.infer<typeof loginSchema>;
 
+// Función para simular la obtención de un token personalizado desde un backend
+// En un entorno real, esto sería una llamada a un endpoint seguro.
+const getMockSuperAdminToken = async (auth: any, uid: string) => {
+    // Esta es una simulación. En producción, NUNCA expongas tu clave de servicio.
+    // Aquí solo simulamos que el backend nos da un token para el UID del superadmin.
+    // Como no podemos generar un token real en el cliente, usamos un truco:
+    // iniciamos sesión anónimamente para obtener un estado de auth válido y luego
+    // navegamos, asumiendo que el perfil se cargará con el rol correcto.
+    console.warn("MODO DE SIMULACIÓN: No se está generando un token de superadmin real.");
+    
+    // Para que el frontend se comporte como si tuviera el rol, lo "inyectamos"
+    // en el perfil del usuario después del login.
+    return { mockRole: 'superadmin' };
+};
+
+
 export default function LoginPage() {
   const auth = useAuth();
-  const { user, isUserLoading } = useUser();
+  const { user, isUserLoading, profile } = useUser();
   const router = useRouter();
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -58,36 +75,44 @@ export default function LoginPage() {
   const onSubmit = async (values: LoginFormValues) => {
     setIsSubmitting(true);
     
-    // MODO DE PRUEBA: Simular inicio de sesión para el superadmin
     if (values.email === 'arvecladu@gmail.com') {
       try {
-        // Usamos inicio de sesión anónimo como un truco para obtener un UID válido
-        await initiateAnonymousSignIn(auth);
+        // En un entorno real, obtendrías un token para 'user-superadmin-1'
+        const superAdminUID = 'user-superadmin-1'; 
         
-        // Esperamos un momento para que el estado de autenticación se propague
-        setTimeout(() => {
-            toast({
-                title: 'Inicio de Sesión de Prueba',
+        // Simulación: Como no tenemos backend, no podemos llamar a signInWithCustomToken.
+        // Haremos un inicio de sesión normal y confiaremos en que el perfil se cargue.
+        // La clave es que el documento del usuario 'user-superadmin-1' en Firestore TENGA el rol.
+        await initiateEmailSignIn(auth, values.email, values.password || 'password'); // Usamos una contraseña dummy
+        
+        const unsubscribe = auth.onAuthStateChanged(async (firebaseUser) => {
+          unsubscribe();
+          if (firebaseUser) {
+              // Forzamos la actualización del perfil en el frontend para simular el rol
+              if (profile) {
+                (profile as any).role = 'superadmin';
+              }
+              toast({
+                title: 'Inicio de Sesión de Superadmin',
                 description: 'Has ingresado como Super Administrador.',
-            });
-            router.push('/');
-            setIsSubmitting(false);
-        }, 1000);
-        return;
+              });
+              router.push('/');
+          }
+           setIsSubmitting(false);
+        });
 
       } catch (error) {
         setIsSubmitting(false);
         toast({
             variant: 'destructive',
             title: 'Error en modo de prueba',
-            description: 'No se pudo simular el inicio de sesión.',
+            description: 'No se pudo simular el inicio de sesión. Asegúrate de que el usuario exista en Firebase Auth.',
         });
         console.error(error);
-        return;
       }
+      return;
     }
 
-    // Lógica de inicio de sesión normal para otros usuarios
     if (!values.password || values.password.length < 6) {
         form.setError('password', { message: 'La contraseña debe tener al menos 6 caracteres.' });
         setIsSubmitting(false);
@@ -95,7 +120,7 @@ export default function LoginPage() {
     }
     
     try {
-      initiateEmailSignIn(auth, values.email, values.password);
+      await initiateEmailSignIn(auth, values.email, values.password);
       
       const unsubscribe = auth.onAuthStateChanged(firebaseUser => {
         unsubscribe();
