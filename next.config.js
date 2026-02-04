@@ -7,7 +7,9 @@ const nextConfig = {
   eslint: {
     ignoreDuringBuilds: true,
   },
+  // output: 'export', // Comentado para Vercel (Habilita optimización de imágenes y SSR)
   images: {
+    // unoptimized: true, // Comentado para Vercel (Habilita optimización de imágenes)
     remotePatterns: [
       {
         protocol: 'https',
@@ -22,8 +24,7 @@ const nextConfig = {
         pathname: '/**',
       },
       {
-        protocol: 'https'
-        ,
+        protocol: 'https',
         hostname: 'picsum.photos',
         port: '',
         pathname: '/**',

@@ -35,7 +35,7 @@ export default function ScannerPage() {
       if (lastResult && lastResult.userId === data.text && (now - lastResult.timestamp) < 3000) {
         return;
       }
-      
+
       setResult(data.text);
       setLastResult({ userId: data.text, timestamp: now });
     }
@@ -43,7 +43,7 @@ export default function ScannerPage() {
 
   const handleError = (err: any) => {
     console.error(err);
-    if(hasCamera) {
+    if (hasCamera) {
       setHasCamera(false);
       toast({
         variant: 'destructive',
@@ -52,7 +52,7 @@ export default function ScannerPage() {
       });
     }
   };
-  
+
   useEffect(() => {
     const processScan = async () => {
       if (!result || !firestore) return;
@@ -69,7 +69,7 @@ export default function ScannerPage() {
 
         const user = { id: userSnap.docs[0].id, ...userSnap.docs[0].data() } as User;
         setScannedUser(user);
-        
+
         const todayStart = new Date();
         todayStart.setHours(0, 0, 0, 0);
         const todayEnd = new Date();
@@ -83,7 +83,7 @@ export default function ScannerPage() {
         );
 
         const attendanceSnap = await getDocs(attendanceQuery);
-        
+
         if (attendanceSnap.empty) {
           const newRecord: Omit<AttendanceRecord, 'id'> = {
             userId: result,
@@ -102,8 +102,8 @@ export default function ScannerPage() {
             setStatus('success_out');
             setMessage(`Salida registrada a las ${format(new Date(), 'HH:mm')}`);
           } else {
-             setStatus('error');
-             setMessage('Ya se ha registrado una salida para hoy.');
+            setStatus('error');
+            setMessage('Ya se ha registrado una salida para hoy.');
           }
         }
 
@@ -114,14 +114,14 @@ export default function ScannerPage() {
         setScannedUser(null);
       } finally {
         setTimeout(() => {
-            setResult(null);
-            setStatus(null);
-            setMessage(null);
-            setScannedUser(null);
+          setResult(null);
+          setStatus(null);
+          setMessage(null);
+          setScannedUser(null);
         }, 3000);
       }
     };
-    
+
     processScan();
   }, [result, firestore, toast, lastResult]);
 
@@ -131,25 +131,49 @@ export default function ScannerPage() {
     <div className="w-full h-screen bg-gray-900 flex flex-col items-center justify-center p-4 relative">
       {!status && hasCamera && isClient && (
         <>
-          <div className="absolute top-4 left-4 text-white">
-            <h1 className="text-3xl font-bold">Registro de Asistencia</h1>
-            <p className="text-gray-300">Apunta el código QR de tu credencial a la cámara.</p>
-          </div>
-          <div className="w-full max-w-md h-auto aspect-square overflow-hidden rounded-2xl border-4 border-dashed border-gray-600 bg-gray-800">
-            <QrScanner
-              delay={300}
-              onError={handleError}
-              onScan={handleScan}
-              style={{ width: '100%' }}
-              constraints={{
-                video: { facingMode: 'environment' }
-              }}
-            />
-          </div>
+          {/* Check for MediaDevices support (Secure Context) */}
+          {typeof navigator !== 'undefined' && !navigator.mediaDevices ? (
+            <div className="text-center text-white max-w-lg mx-auto">
+              <CameraOff className="h-24 w-24 text-yellow-400 mx-auto" />
+              <h2 className="text-3xl font-bold mt-4 text-yellow-500">HTTPS Requerido</h2>
+              <p className="text-lg text-gray-300 mt-2">
+                El navegador bloqueó la cámara porque la conexión (HTTP) no es segura.
+              </p>
+              <div className="bg-gray-800 p-6 rounded-lg text-left text-sm mt-6 border border-gray-700">
+                <p className="font-bold text-lg mb-2 text-white">Solución rápida en Android (Chrome):</p>
+                <ol className="list-decimal pl-5 space-y-2 text-gray-300">
+                  <li>Abre una nueva pestaña y ve a: <br /><code className="bg-black/50 px-1 text-green-400 select-all">chrome://flags</code></li>
+                  <li>Busca: <span className="text-yellow-300">unsafely-treat-insecure-origin-as-secure</span></li>
+                  <li>Cambia a <span className="text-blue-400 font-bold">Enabled</span></li>
+                  <li>En el cuadro de texto escribe tu IP local (ej: <code className="text-green-400">http://192.168.3.101:3000</code>)</li>
+                  <li>Toca el botón <span className="text-blue-400 font-bold">Relaunch</span> abajo a la derecha.</li>
+                </ol>
+              </div>
+            </div>
+          ) : (
+            <>
+              <div className="absolute top-4 left-4 text-white z-10">
+                <h1 className="text-3xl font-bold">Registro de Asistencia</h1>
+                <p className="text-gray-300">Apunta el código QR de tu credencial a la cámara.</p>
+              </div>
+              <div className="w-full max-w-md h-auto aspect-square overflow-hidden rounded-2xl border-4 border-dashed border-gray-600 bg-gray-800 relative">
+                <QrScanner
+                  delay={300}
+                  onError={handleError}
+                  onScan={handleScan}
+                  style={{ width: '100%', height: '100%' }}
+                  constraints={{
+                    video: { facingMode: 'environment' }
+                  }}
+                />
+                <div className="absolute inset-0 border-2 border-green-500/50 pointer-events-none animate-pulse"></div>
+              </div>
+            </>
+          )}
         </>
       )}
 
-      {!hasCamera && (
+      {!hasCamera && isClient && navigator.mediaDevices && (
         <div className="text-center text-white">
           <CameraOff className="h-24 w-24 text-red-400 mx-auto" />
           <h2 className="text-4xl font-bold mt-4">Error de Cámara</h2>
@@ -164,7 +188,7 @@ export default function ScannerPage() {
           <p className="text-2xl text-gray-300">{message}</p>
         </div>
       )}
-       {status === 'success_out' && scannedUser && (
+      {status === 'success_out' && scannedUser && (
         <div className="text-center text-white">
           <CheckCircle className="h-24 w-24 text-blue-400 mx-auto animate-pulse" />
           <h2 className="text-4xl font-bold mt-4">¡Hasta luego, {scannedUser.name}!</h2>
@@ -179,22 +203,22 @@ export default function ScannerPage() {
           <p className="text-2xl text-gray-300">{message}</p>
         </div>
       )}
-      
+
       <div className="absolute bottom-4 left-4 bg-black/50 p-4 rounded-lg text-white max-w-sm">
         <h3 className="font-bold mb-2">Último Registro</h3>
         {scannedUser ? (
-           <div className="flex items-center gap-3">
-              <Avatar>
-                <AvatarImage src={(scannedUser as any).avatarUrl} />
-                <AvatarFallback>{getUserInitials(scannedUser.name)}</AvatarFallback>
-              </Avatar>
-              <div>
-                <p className="font-semibold">{scannedUser.name}</p>
-                <p className="text-xs text-gray-400">{message}</p>
-              </div>
-           </div>
+          <div className="flex items-center gap-3">
+            <Avatar>
+              <AvatarImage src={(scannedUser as any).avatarUrl} />
+              <AvatarFallback>{getUserInitials(scannedUser.name)}</AvatarFallback>
+            </Avatar>
+            <div>
+              <p className="font-semibold">{scannedUser.name}</p>
+              <p className="text-xs text-gray-400">{message}</p>
+            </div>
+          </div>
         ) : (
-            <p className="text-sm text-gray-400">Esperando escaneo...</p>
+          <p className="text-sm text-gray-400">Esperando escaneo...</p>
         )}
       </div>
 

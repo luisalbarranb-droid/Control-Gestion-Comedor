@@ -50,24 +50,24 @@ export default function DailyClosingPage() {
     return todayMenus.find(m => m.time === 'almuerzo') || todayMenus[0];
   }, [todayMenus]);
 
-  const handleSaveClosing = (data: Omit<DailyClosing, 'closingId' | 'plannedMenu' | 'closedBy' | 'date'>) => {
+  const handleSaveClosing = (data: any) => {
     if (!firestore || !authUser) {
-        toast({ variant: 'destructive', title: 'Error', description: 'No se pudo conectar a la base de datos.'});
-        return;
+      toast({ variant: 'destructive', title: 'Error', description: 'No se pudo conectar a la base de datos.' });
+      return;
     }
-    
+
     const closingData = {
-        ...data,
-        date: Timestamp.now(),
-        plannedMenuId: todayPlannedMenu?.id || null,
-        closedBy: authUser.uid,
+      ...data,
+      date: Timestamp.now(),
+      plannedMenuId: todayPlannedMenu?.id || null,
+      closedBy: authUser.uid,
     };
-    
+
     addDocumentNonBlocking(collection(firestore, 'dailyClosings'), closingData);
-    
+
     toast({
-        title: 'Cierre Registrado',
-        description: 'El cierre de hoy ha sido guardado correctamente.',
+      title: 'Cierre Registrado',
+      description: 'El cierre de hoy ha sido guardado correctamente.',
     });
 
     setFormOpen(false);
@@ -217,10 +217,10 @@ export default function DailyClosingPage() {
                         Auditado
                       </Badge>
                     )}
-                     <Link href={`/daily-closing/report?date=${new Date().toISOString().split('T')[0]}`}>
-                        <Button variant="ghost" size="icon" className="h-8 w-8">
-                            <ArrowRight className="h-4 w-4 text-gray-400" />
-                        </Button>
+                    <Link href={`/daily-closing/report?date=${new Date().toISOString().split('T')[0]}`}>
+                      <Button variant="ghost" size="icon" className="h-8 w-8">
+                        <ArrowRight className="h-4 w-4 text-gray-400" />
+                      </Button>
                     </Link>
                   </div>
                 </div>
@@ -249,7 +249,7 @@ export default function DailyClosingPage() {
         </Card>
       </div>
 
-       <ClosingForm 
+      <ClosingForm
         isOpen={isFormOpen}
         onOpenChange={setFormOpen}
         plannedMenu={todayPlannedMenu}

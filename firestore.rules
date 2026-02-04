@@ -1,47 +1,33 @@
-
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // --- FUNCIONES ---
+    // --- FUNCIONES AUXILIARES ---
     function isAuthenticated() {
       return request.auth != null;
     }
 
-    // TU SALVOCONDUCTO: Si es tu email, eres 'Dios' en la base de datos
     function isSuperUserByEmail() {
-       return request.auth.token.email == 'arvecladu@gmail.com' ||    request.auth.token.email == 'luisalbarranb@gmail.com';
+       return request.auth.token.email == 'arvecladu@gmail.com' || 
+              request.auth.token.email == 'luisalbarranb@gmail.com';
     }
 
     function isAdmin() {
-      // Eres admin si eres el SuperUsuario por email O si tu rol en la BD es admin/superadmin.
-      if (isSuperUserByEmail()) {
-        return true;
-      }
-      // Comprobamos que el usuario esté autenticado antes de intentar leer su documento
-      if (!isAuthenticated()) {
-        return false;
-      }
-      // El path al documento del usuario
-      let userPath = /databases/$(database)/documents/users/$(request.auth.uid);
-      // Verificamos si el documento existe y leemos el rol
-      if (exists(userPath)) {
-        let userData = get(userPath).data;
-        return userData.role == 'admin' || userData.role == 'superadmin';
-      }
-      return false;
+      return isSuperUserByEmail() || 
+             (isAuthenticated() && 
+              exists(/databases/$(database)/documents/users/$(request.auth.uid)) && 
+              (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin' || 
+               get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'superadmin'));
     }
 
     function isOwner(userId) {
       return isAuthenticated() && request.auth.uid == userId;
     }
 
-    // --- REGLAS ---
+    // --- REGLAS DE COLECCIONES ---
 
     // 1. USUARIOS
     match /users/{userId} {
-      // Permitir crear si eres el dueño del ID (para que puedas crear tu propio perfil)
-      // O si eres superadmin por email.
       allow create: if isOwner(userId) || isSuperUserByEmail();
       allow update, delete: if isOwner(userId) || isAdmin();
       allow read, list: if isAuthenticated(); 
@@ -57,10 +43,13 @@ service cloud.firestore {
       allow read: if isAuthenticated();
       allow write: if isAdmin();
     }
-    
-    // --- REGLAS EXPLÍCITAS ADICIONALES ---
 
-    // 4. Asistencia y Planificación
+    // 4. MENÚS
+    match /menus/{menuId} {
+      allow read, write: if isAuthenticated();
+    }
+
+    // 5. ASISTENCIA Y PLANIFICACIÓN
     match /attendance/{recordId} {
       allow read, write: if isAuthenticated();
     }
@@ -69,17 +58,27 @@ service cloud.firestore {
       allow read, write: if isAuthenticated();
     }
 
-    // 5. Evaluaciones
+    // 6. EVALUACIONES
     match /evaluationCriteria/{criterionId} {
-        allow read, write: if isAdmin();
+      allow read, write: if isAdmin();
     }
 
     match /monthlyEvaluations/{evaluationId} {
-        allow read, write: if isAuthenticated();
+      allow read, write: if isAuthenticated();
+    }
+
+    // 7. GESTIÓN DE CONTRATOS
+    match /contractTemplates/{templateId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+
+    match /generatedContracts/{contractId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
     }
     
-    // Regla comodín para desbloquearte totalmente mientras desarrollas
-    // Esta es una última capa de seguridad.
+    // Regla comodín para super usuarios (solo durante desarrollo)
     match /{document=**} {
        allow read, write: if isSuperUserByEmail() || isAdmin(); 
     }

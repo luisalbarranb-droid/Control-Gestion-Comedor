@@ -10,8 +10,8 @@ export default function SharePage() {
   const [appUrl, setAppUrl] = useState('');
 
   useEffect(() => {
-    // This ensures window is defined, so it runs only on the client
-    setAppUrl(window.location.origin);
+    // Establecemos manualmente la IP del servidor para asegurar que el QR sea accesible desde otros dispositivos
+    setAppUrl('http://192.168.3.101:3000');
   }, []);
 
   return (
@@ -36,20 +36,20 @@ export default function SharePage() {
           )}
 
           <div className="w-full space-y-4 text-left p-4 bg-muted/50 rounded-lg">
-             <div className="flex items-start gap-3">
-                <Smartphone className="h-6 w-6 text-primary mt-1 flex-shrink-0" />
-                <div>
-                    <h4 className="font-semibold">Paso 1: Escanear</h4>
-                    <p className="text-sm text-muted-foreground">Abre la cámara de tu dispositivo y apunta al código QR.</p>
-                </div>
-             </div>
-             <div className="flex items-start gap-3">
-                <ArrowDown className="h-6 w-6 text-primary mt-1 flex-shrink-0" />
-                <div>
-                    <h4 className="font-semibold">Paso 2: Agregar a Inicio</h4>
-                    <p className="text-sm text-muted-foreground">Una vez abierta la app en tu navegador, busca la opción "Añadir a pantalla de inicio" en el menú para crear un acceso directo.</p>
-                </div>
-             </div>
+            <div className="flex items-start gap-3">
+              <Smartphone className="h-6 w-6 text-primary mt-1 flex-shrink-0" />
+              <div>
+                <h4 className="font-semibold">Paso 1: Escanear</h4>
+                <p className="text-sm text-muted-foreground">Abre la cámara de tu dispositivo y apunta al código QR.</p>
+              </div>
+            </div>
+            <div className="flex items-start gap-3">
+              <ArrowDown className="h-6 w-6 text-primary mt-1 flex-shrink-0" />
+              <div>
+                <h4 className="font-semibold">Paso 2: Agregar a Inicio</h4>
+                <p className="text-sm text-muted-foreground">Una vez abierta la app en tu navegador, busca la opción "Añadir a pantalla de inicio" en el menú para crear un acceso directo.</p>
+              </div>
+            </div>
           </div>
         </CardContent>
       </Card>
