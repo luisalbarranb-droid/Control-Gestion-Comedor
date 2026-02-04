@@ -6,14 +6,16 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Edit } from 'lucide-react';
+import { EmployeeIdCardDialog } from './employee-id-card-dialog';
+import { useState } from 'react';
+import { CreditCard, Edit } from 'lucide-react';
 import type { User } from '@/lib/types';
 import { areas } from '@/lib/placeholder-data';
 
 interface EmployeeListProps {
-  employees: User[];
-  isLoading: boolean;
-  onEdit: (employee: User) => void;
+    employees: User[];
+    isLoading: boolean;
+    onEdit: (employee: User) => void;
 }
 
 const roleDisplay: Record<string, string> = {
@@ -29,6 +31,8 @@ const contractDisplay: Record<string, string> = {
 };
 
 export function EmployeeList({ employees, isLoading, onEdit }: EmployeeListProps) {
+    const [idCardEmployee, setIdCardEmployee] = useState<User | null>(null);
+
     const getAreaName = (areaId?: string) => {
         if (!areaId) return 'N/A';
         return areas.find(a => a.id === areaId)?.nombre || areaId;
@@ -44,51 +48,70 @@ export function EmployeeList({ employees, isLoading, onEdit }: EmployeeListProps
     }
 
     return (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {employees.map(employee => (
-                <Card key={employee.id} className="overflow-hidden">
-                    <CardContent className="p-4">
-                        <div className="flex items-center gap-4 mb-4">
-                            <Avatar className="h-12 w-12">
-                                <AvatarImage src={employee.avatarUrl} />
-                                <AvatarFallback className="text-lg">{getUserInitials(employee.name)}</AvatarFallback>
-                            </Avatar>
-                            <div>
-                                <h3 className="font-semibold text-base leading-tight">{employee.name}</h3>
-                                <p className="text-sm text-muted-foreground">{employee.email}</p>
+        <>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                {employees.map(employee => (
+                    <Card key={employee.id} className="overflow-hidden">
+                        <CardContent className="p-4">
+                            <div className="flex items-center gap-4 mb-4">
+                                <Avatar className="h-12 w-12">
+                                    <AvatarImage src={employee.avatarUrl} />
+                                    <AvatarFallback className="text-lg">{getUserInitials(employee.name)}</AvatarFallback>
+                                </Avatar>
+                                <div>
+                                    <h3 className="font-semibold text-base leading-tight">{employee.name}</h3>
+                                    <p className="text-sm text-muted-foreground">{employee.email}</p>
+                                </div>
                             </div>
-                        </div>
-                        
-                        <div className="space-y-2 text-sm">
-                            <div className="flex justify-between">
-                                <span className="text-muted-foreground">Cédula:</span>
-                                <span>{employee.cedula || 'N/A'}</span>
-                            </div>
-                            <div className="flex justify-between">
-                                <span className="text-muted-foreground">Área:</span>
-                                <span>{getAreaName(employee.area)}</span>
-                            </div>
-                             <div className="flex justify-between items-center">
-                                <span className="text-muted-foreground">Rol:</span>
-                                <Badge variant="outline">{roleDisplay[employee.role] || employee.role}</Badge>
-                            </div>
-                             <div className="flex justify-between items-center">
-                                <span className="text-muted-foreground">Contrato:</span>
-                                <Badge variant="secondary" className="capitalize">{contractDisplay[employee.contractType || ''] || employee.contractType}</Badge>
-                            </div>
-                        </div>
 
-                        <div className="flex gap-2 mt-4">
-                            <Button variant="outline" size="sm" className="flex-1" asChild>
-                                <Link href={`/attendance/personal/${employee.id}`}>Ver Expediente</Link>
-                            </Button>
-                            <Button variant="ghost" size="icon" className="h-9 w-9" onClick={() => onEdit(employee)}>
-                                <Edit className="h-4 w-4" />
-                            </Button>
-                        </div>
-                    </CardContent>
-                </Card>
-            ))}
-        </div>
+                            <div className="space-y-2 text-sm">
+                                <div className="flex justify-between">
+                                    <span className="text-muted-foreground">Cédula:</span>
+                                    <span>{employee.cedula || 'N/A'}</span>
+                                </div>
+                                <div className="flex justify-between">
+                                    <span className="text-muted-foreground">Área:</span>
+                                    <span>{getAreaName(employee.area)}</span>
+                                </div>
+                                <div className="flex justify-between items-center">
+                                    <span className="text-muted-foreground">Rol:</span>
+                                    <Badge variant="outline">{roleDisplay[employee.role] || employee.role}</Badge>
+                                </div>
+                                {employee.position && (
+                                    <div className="flex justify-between items-center">
+                                        <span className="text-muted-foreground">Cargo:</span>
+                                        <span className="font-medium">{employee.position}</span>
+                                    </div>
+                                )}
+                                <div className="flex justify-between items-center">
+                                    <span className="text-muted-foreground">Contrato:</span>
+                                    <Badge variant="secondary" className="capitalize">{contractDisplay[employee.contractType || ''] || employee.contractType}</Badge>
+                                </div>
+                            </div>
+
+                            <div className="flex gap-2 mt-4">
+                                <Button variant="outline" size="sm" className="flex-1" asChild>
+                                    <Link href={`/attendance/personal/${employee.id}`}>Expediente</Link>
+                                </Button>
+                                <Button variant="secondary" size="icon" className="h-9 w-9" onClick={() => setIdCardEmployee(employee)} title="Ver Carnet">
+                                    <CreditCard className="h-4 w-4" />
+                                </Button>
+                                <Button variant="ghost" size="icon" className="h-9 w-9" onClick={() => onEdit(employee)} title="Editar">
+                                    <Edit className="h-4 w-4" />
+                                </Button>
+                            </div>
+                        </CardContent>
+                    </Card>
+                ))}
+            </div>
+
+            {idCardEmployee && (
+                <EmployeeIdCardDialog
+                    employee={idCardEmployee}
+                    isOpen={!!idCardEmployee}
+                    onOpenChange={(open) => !open && setIdCardEmployee(null)}
+                />
+            )}
+        </>
     );
 }

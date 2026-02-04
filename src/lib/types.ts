@@ -1,6 +1,6 @@
 
 
-import { Timestamp } from 'firebase/firestore';
+import { Timestamp, FieldValue } from 'firebase/firestore';
 
 export type Role = 'superadmin' | 'admin' | 'comun';
 export type AreaId = 'servicio' | 'cocina' | 'limpieza' | 'almacen' | 'equipos' | 'administracion' | 'operaciones' | 'rrhh';
@@ -22,13 +22,14 @@ export interface User {
   areas?: AreaId[]; // Admins can have multiple areas
   modules?: ModuleId[]; // Admins can have access to specific modules
   isActive?: boolean;
-  creationDate?: Timestamp | Date | string;
+  creationDate?: Timestamp | Date | string | FieldValue;
   createdBy?: string;
-  lastAccess?: Timestamp | Date | string;
+  lastAccess?: Timestamp | Date | string | FieldValue;
   cedula?: string;
+  rif?: string;
   phone?: string;
   address?: string;
-  contractEndDate?: Timestamp | Date;
+  contractEndDate?: Timestamp | Date | FieldValue;
   avatarUrl?: string;
   workerType?: WorkerType;
   contractType?: ContractType;
@@ -36,14 +37,38 @@ export interface User {
   position?: string;
   permissions?: string[];
   active?: boolean;
-  createdAt?: string | Date;
-  updatedAt?: string | Date;
-  lastLogin?: string | Date;
+  createdAt?: string | Date | FieldValue;
+  updatedAt?: string | Date | FieldValue;
+  lastLogin?: string | Date | FieldValue;
   nombres?: string;
   apellidos?: string;
-  fechaIngreso?: Timestamp | Date | string;
+  fechaIngreso?: Timestamp | Date | string | FieldValue;
   diasContrato?: number;
-  fechaNacimiento?: Timestamp | Date | string;
+  fechaNacimiento?: Timestamp | Date | string | FieldValue;
+  // Personal Details
+  gender?: 'M' | 'F' | 'Other';
+  civilStatus?: 'Single' | 'Married' | 'Divorced' | 'Widowed' | 'Cohabiting';
+  nationality?: string;
+
+  // Dotación / Uniforms
+  shirtSize?: string;
+  pantsSize?: string;
+  shoeSize?: string;
+
+  // Medical
+  bloodType?: string;
+  allergies?: string; // Comma separated or string
+  diseases?: string;
+
+  // Emergency Contact
+  emergencyContactName?: string;
+  emergencyContactPhone?: string;
+  emergencyContactRelation?: string;
+
+  // Financial
+  bankName?: string;
+  bankAccountNumber?: string;
+  bankAccountType?: 'Savings' | 'Current';
 }
 
 export interface Area {
@@ -267,12 +292,12 @@ export type AttendanceStatus = 'presente' | 'ausente' | 'retardo' | 'fuera-de-ho
 export type LeaveType = 'justificado' | 'no-justificado' | 'vacaciones';
 
 export interface AttendanceRecord {
-    id: string;
-    userId: string;
-    checkIn: Timestamp | Date;
-    checkOut?: Timestamp | Date;
-    status: AttendanceStatus;
-    leaveType?: LeaveType;
+  id: string;
+  userId: string;
+  checkIn: Timestamp | Date;
+  checkOut?: Timestamp | Date;
+  status: AttendanceStatus;
+  leaveType?: LeaveType;
 }
 
 export interface ConsolidatedRecord {
@@ -286,13 +311,13 @@ export interface ConsolidatedRecord {
 }
 
 export interface LeaveRecord {
-    leaveId: string;
-    userId: string;
-    startDate: Date;
-    endDate: Date;
-    type: LeaveType;
-    reason: string;
-    approvedBy?: string; // admin or superadmin userId
+  leaveId: string;
+  userId: string;
+  startDate: Date;
+  endDate: Date;
+  type: LeaveType;
+  reason: string;
+  approvedBy?: string; // admin or superadmin userId
 }
 
 export interface DayOff {
@@ -319,17 +344,44 @@ export interface EvaluationCriterion {
 }
 
 export interface EvaluationScore {
-    criterionId: string;
-    score: number;
-    comment?: string;
+  criterionId: string;
+  score: number;
+  comment?: string;
 }
 
 export interface MonthlyEvaluation {
-    id: string; // e.g., {userId}_{period}
-    userId: string;
-    period: string; // YYYY-MM
-    scores: EvaluationScore[];
-    totalScore: number;
-    evaluatorId: string;
-    evaluationDate: Timestamp | Date;
+  id: string; // e.g., {userId}_{period}
+  userId: string;
+  period: string; // YYYY-MM
+  scores: EvaluationScore[];
+  totalScore: number;
+  evaluatorId: string;
+  evaluationDate: Timestamp | Date;
+}
+
+// --- CONTRACT TEMPLATE TYPES ---
+export interface ContractTemplate {
+  id: string;
+  name: string;
+  description?: string;
+  content: string; // HTML or rich text content with placeholders
+  contractType: ContractType;
+  createdBy: string;
+  createdAt: Timestamp | Date;
+  updatedAt: Timestamp | Date;
+  isActive: boolean;
+  placeholders: string[]; // List of available placeholders like {{nombre}}, {{cedula}}, etc.
+}
+
+export interface GeneratedContract {
+  id: string;
+  templateId: string;
+  userId: string; // Employee ID
+  generatedContent: string; // Final HTML content with filled placeholders
+  generatedBy: string; // Admin who generated it
+  generatedAt: Timestamp | Date;
+  contractDate: Timestamp | Date;
+  status: 'draft' | 'signed' | 'archived';
+  signedAt?: Timestamp | Date;
+  pdfUrl?: string; // URL to stored PDF if uploaded
 }

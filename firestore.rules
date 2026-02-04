@@ -10,7 +10,7 @@ service cloud.firestore {
 
     // TU SALVOCONDUCTO: Si es tu email, eres 'Dios' en la base de datos
     function isSuperUserByEmail() {
-       return request.auth.token.email == 'arvecladu@gmail.com';
+       return request.auth.token.email == 'arvecladu@gmail.com' ||    request.auth.token.email == 'luisalbarranb@gmail.com';
     }
 
     function isAdmin() {

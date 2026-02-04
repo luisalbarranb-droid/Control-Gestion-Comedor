@@ -46,7 +46,7 @@ export default function PersonalManagementPage() {
         setEditingEmployee(employee);
         setIsFormOpen(true);
     }
-    
+
     const handleCloseForm = () => {
         setIsFormOpen(false);
         setEditingEmployee(null);
@@ -70,6 +70,7 @@ export default function PersonalManagementPage() {
                         userId: newEmployeeRef.id,
                         name: String(row.name),
                         cedula: String(row.cedula),
+                        rif: row.rif ? String(row.rif) : undefined,
                         email: String(row.email),
                         phone: String(row.phone || ''),
                         address: String(row.address || ''),
@@ -77,11 +78,37 @@ export default function PersonalManagementPage() {
                         area: row.area as User['area'],
                         workerType: row.workerType as User['workerType'],
                         contractType: row.contractType as User['contractType'],
+                        position: row.position ? String(row.position) : undefined,
                         isActive: true,
                         creationDate: serverTimestamp(),
                         fechaIngreso: row.fechaIngreso ? Timestamp.fromDate(new Date(row.fechaIngreso)) : undefined,
                         diasContrato: row.diasContrato ? Number(row.diasContrato) : 0,
                         fechaNacimiento: row.fechaNacimiento ? Timestamp.fromDate(new Date(row.fechaNacimiento)) : undefined,
+
+                        // Personal
+                        gender: row.gender,
+                        civilStatus: row.civilStatus,
+                        nationality: row.nationality,
+
+                        // Dotación
+                        shirtSize: row.shirtSize ? String(row.shirtSize) : undefined,
+                        pantsSize: row.pantsSize ? String(row.pantsSize) : undefined,
+                        shoeSize: row.shoeSize ? String(row.shoeSize) : undefined,
+
+                        // Medical
+                        bloodType: row.bloodType,
+                        allergies: row.allergies,
+                        diseases: row.diseases,
+
+                        // Emergency
+                        emergencyContactName: row.emergencyContactName,
+                        emergencyContactPhone: row.emergencyContactPhone ? String(row.emergencyContactPhone) : undefined,
+                        emergencyContactRelation: row.emergencyContactRelation,
+
+                        // Financial
+                        bankName: row.bankName,
+                        bankAccountNumber: row.bankAccountNumber ? String(row.bankAccountNumber) : undefined,
+                        bankAccountType: row.bankAccountType,
                     };
                     batch.set(newEmployeeRef, newEmployee);
                     importedCount++;
@@ -95,7 +122,7 @@ export default function PersonalManagementPage() {
                     description: `${importedCount} empleados han sido añadidos al sistema.`
                 });
             } else {
-                 toast({ variant: 'destructive', title: 'Sin Datos Válidos', description: 'No se encontraron filas con datos válidos para importar.' });
+                toast({ variant: 'destructive', title: 'Sin Datos Válidos', description: 'No se encontraron filas con datos válidos para importar.' });
             }
 
         } catch (e) {
@@ -154,8 +181,8 @@ export default function PersonalManagementPage() {
                     </Button>
                 </div>
             </div>
-            
-            <EmployeeList 
+
+            <EmployeeList
                 employees={filteredEmployees}
                 isLoading={isLoading || isUserLoading}
                 onEdit={handleEdit}

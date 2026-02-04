@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Contrato de Trabajo</title>
+    <style>
+        body {
+            font-family: 'Times New Roman', serif;
+            line-height: 1.6;
+            max-width: 800px;
+            margin: 40px auto;
+            padding: 20px;
+            color: #333;
+        }
+        h1 {
+            text-align: center;
+            text-transform: uppercase;
+            margin-bottom: 30px;
+            font-size: 24px;
+        }
+        .section {
+            margin-bottom: 20px;
+        }
+        .clause {
+            margin-bottom: 15px;
+            text-align: justify;
+        }
+        .clause-title {
+            font-weight: bold;
+            text-transform: uppercase;
+            margin-bottom: 5px;
+        }
+        .signature-section {
+            margin-top: 60px;
+            display: flex;
+            justify-content: space-between;
+        }
+        .signature-box {
+            text-align: center;
+            width: 45%;
+        }
+        .signature-line {
+            border-top: 1px solid #333;
+            margin-top: 60px;
+            padding-top: 5px;
+        }
+        .highlight {
+            background-color: #fff3cd;
+            padding: 2px 4px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Contrato de Trabajo a Tiempo Determinado</h1>
+    
+    <div class="section">
+        <p>Entre los suscritos a saber: <strong>EMPRESA COMEDOR FULL C.A.</strong>, sociedad mercantil debidamente constituida e inscrita, representada en este acto por su Gerente General, quien en lo adelante se denominará <strong>"EL PATRONO"</strong>, por una parte; y por la otra, el ciudadano(a) <strong class="highlight">{{nombre}}</strong>, de nacionalidad <strong class="highlight">{{nacionalidad}}</strong>, titular de la Cédula de Identidad N° <strong class="highlight">{{cedula}}</strong>, de estado civil <strong class="highlight">{{estadoCivil}}</strong>, de profesión u oficio <strong class="highlight">{{cargo}}</strong>, domiciliado(a) en <strong class="highlight">{{direccion}}</strong>, quien en lo sucesivo se denominará <strong>"EL TRABAJADOR"</strong>, se ha convenido celebrar el presente Contrato de Trabajo, el cual se regirá por las cláusulas siguientes y por las disposiciones de la Ley Orgánica del Trabajo, los Trabajadores y las Trabajadoras.</p>
+    </div>
+
+    <div class="clause">
+        <div class="clause-title">PRIMERA: OBJETO DEL CONTRATO</div>
+        <p><strong>EL PATRONO</strong> contrata los servicios de <strong>EL TRABAJADOR</strong> para desempeñar el cargo de <strong class="highlight">{{cargo}}</strong> en el departamento de <strong class="highlight">{{departamento}}</strong>, comprometiéndose a cumplir con las funciones y responsabilidades inherentes al cargo.</p>
+    </div>
+
+    <div class="clause">
+        <div class="clause-title">SEGUNDA: DURACIÓN DEL CONTRATO</div>
+        <p>El presente contrato tendrá una duración de <strong class="highlight">{{diasContrato}}</strong> días, contados a partir del <strong class="highlight">{{fechaIngreso}}</strong> y finalizará el <strong class="highlight">{{fechaFinContrato}}</strong>, salvo que sea renovado por mutuo acuerdo entre las partes o terminado anticipadamente por las causales previstas en la Ley.</p>
+    </div>
+
+    <div class="clause">
+        <div class="clause-title">TERCERA: JORNADA DE TRABAJO</div>
+        <p><strong>EL TRABAJADOR</strong> se compromete a cumplir con la jornada de trabajo establecida por <strong>EL PATRONO</strong>, de acuerdo con lo dispuesto en la Ley Orgánica del Trabajo, los Trabajadores y las Trabajadoras, respetando los horarios, turnos y descansos correspondientes.</p>
+    </div>
+
+    <div class="clause">
+        <div class="clause-title">CUARTA: REMUNERACIÓN</div>
+        <p><strong>EL PATRONO</strong> se compromete a pagar a <strong>EL TRABAJADOR</strong> el salario correspondiente a su cargo, de acuerdo con las políticas salariales de la empresa y en cumplimiento de las disposiciones legales vigentes. El pago se realizará mediante depósito bancario en la cuenta del <strong class="highlight">{{banco}}</strong>, tipo <strong class="highlight">{{tipoCuenta}}</strong>, número <strong class="highlight">{{numeroCuenta}}</strong>.</p>
+    </div>
+
+    <div class="clause">
+        <div class="clause-title">QUINTA: OBLIGACIONES DEL TRABAJADOR</div>
+        <p><strong>EL TRABAJADOR</strong> se obliga a:</p>
+        <ul>
+            <li>Cumplir con las normas, reglamentos y políticas internas de la empresa.</li>
+            <li>Desempeñar sus funciones con diligencia, eficiencia y lealtad.</li>
+            <li>Guardar confidencialidad sobre la información de la empresa.</li>
+            <li>Notificar cualquier cambio en sus datos personales, incluyendo dirección y contactos de emergencia.</li>
+        </ul>
+    </div>
+
+    <div class="clause">
+        <div class="clause-title">SEXTA: OBLIGACIONES DEL PATRONO</div>
+        <p><strong>EL PATRONO</strong> se obliga a:</p>
+        <ul>
+            <li>Pagar puntualmente el salario convenido.</li>
+            <li>Proporcionar las condiciones de trabajo adecuadas y seguras.</li>
+            <li>Cumplir con todas las obligaciones laborales y de seguridad social.</li>
+            <li>Respetar los derechos del trabajador establecidos en la legislación vigente.</li>
+        </ul>
+    </div>
+
+    <div class="clause">
+        <div class="clause-title">SÉPTIMA: TERMINACIÓN DEL CONTRATO</div>
+        <p>El presente contrato podrá darse por terminado por las causales establecidas en la Ley Orgánica del Trabajo, los Trabajadores y las Trabajadoras, o por mutuo acuerdo entre las partes. En caso de terminación, se procederá al pago de las prestaciones sociales y demás beneficios que correspondan según la ley.</p>
+    </div>
+
+    <div class="clause">
+        <div class="clause-title">OCTAVA: DATOS DE CONTACTO DE EMERGENCIA</div>
+        <p>En caso de emergencia, contactar a: <strong class="highlight">{{contactoEmergencia}}</strong>, teléfono <strong class="highlight">{{telefonoEmergencia}}</strong>, quien es <strong class="highlight">{{relacionEmergencia}}</strong> de <strong>EL TRABAJADOR</strong>.</p>
+    </div>
+
+    <div class="clause">
+        <div class="clause-title">NOVENA: ACEPTACIÓN</div>
+        <p>Ambas partes declaran estar de acuerdo con todas las cláusulas del presente contrato y se comprometen a cumplirlas fielmente.</p>
+    </div>
+
+    <div class="section" style="margin-top: 40px;">
+        <p>En constancia de lo anterior, se firma el presente contrato en la ciudad de Caracas, a los <strong class="highlight">{{fechaActual}}</strong>.</p>
+    </div>
+
+    <div class="signature-section">
+        <div class="signature-box">
+            <div class="signature-line">
+                <strong>EL PATRONO</strong><br>
+                Empresa Comedor Full C.A.<br>
+                Gerente General
+            </div>
+        </div>
+        <div class="signature-box">
+            <div class="signature-line">
+                <strong>EL TRABAJADOR</strong><br>
+                <span class="highlight">{{nombre}}</span><br>
+                C.I.: <span class="highlight">{{cedula}}</span>
+            </div>
+        </div>
+    </div>
+
+    <div style="margin-top: 40px; padding: 15px; background-color: #f8f9fa; border-left: 4px solid #007bff;">
+        <p style="margin: 0; font-size: 12px; color: #666;">
+            <strong>Datos del Trabajador:</strong><br>
+            Nombre: {{nombre}} | Cédula: {{cedula}} | RIF: {{rif}}<br>
+            Fecha de Nacimiento: {{fechaNacimiento}} | Género: {{genero}}<br>
+            Teléfono: {{telefono}} | Email: {{email}}<br>
+            Cargo: {{cargo}} | Departamento: {{departamento}} | Área: {{area}}
+        </p>
+    </div>
+</body>
+</html>

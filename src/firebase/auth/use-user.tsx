@@ -38,7 +38,8 @@ export function useUser(): UseUserResult {
   // Memoize el perfil final para evitar recálculos innecesarios
   const profile = useMemo(() => {
     // Si el email es el del superusuario, forzamos el perfil de superadmin.
-    if (user?.email === 'arvecladu@gmail.com') {
+    const superAdmins = ['arvecladu@gmail.com', 'luisalbarranb@gmail.com'];
+    if (user?.email && superAdmins.includes(user.email)) {
       const baseProfile = profileData || { id: user.uid, email: user.email, name: 'Super Admin' };
       return {
         ...baseProfile,
@@ -56,11 +57,11 @@ export function useUser(): UseUserResult {
 
   const isUserLoading = isAuthLoading || (!!user && isProfileLoading);
 
-  return { 
-    user, 
+  return {
+    user,
     // Devuelve el perfil solo cuando la carga ha terminado y el perfil existe.
-    profile: isUserLoading ? null : profile, 
-    isUserLoading, 
-    signOut 
+    profile: isUserLoading ? null : profile,
+    isUserLoading,
+    signOut
   };
 }

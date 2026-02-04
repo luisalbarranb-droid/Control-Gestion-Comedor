@@ -11,18 +11,29 @@ import { SidebarProvider } from '@/components/ui/sidebar-provider';
 import { Header } from '@/components/dashboard/header';
 import { MainNav } from '@/components/dashboard/main-nav';
 import { SquareCheck } from 'lucide-react';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
+import { useUser } from '@/firebase';
 import { FirebaseErrorListener } from '@/components/FirebaseErrorListener';
 
-export function Providers({ children }: { children: React.ReactNode }) {
+import React from 'react';
+
+function AppContent({ children }: { children: React.ReactNode }) {
+  const { user, isUserLoading } = useUser();
+  const router = useRouter();
   const pathname = usePathname();
-  const noSidebarRoutes = ['/login', '/signup', '/share']; 
+  const noSidebarRoutes = ['/login', '/signup', '/share'];
   const showSidebar = !noSidebarRoutes.includes(pathname);
 
+  React.useEffect(() => {
+    if (!isUserLoading && !user && showSidebar) {
+      router.push('/login');
+    }
+  }, [user, isUserLoading, showSidebar, router]);
+
   return (
-    <FirebaseProvider>
-      <SidebarProvider>
-        {showSidebar ? (
+    <SidebarProvider>
+      {showSidebar ? (
+        user ? (
           <div className="min-h-screen w-full">
             <Sidebar>
               <SidebarHeader className="p-4 justify-center flex items-center gap-2">
@@ -39,10 +50,22 @@ export function Providers({ children }: { children: React.ReactNode }) {
             </SidebarInset>
           </div>
         ) : (
-          children
-        )}
-        <FirebaseErrorListener />
-      </SidebarProvider>
+          <div className="flex h-screen w-full items-center justify-center">
+            <SquareCheck className="h-12 w-12 animate-pulse text-primary" />
+          </div>
+        )
+      ) : (
+        children
+      )}
+      <FirebaseErrorListener />
+    </SidebarProvider>
+  );
+}
+
+export function Providers({ children }: { children: React.ReactNode }) {
+  return (
+    <FirebaseProvider>
+      <AppContent>{children}</AppContent>
     </FirebaseProvider>
   );
 }

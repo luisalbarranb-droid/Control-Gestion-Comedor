@@ -2,12 +2,11 @@
 'use client';
 
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
-import { ClipboardList, CheckCircle, Clock, TrendingUp } from 'lucide-react';
+import { collection, query } from 'firebase/firestore';
 import { useCollection, useFirestore, useUser, useMemoFirebase } from '@/firebase';
-import { collection } from 'firebase/firestore';
-import type { Task } from '@/lib/types';
+import { CheckCircle, Clock, TrendingUp, DollarSign, Loader2 } from 'lucide-react';
+import type { Task, InventoryItem } from '@/lib/types';
 import { useMemo, useState, useEffect } from 'react';
-import { Loader2 } from 'lucide-react';
 
 export function OverviewCards() {
   const [isClient, setIsClient] = useState(false);
@@ -23,17 +22,23 @@ export function OverviewCards() {
     return collection(firestore, 'tasks');
   }, [firestore]);
 
+  const inventoryQuery = useMemoFirebase(() => {
+    if (!firestore) return null;
+    return collection(firestore, 'inventory');
+  }, [firestore]);
+
   const { data: tasks, isLoading: isLoadingTasks } = useCollection<Task>(tasksQuery, { disabled: !user });
+  const { data: inventory, isLoading: isLoadingInventory } = useCollection<InventoryItem>(inventoryQuery, { disabled: !user });
 
   const stats = useMemo(() => {
     if (!tasks) {
       return { total: 0, completadas: 0, pendientes: 0, eficiencia: 0 };
     }
     const total = tasks.length;
-    const completadas = tasks.filter(t => t.estado === 'completada' || t.estado === 'verificada').length;
+    const completadas = tasks.filter((t: Task) => t.estado === 'completada' || t.estado === 'verificada').length;
     const pendientes = total - completadas;
     const eficiencia = total > 0 ? (completadas / total) * 100 : 0;
-    
+
     return {
       total,
       completadas,
@@ -42,13 +47,22 @@ export function OverviewCards() {
     };
   }, [tasks]);
 
-  const isLoading = isLoadingTasks || !isClient;
+  const inventoryStats = useMemo(() => {
+    if (!inventory) return { totalValue: 0 };
+    const totalValue = inventory.reduce((sum: number, item: InventoryItem) => {
+      const costPerRecipeUnit = (item.costoUnitario || 0) / (item.factorConversion || 1);
+      return sum + (item.cantidad * costPerRecipeUnit);
+    }, 0);
+    return { totalValue };
+  }, [inventory]);
+
+  const isLoading = isLoadingTasks || isLoadingInventory || !isClient;
 
   const cardData = [
-    { title: "Total de Tareas", value: stats.total, icon: ClipboardList, description: "en el último mes" },
+    { title: "Monto en Almacén", value: `$${inventoryStats.totalValue.toFixed(2)}`, icon: DollarSign, description: "Valor neto actual" },
     { title: "Tareas Completadas", value: stats.completadas, icon: CheckCircle, description: `de ${stats.total} tareas` },
     { title: "Tareas Pendientes", value: stats.pendientes, icon: Clock, description: "para esta semana" },
-    { title: "Eficiencia", value: `${stats.eficiencia}%`, icon: TrendingUp, description: "+2.1% desde el mes pasado" },
+    { title: "Eficiencia General", value: `${stats.eficiencia}%`, icon: TrendingUp, description: "Rendimiento promedio" },
   ];
 
   return (
