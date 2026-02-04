@@ -4,7 +4,7 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetTrigger, SheetContent } from '@/components/ui/sheet';
-import { PanelLeft, LogOut, User as UserIcon } from 'lucide-react';
+import { PanelLeft, LogOut, User as UserIcon, Share2 } from 'lucide-react';
 import { MainNav } from './main-nav';
 import { useAuth, useUser } from '@/firebase';
 import { useRouter } from 'next/navigation';
@@ -60,6 +60,22 @@ export function Header() {
             <UserIcon className="h-5 w-5 text-blue-700" />
           )}
         </div>
+
+        {/* Botón Compartir (Solo Super Admin) */}
+        {profile?.role === 'superadmin' && (
+          <Button
+            variant="ghost"
+            size="sm"
+            className="text-green-600 hover:text-green-700 hover:bg-green-50 gap-2 ml-1"
+            onClick={() => {
+              const text = encodeURIComponent('🍽️ Hola! Aquí tienes el acceso al Sistema de Control Comedor: https://sistema-comedor11-2026.vercel.app');
+              window.open(`https://wa.me/?text=${text}`, '_blank');
+            }}
+          >
+            <Share2 className="h-4 w-4" />
+            <span className="hidden md:inline">Compartir</span>
+          </Button>
+        )}
 
         {/* Botón Salir */}
         <Button
