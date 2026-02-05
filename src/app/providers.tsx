@@ -1,6 +1,6 @@
 'use client';
 
-import { FirebaseProvider } from '@/firebase/provider';
+import { FirebaseProvider } from '@/firebase';
 import {
   Sidebar,
   SidebarContent,
