@@ -4,7 +4,15 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetTrigger, SheetContent } from '@/components/ui/sheet';
-import { PanelLeft, LogOut, User as UserIcon, Share2 } from 'lucide-react';
+import { PanelLeft, LogOut, User as UserIcon, Share2, Download, FileText, FileSpreadsheet, Book } from 'lucide-react';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { MainNav } from './main-nav';
 import { useAuth, useUser } from '@/firebase';
 import { useRouter } from 'next/navigation';
@@ -41,6 +49,38 @@ export function Header() {
 
       {/* --- SECCIÓN DE USUARIO REAL --- */}
       <div className="flex items-center gap-3">
+
+        {/* Botón de Descargas Globales */}
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="outline" size="sm" className="gap-2 border-primary/20 hover:bg-primary/5">
+              <Download className="h-4 w-4 text-primary" />
+              <span className="hidden md:inline">Descargas</span>
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-56">
+            <DropdownMenuLabel>Centro de Descargas</DropdownMenuLabel>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem onClick={() => router.push('/help')}>
+              <Book className="mr-2 h-4 w-4" />
+              <span>Manual de Usuario</span>
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => router.push('/reports')}>
+              <FileText className="mr-2 h-4 w-4" />
+              <span>Reportes Generales</span>
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => router.push('/inventory/reports')}>
+              <FileSpreadsheet className="mr-2 h-4 w-4" />
+              <span>Estado de Inventario</span>
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem onClick={() => window.print()} className="text-xs text-muted-foreground">
+              <Download className="mr-2 h-3 w-3" />
+              Guardar Vista Actual (PDF)
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+
         {/* Nombre y Rol */}
         <div className="hidden md:flex flex-col items-end mr-1">
           <span className="text-sm font-semibold text-gray-900">
@@ -81,7 +121,7 @@ export function Header() {
         <Button
           variant="ghost"
           size="sm"
-          className="text-red-600 hover:text-red-700 hover:bg-red-50 gap-2 ml-1"
+          className="text-red-600 hover:text-red-700 hover:bg-red-50 gap-2 ml-3"
           onClick={handleLogout}
         >
           <LogOut className="h-4 w-4" />

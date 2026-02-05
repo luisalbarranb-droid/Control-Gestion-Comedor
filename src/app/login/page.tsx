@@ -27,6 +27,7 @@ import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { Loader2, SquareCheck } from 'lucide-react';
 import { signInWithEmailAndPassword } from 'firebase/auth';
+import { resetUserPassword } from '@/firebase/auth-operations';
 
 const loginSchema = z.object({
   email: z.string().email('Por favor, introduce un email válido.'),
@@ -60,38 +61,38 @@ export default function LoginPage() {
   const onSubmit = async (values: LoginFormValues) => {
     if (!auth) return;
     setIsSubmitting(true);
-    
+
     const superAdminPassword = 'password';
     const password = values.email === 'arvecladu@gmail.com' ? (values.password || superAdminPassword) : values.password;
 
     if (!password || password.length < 6) {
-        form.setError('password', { message: 'La contraseña debe tener al menos 6 caracteres.' });
-        setIsSubmitting(false);
-        return;
+      form.setError('password', { message: 'La contraseña debe tener al menos 6 caracteres.' });
+      setIsSubmitting(false);
+      return;
     }
-    
+
     try {
       await signInWithEmailAndPassword(auth, values.email, password);
       // El listener onAuthStateChanged en useUser se encargará de la redirección
-       toast({
+      toast({
         title: 'Inicio de sesión exitoso',
         description: 'Bienvenido de vuelta.',
       });
-       // No es necesario llamar a router.push('/') aquí, el useEffect lo maneja.
+      // No es necesario llamar a router.push('/') aquí, el useEffect lo maneja.
 
     } catch (error: any) {
-        console.error("Login error:", error);
-        toast({
-            variant: 'destructive',
-            title: 'Error de autenticación',
-            description: 'Credenciales incorrectas o el usuario no existe. Por favor, inténtalo de nuevo.',
-        });
+      console.error("Login error:", error);
+      toast({
+        variant: 'destructive',
+        title: 'Error de autenticación',
+        description: 'Credenciales incorrectas o el usuario no existe. Por favor, inténtalo de nuevo.',
+      });
     } finally {
-        setIsSubmitting(false);
+      setIsSubmitting(false);
     }
   };
-  
-   if (isUserLoading || user) {
+
+  if (isUserLoading || user) {
     return (
       <div className="flex h-screen w-full items-center justify-center">
         <Loader2 className="h-10 w-10 animate-spin text-primary" />
@@ -103,10 +104,10 @@ export default function LoginPage() {
     <div className="flex min-h-screen items-center justify-center bg-muted/40 p-4">
       <Card className="w-full max-w-sm">
         <CardHeader className="text-center">
-            <div className="mx-auto flex items-center gap-2 mb-4">
-               <SquareCheck className="size-10 text-primary" />
-               <h1 className="font-headline text-3xl font-bold">Comedor</h1>
-            </div>
+          <div className="mx-auto flex items-center gap-2 mb-4">
+            <SquareCheck className="size-10 text-primary" />
+            <h1 className="font-headline text-3xl font-bold">Comedor</h1>
+          </div>
           <CardTitle>Iniciar Sesión</CardTitle>
           <CardDescription>
             Ingresa a tu cuenta para gestionar el comedor.
@@ -150,9 +151,32 @@ export default function LoginPage() {
                 )}
               />
               <Button type="submit" className="w-full" disabled={isSubmitting}>
-                 {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 {isSubmitting ? 'Ingresando...' : 'Ingresar'}
               </Button>
+              <div className="text-center">
+                <Button
+                  variant="link"
+                  size="sm"
+                  className="text-xs text-muted-foreground"
+                  type="button"
+                  onClick={async () => {
+                    const email = form.getValues('email');
+                    if (!email) {
+                      form.setError('email', { message: 'Introduce tu email para restablecer la contraseña.' });
+                      return;
+                    }
+                    const result = await resetUserPassword(email);
+                    if (result.success) {
+                      toast({ title: 'Correo Enviado', description: 'Revisa tu bandeja de entrada para restablecer tu contraseña.' });
+                    } else {
+                      toast({ variant: 'destructive', title: 'Error', description: 'No se pudo enviar el correo. Verifica el email.' });
+                    }
+                  }}
+                >
+                  ¿Olvidaste tu contraseña?
+                </Button>
+              </div>
             </form>
           </Form>
         </CardContent>

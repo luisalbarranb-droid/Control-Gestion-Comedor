@@ -10,9 +10,9 @@ import type { User } from '@/lib/types';
 import { Skeleton } from '../ui/skeleton';
 
 interface UserListProps {
-  users: User[];
-  isLoading: boolean;
-  onEdit: (user: User) => void;
+    users: User[];
+    isLoading: boolean;
+    onEdit: (user: User) => void;
 }
 
 const roleDisplay: Record<string, { label: string; icon: React.ElementType, className: string }> = {
@@ -21,12 +21,33 @@ const roleDisplay: Record<string, { label: string; icon: React.ElementType, clas
     superadmin: { label: 'Superadmin', icon: Shield, className: 'bg-amber-100 text-amber-700' }
 };
 
+import { resetUserPassword } from '@/firebase/auth-operations';
+import { useToast } from '@/components/ui/toast';
+
 export function UserList({ users, isLoading, onEdit }: UserListProps) {
+    const { toast } = useToast();
     const getUserInitials = (name?: string) => name ? name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase() : 'U';
+
+    const handleResetPassword = async (email: string) => {
+        if (!email) return;
+        const result = await resetUserPassword(email);
+        if (result.success) {
+            toast({
+                title: 'Correo Enviado',
+                description: `Se ha enviado un correo de recuperación a ${email}.`,
+            });
+        } else {
+            toast({
+                variant: 'destructive',
+                title: 'Error',
+                description: 'No se pudo enviar el correo de recuperación.',
+            });
+        }
+    };
 
     if (isLoading) {
         return (
-             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                 {Array.from({ length: 4 }).map((_, index) => (
                     <Card key={index}>
                         <CardContent className="p-4">
@@ -41,7 +62,7 @@ export function UserList({ users, isLoading, onEdit }: UserListProps) {
                                 <Skeleton className="h-5 w-full" />
                             </div>
                             <div className="flex gap-2 mt-4">
-                                 <Skeleton className="h-9 w-full" />
+                                <Skeleton className="h-9 w-full" />
                             </div>
                         </CardContent>
                     </Card>
@@ -74,7 +95,7 @@ export function UserList({ users, isLoading, onEdit }: UserListProps) {
                                     <p className="text-sm text-muted-foreground">{user.email}</p>
                                 </div>
                             </div>
-                            
+
                             <div className="flex justify-between items-center p-2 rounded-md bg-muted/50">
                                 <span className="text-sm text-muted-foreground">Rol del Sistema:</span>
                                 <Badge variant="secondary" className={roleInfo.className}>
@@ -83,10 +104,13 @@ export function UserList({ users, isLoading, onEdit }: UserListProps) {
                                 </Badge>
                             </div>
 
-                            <div className="flex gap-2 mt-4">
-                                <Button variant="outline" size="sm" className="flex-1" onClick={() => onEdit(user)}>
+                            <div className="flex flex-col gap-2 mt-4">
+                                <Button variant="outline" size="sm" className="w-full" onClick={() => onEdit(user)}>
                                     <Edit className="h-4 w-4 mr-2" />
                                     Gestionar Rol
+                                </Button>
+                                <Button variant="ghost" size="sm" className="w-full text-xs text-muted-foreground" onClick={() => handleResetPassword(user.email)}>
+                                    Restablecer Contraseña
                                 </Button>
                             </div>
                         </CardContent>

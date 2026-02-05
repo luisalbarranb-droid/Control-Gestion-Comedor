@@ -15,6 +15,9 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { DateRange } from 'react-day-picker';
 import { DateRangePicker } from '@/components/attendance/date-range-picker';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useToast } from '@/components/ui/toast';
+import * as XLSX from 'xlsx';
+import { saveAs } from 'file-saver';
 
 
 // --- Helper Functions ---
@@ -31,6 +34,7 @@ function convertToDate(date: any): Date | null {
 }
 
 export default function AttendanceReportPage() {
+    const { toast } = useToast();
     const firestore = useFirestore();
     const { isUserLoading } = useUser();
     const [dateRange, setDateRange] = useState<DateRange | undefined>();
@@ -58,10 +62,10 @@ export default function AttendanceReportPage() {
             where('checkIn', '<=', Timestamp.fromDate(dateRange.to))
         );
     }, [firestore, dateRange]);
-    
+
     const daysOffQuery = useMemoFirebase(() => {
         if (!firestore || !dateRange?.from || !dateRange?.to) return null;
-         return query(
+        return query(
             collection(firestore, 'daysOff'),
             where('date', '>=', format(dateRange.from, 'yyyy-MM-dd')),
             where('date', '<=', format(dateRange.to, 'yyyy-MM-dd'))
@@ -74,16 +78,16 @@ export default function AttendanceReportPage() {
 
     const consolidatedData: ConsolidatedRecord[] = useMemo(() => {
         if (!users || !attendance || !dateRange?.from || !dateRange?.to || !daysOff) return [];
-        
+
         const businessDays = differenceInBusinessDays(dateRange.to, dateRange.from) + 1;
 
         return users.map(user => {
             const userAttendance = attendance.filter(rec => rec.userId === user.id);
             const userDaysOff = daysOff.filter(d => d.userId === user.id).length;
-            
+
             const attendedDays = userAttendance.filter(r => ['presente', 'retardo'].includes(r.status)).length;
             const justifiedAbsences = userAttendance.filter(r => r.status === 'justificado' || r.status === 'vacaciones').length;
-            
+
             const totalHours = userAttendance.reduce((acc, rec) => {
                 const checkIn = convertToDate(rec.checkIn);
                 const checkOut = convertToDate(rec.checkOut);
@@ -108,6 +112,40 @@ export default function AttendanceReportPage() {
         });
     }, [users, attendance, daysOff, dateRange]);
 
+    const handleExport = () => {
+        if (consolidatedData.length === 0) {
+            toast({ variant: 'destructive', title: 'Error', description: 'No hay datos para exportar.' });
+            return;
+        }
+
+        const reportData = consolidatedData.map(record => ({
+            'Empleado': record.userName,
+            'Días Asistidos': record.attendedDays,
+            'Días Libres': record.freeDays,
+            'Reposos Justificados': record.justifiedRestDays,
+            'Ausencias': record.absentDays,
+            'Horas Laboradas': `${record.totalHours} hrs`,
+        }));
+
+        const worksheet = XLSX.utils.json_to_sheet(reportData);
+        const workbook = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(workbook, worksheet, 'Asistencia');
+
+        // Ajustar anchos de columnas
+        worksheet["!cols"] = [{ wch: 30 }, { wch: 15 }, { wch: 15 }, { wch: 20 }, { wch: 15 }, { wch: 15 }];
+
+        const excelBuffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
+        const data = new Blob([excelBuffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;charset=UTF-8' });
+
+        const dateStr = dateRange?.from ? format(dateRange.from, 'yyyy-MM-dd') : format(new Date(), 'yyyy-MM-dd');
+        saveAs(data, `Reporte_Asistencia_${dateStr}.xlsx`);
+
+        toast({
+            title: 'Exportación Exitosa',
+            description: 'El reporte de asistencia ha sido descargado.',
+        });
+    };
+
     const isLoading = !isClient || isLoadingUsers || isLoadingAttendance || isLoadingDaysOff || !dateRange;
 
     if (!isClient) {
@@ -121,21 +159,7 @@ export default function AttendanceReportPage() {
                             <Skeleton className="h-4 w-80" />
                         </div>
                     </div>
-                    <div className="flex items-center gap-2">
-                        <Skeleton className="h-10 w-[300px]" />
-                        <Skeleton className="h-10 w-28" />
-                        <Skeleton className="h-10 w-28" />
-                    </div>
                 </div>
-                <Card>
-                    <CardHeader>
-                        <Skeleton className="h-6 w-48 mb-2" />
-                        <Skeleton className="h-4 w-96" />
-                    </CardHeader>
-                    <CardContent>
-                        <Skeleton className="h-64 w-full" />
-                    </CardContent>
-                </Card>
             </main>
         );
     }
@@ -156,10 +180,10 @@ export default function AttendanceReportPage() {
                         <p className="text-sm text-muted-foreground">Consolidado de asistencia por rango de fechas.</p>
                     </div>
                 </div>
-                 <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2">
                     <DateRangePicker date={dateRange} setDate={setDateRange} />
-                    <Button variant="outline"><Printer className="mr-2 h-4 w-4" /> Imprimir</Button>
-                    <Button><Download className="mr-2 h-4 w-4" /> Exportar</Button>
+                    <Button variant="outline" onClick={() => window.print()}><Printer className="mr-2 h-4 w-4" /> Imprimir</Button>
+                    <Button onClick={handleExport}><Download className="mr-2 h-4 w-4" /> Exportar</Button>
                 </div>
             </div>
 
@@ -167,14 +191,14 @@ export default function AttendanceReportPage() {
                 <CardHeader>
                     <CardTitle>Resumen del Período</CardTitle>
                     <CardDescription>
-                        {dateRange?.from && dateRange.to ? 
-                        `Mostrando datos desde ${format(dateRange.from, 'dd/MM/yyyy')} hasta ${format(dateRange.to, 'dd/MM/yyyy')}`
-                        : 'Seleccione un rango de fechas.'}
+                        {dateRange?.from && dateRange.to ?
+                            `Mostrando datos desde ${format(dateRange.from, 'dd/MM/yyyy')} hasta ${format(dateRange.to, 'dd/MM/yyyy')}`
+                            : 'Seleccione un rango de fechas.'}
                     </CardDescription>
                 </CardHeader>
                 <CardContent>
                     {isLoading ? <p>Generando reporte...</p> : (
-                         <Table>
+                        <Table>
                             <TableHeader>
                                 <TableRow>
                                     <TableHead>Empleado</TableHead>
@@ -198,7 +222,7 @@ export default function AttendanceReportPage() {
                                     </TableRow>
                                 ))}
                             </TableBody>
-                         </Table>
+                        </Table>
                     )}
                 </CardContent>
             </Card>
