@@ -54,6 +54,7 @@ export default function HelpPage() {
                                 <PieChart className="h-4 w-4 text-blue-600" /> Módulos Principales
                             </h3>
                             <ul className="text-sm text-blue-700 space-y-1.5 ml-6">
+                                <li>• 0. Inicio de Sesión y Primer Acceso</li>
                                 <li>• 1. Dashboard y Centro de Control</li>
                                 <li>• 2. Gestión de Inventario Inteligente</li>
                                 <li>• 3. Recursos Humanos y Asistencia</li>
@@ -74,6 +75,54 @@ export default function HelpPage() {
                         </div>
                     </div>
                 </nav>
+
+                {/* SECCIÓN 0: PRIMER ACCESO */}
+                <section className="space-y-6 pt-8">
+                    <h2 className="text-3xl font-bold flex items-center gap-3 border-b-2 border-indigo-600 pb-2 text-gray-900">
+                        <UserPlus className="h-7 w-7 text-indigo-600" />
+                        0. Inicio de Sesión y Primer Acceso
+                    </h2>
+
+                    <div className="pl-6 space-y-6">
+                        <p className="text-gray-700 leading-relaxed text-lg">
+                            Para garantizar la máxima seguridad, el sistema no utiliza contraseñas genéricas. Cada integrante debe definir su propia clave privada mediante el proceso de activación por correo electrónico.
+                        </p>
+
+                        <div className="bg-indigo-50 p-6 rounded-xl border-l-4 border-indigo-600">
+                            <h3 className="text-xl font-bold text-indigo-900 mb-3">Guía paso a paso para el Primer Ingreso</h3>
+                            <div className="space-y-4">
+                                <div className="flex gap-4 items-start">
+                                    <div className="bg-indigo-600 text-white p-2 rounded-lg font-bold">1</div>
+                                    <div>
+                                        <p className="font-bold text-gray-900">Creación del Perfil</p>
+                                        <p className="text-sm text-gray-600">El SuperAdmin registra al nuevo miembro en el módulo de <strong>Gestión de Personal</strong>.</p>
+                                    </div>
+                                </div>
+                                <div className="flex gap-4 items-start">
+                                    <div className="bg-indigo-600 text-white p-2 rounded-lg font-bold">2</div>
+                                    <div>
+                                        <p className="font-bold text-gray-900">Activación de Cuenta</p>
+                                        <p className="text-sm text-gray-600">El Administrador debe ir a <strong>Gestión de Usuarios</strong> y presionar el botón <span className="text-blue-600 font-bold italic">"Restablecer Contraseña"</span> en la tarjeta del nuevo integrante.</p>
+                                    </div>
+                                </div>
+                                <div className="flex gap-4 items-start">
+                                    <div className="bg-indigo-600 text-white p-2 rounded-lg font-bold">3</div>
+                                    <div>
+                                        <p className="font-bold text-gray-900">Definición de Contraseña</p>
+                                        <p className="text-sm text-gray-600">El usuario recibirá un email con un enlace seguro. Al pulsarlo, podrá elegir la contraseña que desee.</p>
+                                    </div>
+                                </div>
+                                <div className="flex gap-4 items-start">
+                                    <div className="bg-indigo-600 text-white p-2 rounded-lg font-bold">4</div>
+                                    <div>
+                                        <p className="font-bold text-gray-900">Ingreso Final</p>
+                                        <p className="text-sm text-gray-600">Con su email y clave personal, ya puede entrar desde la pantalla de Login.</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
 
                 {/* SECCIÓN 1: DASHBOARD */}
                 <section className="space-y-6 pt-8">
