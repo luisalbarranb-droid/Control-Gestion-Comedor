@@ -15,6 +15,8 @@ import { SquareCheck } from 'lucide-react';
 import { usePathname, useRouter } from 'next/navigation';
 import { useUser } from '@/firebase';
 import { FirebaseErrorListener } from '@/components/FirebaseErrorListener';
+import { APP_VERSION } from '@/lib/version';
+import { VersionChecker } from '@/components/dashboard/version-checker';
 
 import React from 'react';
 
@@ -46,7 +48,12 @@ function AppContent({ children }: { children: React.ReactNode }) {
               </SidebarContent>
               <SidebarFooter className="p-4 border-t bg-slate-50/80 mt-auto">
                 <div className="flex flex-col gap-1 text-[11px] text-slate-500 leading-tight">
-                  <p className="font-bold text-slate-900">© {new Date().getFullYear()} VELCAR, C.A.</p>
+                  <div className="flex items-center justify-between mb-1">
+                    <p className="font-bold text-slate-900">© {new Date().getFullYear()} VELCAR, C.A.</p>
+                    <span className="px-1.5 py-0.5 bg-slate-200 text-slate-700 rounded-full text-[9px] font-mono font-bold">
+                      v{APP_VERSION}
+                    </span>
+                  </div>
                   <p>Todos los derechos reservados.</p>
                   <div className="mt-1 pt-1 border-t border-slate-200">
                     <p className="opacity-70">Desarrollado por:</p>
@@ -69,6 +76,7 @@ function AppContent({ children }: { children: React.ReactNode }) {
         children
       )}
       <FirebaseErrorListener />
+      <VersionChecker />
     </SidebarProvider>
   );
 }
