@@ -9,8 +9,9 @@ import {
     Smartphone, Scan, PieChart, Users, Settings,
     CheckCircle2, AlertCircle, ShoppingCart, History,
     Calendar, TrendingUp, Package, ClipboardList,
-    UserPlus, QrCode, BarChart3, FileSpreadsheet
+    UserPlus, QrCode, BarChart3, FileSpreadsheet, Trash2
 } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
 
 export default function HelpPage() {
     const handlePrint = () => {
@@ -68,9 +69,10 @@ export default function HelpPage() {
                             </h3>
                             <ul className="text-sm text-green-700 space-y-1.5 ml-6">
                                 <li>• 6. Configuración del Sistema</li>
-                                <li>• 7. Solución de Problemas</li>
-                                <li>• 8. Mejores Prácticas</li>
-                                <li>• 9. Preguntas Frecuentes</li>
+                                <li>• 7. Gestión de Usuarios del Sistema</li>
+                                <li>• 8. Solución de Problemas</li>
+                                <li>• 9. Mejores Prácticas</li>
+                                <li>• 10. Preguntas Frecuentes</li>
                             </ul>
                         </div>
                     </div>
@@ -557,7 +559,63 @@ export default function HelpPage() {
                     </div>
                 </section>
 
-                {/* SECCIÓN 7: SOLUCIÓN DE PROBLEMAS */}
+                {/* SECCIÓN 7: GESTIÓN DE USUARIOS DEL SISTEMA */}
+                <section className="space-y-6 pt-8">
+                    <h2 className="text-3xl font-bold flex items-center gap-3 border-b-2 border-slate-700 pb-2 text-gray-900">
+                        <Users className="h-7 w-7 text-slate-700" />
+                        7. Gestión de Usuarios del Sistema
+                    </h2>
+
+                    <div className="pl-6 space-y-6">
+                        <p className="text-gray-700 leading-relaxed text-lg">
+                            Este módulo es exclusivo para <strong>Superadmins</strong> y permite administrar quiénes pueden entrar al sistema y qué acciones pueden realizar.
+                        </p>
+
+                        <div className="grid md:grid-cols-2 gap-6">
+                            <div className="bg-slate-50 p-6 rounded-xl border border-slate-200">
+                                <h4 className="font-bold text-slate-900 mb-3">Roles y Permisos</h4>
+                                <ul className="text-sm text-gray-700 space-y-3">
+                                    <li>
+                                        <Badge className="bg-amber-100 text-amber-700 mr-2">Superadmin</Badge>
+                                        Tiene control total. Puede crear, modificar y eliminar cualquier usuario (excepto a sí mismo).
+                                    </li>
+                                    <li>
+                                        <Badge className="bg-purple-100 text-purple-700 mr-2">Admin</Badge>
+                                        Tiene acceso solo a los módulos y áreas que el Superadmin le asigne específicamente.
+                                    </li>
+                                    <li>
+                                        <Badge className="bg-gray-100 text-gray-700 mr-2">Común</Badge>
+                                        Vista limitada. Solo puede ver su Dashboard, sus Tareas y su área de trabajo asignada.
+                                    </li>
+                                </ul>
+                            </div>
+
+                            <div className="bg-red-50 p-6 rounded-xl border border-red-100">
+                                <h4 className="font-bold text-red-900 mb-3 flex items-center gap-2">
+                                    <Trash2 className="h-4 w-4" /> Eliminación de Usuarios
+                                </h4>
+                                <p className="text-sm text-red-800 mb-3">
+                                    Por motivos de seguridad y control, <strong>solo el Superadmin</strong> tiene la facultad de eliminar perfiles del sistema.
+                                </p>
+                                <div className="bg-white/50 p-3 rounded-md text-xs text-red-700 italic">
+                                    ⚠️ Nota: Al eliminar un usuario, este pierde acceso inmediato. Esta acción no se puede deshacer desde la aplicación.
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="bg-indigo-50 p-6 rounded-xl border-l-4 border-indigo-600">
+                            <h4 className="font-bold text-indigo-900 mb-3">Cómo Gestionar un Usuario:</h4>
+                            <ol className="text-sm text-gray-700 space-y-2 list-decimal ml-4">
+                                <li>Ve al menú lateral &gt; <strong>"Gestión de Usuario"</strong>.</li>
+                                <li>Para crear: Pulsa <strong>"+ Agregar Usuario"</strong>. La clave temporal será <code className="bg-white px-1 font-mono">password</code>.</li>
+                                <li>Para editar: Pulsa <strong>"Gestionar Rol"</strong> en la tarjeta del usuario.</li>
+                                <li>Para activar: Si es un usuario nuevo, pulsa <strong>"Recuperar Clave"</strong> para enviarle el email de activación.</li>
+                            </ol>
+                        </div>
+                    </div>
+                </section>
+
+                {/* SECCIÓN 8: SOLUCIÓN DE PROBLEMAS */}
                 <section className="space-y-6 pt-8">
                     <h2 className="text-3xl font-bold flex items-center gap-3 border-b-2 border-yellow-600 pb-2 text-gray-900">
                         <AlertCircle className="h-7 w-7 text-yellow-600" />
@@ -600,11 +658,11 @@ export default function HelpPage() {
                     </div>
                 </section>
 
-                {/* SECCIÓN 8: MEJORES PRÁCTICAS */}
+                {/* SECCIÓN 9: MEJORES PRÁCTICAS */}
                 <section className="space-y-6 pt-8">
                     <h2 className="text-3xl font-bold flex items-center gap-3 border-b-2 border-green-600 pb-2 text-gray-900">
                         <CheckCircle2 className="h-7 w-7 text-green-600" />
-                        8. Mejores Prácticas
+                        9. Mejores Prácticas
                     </h2>
 
                     <div className="pl-6 space-y-4">
@@ -656,11 +714,11 @@ export default function HelpPage() {
                     </div>
                 </section>
 
-                {/* SECCIÓN 9: FAQ */}
+                {/* SECCIÓN 10: FAQ */}
                 <section className="space-y-6 pt-8">
                     <h2 className="text-3xl font-bold flex items-center gap-3 border-b-2 border-blue-600 pb-2 text-gray-900">
                         <HelpCircle className="h-7 w-7 text-blue-600" />
-                        9. Preguntas Frecuentes
+                        10. Preguntas Frecuentes
                     </h2>
 
                     <div className="pl-6 space-y-4">

@@ -1,11 +1,11 @@
 import {
-  createUserWithEmailAndPassword,
-  getAuth,
-  UserCredential,
-  sendPasswordResetEmail,
-  updatePassword as firebaseUpdatePassword,
-  reauthenticateWithCredential,
-  EmailAuthProvider,
+    createUserWithEmailAndPassword,
+    getAuth,
+    UserCredential,
+    sendPasswordResetEmail,
+    updatePassword as firebaseUpdatePassword,
+    reauthenticateWithCredential,
+    EmailAuthProvider,
 } from 'firebase/auth';
 
 /**
@@ -17,49 +17,25 @@ import {
  * @returns An object containing the new user credential or an error message.
  */
 export async function createUserAccount(email: string): Promise<{ user?: UserCredential, error?: string }> {
-  try {
-    // For demonstration, we'll use a default, non-secure password.
-    const tempPassword = "password"; 
-    
-    // NOTE: This will likely fail without proper Admin SDK setup or specific client-side permissions if restricted.
-    // However, we'll try the real call first.
-    const auth = getAuth();
     try {
+        // For demonstration, we'll use a default, non-secure password.
+        const tempPassword = "password";
+
+        // NOTE: This will likely fail without proper Admin SDK setup or specific client-side permissions if restricted.
+        const auth = getAuth();
         const userCredential = await createUserWithEmailAndPassword(auth, email, tempPassword);
         return { user: userCredential };
-    } catch (realError: any) {
-        console.warn("Real user creation failed, falling back to simulation:", realError.message);
-        
-        // --- SIMULATION FOR PROTOTYPE ---
-        const simulatedUser = {
-            uid: `simulated_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`,
-            email: email,
-            emailVerified: false,
-            isAnonymous: false,
-            metadata: {},
-            providerData: [],
-            tenantId: null,
-            displayName: null,
-            photoURL: null,
-            phoneNumber: null,
-        };
-        
-        const simulatedUserCredential = {
-            user: simulatedUser,
-            providerId: "password",
-            operationType: "signIn",
-        } as unknown as UserCredential;
 
-        return { user: simulatedUserCredential };
+    } catch (error: any) {
+        console.error("Error in createUserAccount:", error);
+        if (error.code === 'auth/email-already-in-use') {
+            return { error: 'Este correo electrónico ya está en uso en Firebase Authentication.' };
+        }
+        if (error.code === 'auth/operation-not-allowed') {
+            return { error: 'El método de inicio de sesión con correo y contraseña no está habilitado en la consola de Firebase.' };
+        }
+        return { error: `No se pudo crear la cuenta: ${error.message}` };
     }
-
-  } catch (error: any) {
-    console.error("Error in createUserAccount:", error);
-    if (error.code === 'auth/email-already-in-use') {
-        return { error: 'Este correo electrónico ya está en uso.' };
-    }
-    return { error: 'No se pudo crear la cuenta de autenticación.' };
-  }
 }
 
 /**
@@ -83,14 +59,14 @@ export async function resetUserPassword(email: string): Promise<{ success: boole
 export async function updateCurrentUserPassword(currentPassword: string, newPassword: string): Promise<{ success: boolean, error?: string }> {
     const auth = getAuth();
     const user = auth.currentUser;
-    
+
     if (!user || !user.email) return { success: false, error: 'No hay usuario autenticado.' };
 
     try {
         // Reautenticar para poder cambiar la contraseña
         const credential = EmailAuthProvider.credential(user.email, currentPassword);
         await reauthenticateWithCredential(user, credential);
-        
+
         // Actualizar contraseña
         await firebaseUpdatePassword(user, newPassword);
         return { success: true };

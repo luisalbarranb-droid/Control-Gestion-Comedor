@@ -5,9 +5,24 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Edit, Shield, User as UserIcon } from 'lucide-react';
+import { Trash2, Edit, Shield, User as UserIcon } from 'lucide-react';
 import type { User } from '@/lib/types';
 import { Skeleton } from '../ui/skeleton';
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+    AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { useFirestore, useUser, deleteDocumentNonBlocking } from '@/firebase';
+import { doc } from 'firebase/firestore';
+import { resetUserPassword } from '@/firebase/auth-operations';
+import { useToast } from '@/components/ui/toast';
 
 interface UserListProps {
     users: User[];
@@ -21,11 +36,13 @@ const roleDisplay: Record<string, { label: string; icon: React.ElementType, clas
     superadmin: { label: 'Superadmin', icon: Shield, className: 'bg-amber-100 text-amber-700' }
 };
 
-import { resetUserPassword } from '@/firebase/auth-operations';
-import { useToast } from '@/components/ui/toast';
-
 export function UserList({ users, isLoading, onEdit }: UserListProps) {
     const { toast } = useToast();
+    const { user: authUser, profile } = useUser();
+    const firestore = useFirestore();
+
+    const isSuperAdmin = profile?.role === 'superadmin';
+
     const getUserInitials = (name?: string) => name ? name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase() : 'U';
 
     const handleResetPassword = async (email: string) => {
@@ -41,6 +58,35 @@ export function UserList({ users, isLoading, onEdit }: UserListProps) {
                 variant: 'destructive',
                 title: 'Error',
                 description: 'No se pudo enviar el correo de recuperación.',
+            });
+        }
+    };
+
+    const handleDeleteUser = async (userId: string, userName: string) => {
+        if (!firestore || !isSuperAdmin) return;
+
+        // Evitar que el superadmin se elimine a sí mismo por error
+        if (userId === authUser?.uid) {
+            toast({
+                variant: 'destructive',
+                title: 'Operación denegada',
+                description: 'No puedes eliminar tu propia cuenta de administrador.',
+            });
+            return;
+        }
+
+        try {
+            const userRef = doc(firestore, 'users', userId);
+            await deleteDocumentNonBlocking(userRef);
+            toast({
+                title: 'Usuario eliminado',
+                description: `El perfil de ${userName} ha sido eliminado del sistema.`,
+            });
+        } catch (error: any) {
+            toast({
+                variant: 'destructive',
+                title: 'Error al eliminar',
+                description: error.message || 'No se pudo eliminar el usuario.',
             });
         }
     };
@@ -109,9 +155,41 @@ export function UserList({ users, isLoading, onEdit }: UserListProps) {
                                     <Edit className="h-4 w-4 mr-2" />
                                     Gestionar Rol
                                 </Button>
-                                <Button variant="ghost" size="sm" className="w-full text-xs text-muted-foreground" onClick={() => handleResetPassword(user.email)}>
-                                    Restablecer Contraseña
-                                </Button>
+
+                                {isSuperAdmin && (
+                                    <div className="flex gap-2">
+                                        <AlertDialog>
+                                            <AlertDialogTrigger asChild>
+                                                <Button variant="ghost" size="sm" className="flex-1 text-xs text-red-600 hover:text-red-700 hover:bg-red-50">
+                                                    <Trash2 className="h-3.5 w-3.5 mr-1" />
+                                                    Eliminar
+                                                </Button>
+                                            </AlertDialogTrigger>
+                                            <AlertDialogContent>
+                                                <AlertDialogHeader>
+                                                    <AlertDialogTitle>¿Está absolutamente seguro?</AlertDialogTitle>
+                                                    <AlertDialogDescription>
+                                                        Esta acción eliminará el perfil de <strong>{user.name}</strong> del sistema.
+                                                        El usuario perderá todo acceso de forma inmediata.
+                                                    </AlertDialogDescription>
+                                                </AlertDialogHeader>
+                                                <AlertDialogFooter>
+                                                    <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                                    <AlertDialogAction
+                                                        onClick={() => handleDeleteUser(user.id, user.name)}
+                                                        className="bg-red-600 hover:bg-red-700"
+                                                    >
+                                                        Confirmar Eliminación
+                                                    </AlertDialogAction>
+                                                </AlertDialogFooter>
+                                            </AlertDialogContent>
+                                        </AlertDialog>
+
+                                        <Button variant="ghost" size="sm" className="flex-1 text-xs text-muted-foreground" onClick={() => handleResetPassword(user.email)}>
+                                            Recuperar Clave
+                                        </Button>
+                                    </div>
+                                )}
                             </div>
                         </CardContent>
                     </Card>
