@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Mail, Clock, Calendar, CheckCircle2, AlertCircle, Loader2 } from 'lucide-react';
-import { useFirestore, useUser, useDoc } from '@/firebase';
+import { useFirestore, useUser, useDoc, useMemoFirebase } from '@/firebase';
 import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { useToast } from '@/components/ui/toast';
 
@@ -23,7 +23,11 @@ export default function ReportAutomationPage() {
     const [email, setEmail] = useState('');
 
     // Use a special document ID for the user's subscription
-    const subscriptionRef = firestore ? doc(firestore, 'report_subscriptions', user?.uid || 'temp') : null;
+    const subscriptionRef = useMemoFirebase(() => {
+        if (!firestore || !user?.uid) return null;
+        return doc(firestore, 'report_subscriptions', user.uid);
+    }, [firestore, user?.uid]);
+
     const { data: subscription, isLoading } = useDoc<any>(subscriptionRef, { disabled: !user });
 
     useEffect(() => {
