@@ -765,9 +765,13 @@ export default function HelpPage() {
                     <div className="mt-8 space-y-2">
                         <p className="text-sm text-gray-600 font-semibold">Soporte Técnico</p>
                         <p className="text-sm text-gray-500">Email: arvecladu@gmail.com</p>
-                        <p className="text-xs text-gray-400 font-mono mt-4">
-                            CONTROL COMEDOR v2.0 - {new Date().getFullYear()} - Todos los derechos reservados
-                        </p>
+                        <div className="mt-8 space-y-1">
+                            <p className="text-sm text-gray-600 font-bold tracking-tight">© {new Date().getFullYear()} VELCAR, C.A.</p>
+                            <p className="text-xs text-gray-500">Todos los derechos reservados.</p>
+                            <p className="text-xs text-gray-400 font-medium italic mt-2">
+                                Diseñado y desarrollado por <span className="text-blue-600 not-italic font-bold">Luis E. Albarrán B.</span>
+                            </p>
+                        </div>
                     </div>
                 </footer>
             </div>
