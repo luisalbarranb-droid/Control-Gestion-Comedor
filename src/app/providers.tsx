@@ -44,12 +44,14 @@ function AppContent({ children }: { children: React.ReactNode }) {
               <SidebarContent>
                 <MainNav />
               </SidebarContent>
-              <SidebarFooter className="p-4 border-t bg-muted/20">
-                <div className="flex flex-col gap-1 text-[10px] text-muted-foreground leading-tight">
-                  <p className="font-semibold">© {new Date().getFullYear()} VELCAR, C.A.</p>
+              <SidebarFooter className="p-4 border-t bg-slate-50/80 mt-auto">
+                <div className="flex flex-col gap-1 text-[11px] text-slate-500 leading-tight">
+                  <p className="font-bold text-slate-900">© {new Date().getFullYear()} VELCAR, C.A.</p>
                   <p>Todos los derechos reservados.</p>
-                  <p className="mt-1 opacity-70">Diseñado y desarrollado por:</p>
-                  <p className="font-medium text-primary/80">Luis E. Albarrán B.</p>
+                  <div className="mt-1 pt-1 border-t border-slate-200">
+                    <p className="opacity-70">Desarrollado por:</p>
+                    <p className="font-semibold text-primary">Luis E. Albarrán B.</p>
+                  </div>
                 </div>
               </SidebarFooter>
             </Sidebar>
