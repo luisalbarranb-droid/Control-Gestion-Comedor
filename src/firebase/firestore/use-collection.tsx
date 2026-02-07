@@ -56,8 +56,8 @@ interface UseCollectionOptions {
  * @returns {UseCollectionResult<T>} Object with data, isLoading, error.
  */
 export function useCollection<T = any>(
-    memoizedTargetRefOrQuery: ((CollectionReference<DocumentData> | Query<DocumentData>) & {__memo?: boolean})  | null | undefined,
-    options: UseCollectionOptions = { disabled: false },
+  memoizedTargetRefOrQuery: ((CollectionReference<DocumentData> | Query<DocumentData>) & { __memo?: boolean }) | null | undefined,
+  options: UseCollectionOptions = { disabled: false },
 ): UseCollectionResult<T> {
   type ResultItemType = WithId<T>;
   type StateDataType = ResultItemType[] | null;
@@ -90,11 +90,20 @@ export function useCollection<T = any>(
         setIsLoading(false);
       },
       (error: FirestoreError) => {
-        // This logic extracts the path from either a ref or a query
-        const path: string =
-          memoizedTargetRefOrQuery.type === 'collection'
-            ? (memoizedTargetRefOrQuery as CollectionReference).path
-            : (memoizedTargetRefOrQuery as unknown as InternalQuery)._query.path.canonicalString()
+        // This logic extracts the path from either a ref or a query safely
+        let path = 'unknown';
+        try {
+          if (memoizedTargetRefOrQuery.type === 'collection') {
+            path = (memoizedTargetRefOrQuery as CollectionReference).path;
+          } else {
+            // Safer way to get path from query if possible, fallback to string representation
+            path = (memoizedTargetRefOrQuery as any)._query?.path?.canonicalString?.()
+              || (memoizedTargetRefOrQuery as any)._path?.toString?.()
+              || 'query';
+          }
+        } catch (e) {
+          console.warn('Could not extract path for Firestore error:', e);
+        }
 
         const contextualError = new FirestorePermissionError({
           operation: 'list',
@@ -112,10 +121,11 @@ export function useCollection<T = any>(
 
     return () => unsubscribe();
   }, [memoizedTargetRefOrQuery, options.disabled]); // Re-run if the target query/reference or disabled state changes.
-  
-  if(memoizedTargetRefOrQuery && !memoizedTargetRefOrQuery.__memo && !options.disabled) {
-    throw new Error(memoizedTargetRefOrQuery + ' was not properly memoized using useMemoFirebase');
-  }
+
+  // Removed strict memoization check that was causing production crashes due to frozen objects.
+  // if(memoizedTargetRefOrQuery && !memoizedTargetRefOrQuery.__memo && !options.disabled) {
+  //   throw new Error(memoizedTargetRefOrQuery + ' was not properly memoized using useMemoFirebase');
+  // }
 
   return { data, isLoading, error };
 }

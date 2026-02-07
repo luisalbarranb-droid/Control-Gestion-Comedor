@@ -37,7 +37,7 @@ export default function HelpPage() {
                     <h1 className="text-5xl font-extrabold text-blue-900 tracking-tight">CONTROL COMEDOR</h1>
                     <p className="text-xl text-blue-600 font-semibold tracking-widest uppercase">Manual Completo de Operaciones v2.0</p>
                     <div className="flex justify-center gap-4 text-sm text-gray-500 font-medium">
-                        <span>Generado: {new Date().toLocaleDateString()}</span>
+                        <span>Manual de Usuario</span>
                         <span>•</span>
                         <span>Soporte: arvecladu@gmail.com</span>
                     </div>
@@ -766,7 +766,7 @@ export default function HelpPage() {
                         <p className="text-sm text-gray-600 font-semibold">Soporte Técnico</p>
                         <p className="text-sm text-gray-500">Email: arvecladu@gmail.com</p>
                         <div className="mt-8 space-y-1">
-                            <p className="text-sm text-gray-600 font-bold tracking-tight">© {new Date().getFullYear()} VELCAR, C.A.</p>
+                            <p className="text-sm text-gray-600 font-bold tracking-tight">© 2026 VELCAR, C.A.</p>
                             <p className="text-xs text-gray-500">Todos los derechos reservados.</p>
                             <p className="text-xs text-gray-400 font-medium italic mt-2">
                                 Diseñado y desarrollado por <span className="text-blue-600 not-italic font-bold">Luis E. Albarrán B.</span>

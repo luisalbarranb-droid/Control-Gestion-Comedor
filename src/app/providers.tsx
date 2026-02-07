@@ -49,7 +49,7 @@ function AppContent({ children }: { children: React.ReactNode }) {
               <SidebarFooter className="p-4 border-t bg-slate-50/80 mt-auto">
                 <div className="flex flex-col gap-1 text-[11px] text-slate-500 leading-tight">
                   <div className="flex items-center justify-between mb-1">
-                    <p className="font-bold text-slate-900">© {new Date().getFullYear()} VELCAR, C.A.</p>
+                    <p className="font-bold text-slate-900">© 2026 VELCAR, C.A.</p>
                     <span className="px-1.5 py-0.5 bg-slate-200 text-slate-700 rounded-full text-[9px] font-mono font-bold">
                       v{APP_VERSION}
                     </span>
