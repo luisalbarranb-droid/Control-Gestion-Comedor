@@ -20,6 +20,7 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
+  FormDescription,
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import {
@@ -31,7 +32,7 @@ import {
 } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/ui/toast';
-import { useAuth, useFirestore, setDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase';
+import { useAuth, useFirestore, useCollection, setDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase';
 import { createUserAccount } from '@/firebase/auth-operations';
 import { collection, doc, serverTimestamp, Timestamp } from 'firebase/firestore';
 import type { User } from '@/lib/types';
@@ -40,7 +41,7 @@ import { DatePicker } from '../ui/datepicker';
 import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
 import { Camera, Loader2 } from 'lucide-react';
 import { uploadProfilePicture } from '@/actions/upload-actions';
-
+import { useMultiTenant } from '@/providers/multi-tenant-provider';
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -61,6 +62,7 @@ const employeeSchema = z.object({
   fechaNacimiento: z.date().optional(),
   diasContrato: z.coerce.number().optional(),
   avatarUrl: z.string().url().optional().or(z.literal('')),
+  comedorId: z.string().optional(),
 
   // New Fields
   gender: z.enum(['M', 'F', 'Other']).optional(),
@@ -98,11 +100,16 @@ const convertToDate = (date: any): Date | undefined => {
 
 const getUserInitials = (name?: string) => name ? name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase() : 'U';
 
-
 export function EmployeeForm({ isOpen, onOpenChange, employee }: EmployeeFormProps) {
   const auth = useAuth();
   const firestore = useFirestore();
   const { toast } = useToast();
+  const { activeComedorId, isSuperAdmin } = useMultiTenant();
+
+  // Load comedores list for SuperAdmin selection
+  const comedoresQuery = isSuperAdmin ? collection(firestore, 'comedores') : null;
+  const { data: comedoresList } = useCollection<any>(comedoresQuery);
+
   const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
@@ -119,14 +126,13 @@ export function EmployeeForm({ isOpen, onOpenChange, employee }: EmployeeFormPro
       role: 'comun',
       area: undefined,
       workerType: 'obrero',
-      workerType: 'obrero',
       contractType: 'indeterminado',
       position: '',
       fechaIngreso: undefined,
       fechaNacimiento: undefined,
       diasContrato: 0,
       avatarUrl: '',
-      // Default values for new fields
+      comedorId: activeComedorId || '',
       gender: undefined,
       civilStatus: undefined,
       nationality: '',
@@ -163,7 +169,7 @@ export function EmployeeForm({ isOpen, onOpenChange, employee }: EmployeeFormPro
         fechaNacimiento: convertToDate(employee.fechaNacimiento),
         diasContrato: employee.diasContrato || 0,
         avatarUrl: employee.avatarUrl || '',
-        // Map new fields
+        comedorId: employee.comedorId || activeComedorId || '',
         gender: employee.gender || undefined,
         civilStatus: employee.civilStatus || undefined,
         nationality: employee.nationality || '',
@@ -192,13 +198,13 @@ export function EmployeeForm({ isOpen, onOpenChange, employee }: EmployeeFormPro
         role: 'comun',
         area: undefined,
         workerType: 'obrero',
-        workerType: 'obrero',
         contractType: 'indeterminado',
         position: '',
         fechaIngreso: new Date(),
         fechaNacimiento: undefined,
         diasContrato: 0,
         avatarUrl: '',
+        comedorId: activeComedorId || '',
         gender: undefined,
         civilStatus: undefined,
         nationality: '',
@@ -218,7 +224,7 @@ export function EmployeeForm({ isOpen, onOpenChange, employee }: EmployeeFormPro
       setPreviewUrl(null);
     }
     setPhotoFile(null);
-  }, [employee, isOpen, form]);
+  }, [employee, isOpen, form, activeComedorId]);
 
   const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files?.[0]) {
@@ -227,7 +233,6 @@ export function EmployeeForm({ isOpen, onOpenChange, employee }: EmployeeFormPro
       setPreviewUrl(URL.createObjectURL(file));
     }
   }
-
 
   const onSubmit = async (values: EmployeeFormValues) => {
     if (!firestore || !auth) return;
@@ -256,7 +261,7 @@ export function EmployeeForm({ isOpen, onOpenChange, employee }: EmployeeFormPro
         if (authError || !newUserAuth) {
           throw new Error(authError || 'No se pudo crear la cuenta de autenticación.');
         }
-        docId = newUserAuth.uid;
+        docId = newUserAuth.user.uid;
 
         if (photoFile) {
           const { url, error } = await uploadProfilePicture(docId, photoFile);
@@ -264,20 +269,22 @@ export function EmployeeForm({ isOpen, onOpenChange, employee }: EmployeeFormPro
           finalAvatarUrl = url;
         }
 
-        // Define the document reference with the AUTH UID
         const employeeRef = doc(firestore, 'users', docId);
 
-        const newEmployeeData: User = {
+        const newEmployeeData = {
           ...values,
-          id: docId, // Ensure the document ID is the UID
+          id: docId,
           userId: docId,
+          email: values.email, // Ensure email is passed correctly as it's required in User type
+          name: values.name,
+          role: values.role,
           avatarUrl: finalAvatarUrl,
           isActive: true,
           creationDate: serverTimestamp(),
           createdBy: auth.currentUser?.uid || 'system',
-        };
+          comedorId: values.comedorId || activeComedorId || '',
+        } as any;
 
-        // Use setDoc with the specific docRef
         await setDocumentNonBlocking(employeeRef, newEmployeeData);
 
         toast({
@@ -333,7 +340,6 @@ export function EmployeeForm({ isOpen, onOpenChange, employee }: EmployeeFormPro
                           <input id="photo-upload" type="file" className="sr-only" accept="image/*" onChange={handlePhotoChange} />
                         </label>
                       </Button>
-                      {/* Hidden Field for URL if needed manual entry, removed to simplify UI as per modern standards */}
                     </div>
                   </div>
 
@@ -359,6 +365,33 @@ export function EmployeeForm({ isOpen, onOpenChange, employee }: EmployeeFormPro
                   <FormField name="address" control={form.control} render={({ field }) => (
                     <FormItem><FormLabel>Dirección</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
                   )} />
+
+                  {isSuperAdmin && (
+                    <FormField
+                      name="comedorId"
+                      control={form.control}
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Sede / Comedor</FormLabel>
+                          <Select onValueChange={field.onChange} value={field.value}>
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Seleccionar comedor..." />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              {comedoresList?.map((comedor: any) => (
+                                <SelectItem key={comedor.id} value={comedor.id}>
+                                  {comedor.nombre}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  )}
 
                   <h3 className="font-semibold text-sm text-muted-foreground mt-4 mb-2">Contrato y Rol</h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

@@ -10,20 +10,31 @@ import { Button } from '@/components/ui/button';
 import { Search, ArrowLeft, History, TrendingUp, TrendingDown, ClipboardList } from 'lucide-react';
 import Link from 'next/link';
 import { useCollection, useFirestore, useMemoFirebase, useUser } from '@/firebase';
-import { collection, query, orderBy } from 'firebase/firestore';
+import { collection, query, orderBy, where } from 'firebase/firestore';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { Skeleton } from '@/components/ui/skeleton';
 
+import { useMultiTenant } from '@/providers/multi-tenant-provider';
+
 export default function InventoryHistoryPage() {
     const firestore = useFirestore();
     const { user, isUserLoading } = useUser();
+    const { activeComedorId, isSuperAdmin } = useMultiTenant();
     const [searchTerm, setSearchTerm] = useState('');
 
     const transactionsQuery = useMemoFirebase(() => {
         if (!firestore) return null;
-        return query(collection(firestore, 'inventory_transactions'), orderBy('fecha', 'desc'));
-    }, [firestore]);
+        const baseRef = collection(firestore, 'inventory_transactions');
+
+        if (activeComedorId) {
+            return query(baseRef, where('comedorId', '==', activeComedorId), orderBy('fecha', 'desc'));
+        } else if (isSuperAdmin) {
+            return query(baseRef, orderBy('fecha', 'desc'));
+        }
+
+        return null;
+    }, [firestore, activeComedorId, isSuperAdmin]);
 
     const { data: transactions, isLoading } = useCollection<any>(transactionsQuery, { disabled: isUserLoading || !user });
 

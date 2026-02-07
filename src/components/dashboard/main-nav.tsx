@@ -19,6 +19,7 @@ import {
   Share2,
   History,
   HelpCircle,
+  Building2,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { ModuleId } from '@/lib/types';
@@ -26,7 +27,7 @@ import { useUser } from '@/firebase';
 
 
 interface NavItem {
-  id?: string;
+  id?: ModuleId;
   href: string;
   label: string;
   icon: React.ReactNode;
@@ -46,6 +47,7 @@ export const navItems: NavItem[] = [
   { id: 'reports', href: '/reports', label: 'Reportes', icon: <FileSpreadsheet className="h-5 w-5" /> },
   { id: 'stats', href: '/stats', label: 'Estadísticas', icon: <AreaChart className="h-5 w-5" /> },
   { id: 'users', href: '/users', label: 'Gestión de Usuario', icon: <Users className="h-5 w-5" />, roles: ['superadmin'] },
+  { id: 'comedores', href: '/superadmin/comedores', label: 'Gestión de Comedores', icon: <Building2 className="h-5 w-5" />, roles: ['superadmin'] },
   { id: 'share', href: '/share', label: 'Compartir App', icon: <Share2 className="h-5 w-5" /> },
   { id: 'help', href: '/help', label: 'Ayuda y Manual', icon: <HelpCircle className="h-5 w-5" /> },
   { id: 'settings', href: '/settings', label: 'Configuración', icon: <Settings className="h-5 w-5" /> },

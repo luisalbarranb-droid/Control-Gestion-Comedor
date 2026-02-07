@@ -9,12 +9,30 @@ export type TaskPriority = 'baja' | 'media' | 'alta' | 'urgente';
 export type TaskPeriodicity = 'diaria' | 'semanal' | 'quincenal' | 'mensual' | 'unica';
 export type WorkerType = 'obrero' | 'empleado';
 export type ContractType = 'determinado' | 'indeterminado' | 'prueba';
-export type ModuleId = 'dashboard' | 'tasks' | 'menus' | 'daily-closing' | 'inventory' | 'attendance' | 'recognition' | 'reports' | 'stats' | 'users' | 'share' | 'settings';
+export type ModuleId = 'dashboard' | 'tasks' | 'menus' | 'daily-closing' | 'inventory' | 'attendance' | 'recognition' | 'reports' | 'stats' | 'users' | 'share' | 'settings' | 'comedores' | 'help';
 
+export interface Comedor {
+  id: string;
+  nombre: string;
+  slug: string; // Para URLs amigables
+  direccion?: string;
+  ciudad?: string;
+  estado?: string;
+  telefono?: string;
+  logoUrl?: string;
+  isActive: boolean;
+  creationDate: Timestamp | Date | FieldValue;
+  config?: {
+    timezone?: string;
+    currency?: string;
+    allowSelfCheckIn?: boolean;
+  };
+}
 
 export interface User {
   id: string;
   userId?: string;
+  comedorId?: string; // ID del comedor al que pertenece (obligatorio para no superadmins)
   email: string;
   name: string;
   role: Role;
@@ -73,6 +91,7 @@ export interface User {
 
 export interface Area {
   id: AreaId;
+  comedorId: string;
   nombre: string;
   color: string;
   responsable: string; // userId
@@ -103,6 +122,7 @@ export interface Comment {
 
 export interface Task {
   id: string; // Document ID from Firestore
+  comedorId: string;
   titulo: string;
   descripcion: string;
   area: AreaId;
@@ -126,6 +146,7 @@ export interface Task {
 
 export interface Stats {
   periodo: string; // YYYY-MM
+  comedorId: string;
   totalTareas: number;
   tareasCompletadas: number;
   tareasPendientes: number;
@@ -154,6 +175,7 @@ export interface InventoryCategory {
 
 export interface InventoryItem {
   id: string;
+  comedorId: string;
   codigo: string; // Unique business logic identifier
   nombre: string;
   descripcion?: string;
@@ -175,6 +197,7 @@ export type InventoryTransactionType = 'entrada' | 'salida' | 'ajuste-positivo' 
 
 export interface InventoryTransaction {
   transactionId: string;
+  comedorId: string;
   itemId: string;
   type: InventoryTransactionType;
   quantity: number;
@@ -212,6 +235,7 @@ export interface InventoryOrderItem {
 
 export interface InventoryOrder {
   orderId: string;
+  comedorId: string;
   fechaPedido: Date;
   fechaEntregaEstimada: Date;
   proveedor: string;
@@ -240,6 +264,7 @@ export interface MenuItem {
 
 export interface Menu {
   id: string;
+  comedorId: string;
   name?: string;
   date: Timestamp | Date;
   time?: MealType;
@@ -279,6 +304,7 @@ export interface DailyClosingItem {
 
 export interface DailyClosing {
   closingId: string;
+  comedorId: string;
   date: Timestamp | Date;
   plannedMenuId: string | null;
   executedPax: number;
@@ -293,6 +319,7 @@ export type LeaveType = 'justificado' | 'no-justificado' | 'vacaciones';
 
 export interface AttendanceRecord {
   id: string;
+  comedorId: string;
   userId: string;
   checkIn: Timestamp | Date;
   checkOut?: Timestamp | Date;
@@ -312,6 +339,7 @@ export interface ConsolidatedRecord {
 
 export interface LeaveRecord {
   leaveId: string;
+  comedorId: string;
   userId: string;
   startDate: Date;
   endDate: Date;
@@ -322,6 +350,7 @@ export interface LeaveRecord {
 
 export interface DayOff {
   id: string;
+  comedorId: string;
   userId: string;
   weekStartDate: string; // YYYY-MM-DD
   date: string; // YYYY-MM-DD
@@ -329,6 +358,7 @@ export interface DayOff {
 
 export interface WeeklyPlan {
   id: string;
+  comedorId: string;
   startDate: Date;
   name: string;
   menus: (Menu | null)[];
@@ -337,6 +367,7 @@ export interface WeeklyPlan {
 // --- EVALUATION TYPES ---
 export interface EvaluationCriterion {
   id: string;
+  comedorId: string;
   name: string;
   description: string;
   maxPoints: number;
@@ -351,6 +382,7 @@ export interface EvaluationScore {
 
 export interface MonthlyEvaluation {
   id: string; // e.g., {userId}_{period}
+  comedorId: string;
   userId: string;
   period: string; // YYYY-MM
   scores: EvaluationScore[];
@@ -362,6 +394,7 @@ export interface MonthlyEvaluation {
 // --- CONTRACT TEMPLATE TYPES ---
 export interface ContractTemplate {
   id: string;
+  comedorId: string;
   name: string;
   description?: string;
   content: string; // HTML or rich text content with placeholders
@@ -375,6 +408,7 @@ export interface ContractTemplate {
 
 export interface GeneratedContract {
   id: string;
+  comedorId: string;
   templateId: string;
   userId: string; // Employee ID
   generatedContent: string; // Final HTML content with filled placeholders

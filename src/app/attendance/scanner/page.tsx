@@ -12,6 +12,8 @@ import { format } from 'date-fns';
 
 const QrScanner = dynamic(() => import('react-qr-scanner'), { ssr: false });
 
+import { useMultiTenant } from '@/providers/multi-tenant-provider';
+
 export default function ScannerPage() {
   const [result, setResult] = useState<string | null>(null);
   const [lastResult, setLastResult] = useState<{ userId: string; timestamp: number } | null>(null);
@@ -20,6 +22,7 @@ export default function ScannerPage() {
   const [message, setMessage] = useState<string | null>(null);
   const firestore = useFirestore();
   const { toast } = useToast();
+  const { activeComedorId } = useMultiTenant();
   const [hasCamera, setHasCamera] = useState(true);
   const [isClient, setIsClient] = useState(false);
 
@@ -58,11 +61,15 @@ export default function ScannerPage() {
       if (!result || !firestore) return;
 
       try {
-        const userSnap = await getDocs(query(collection(firestore, 'users'), where('id', '==', result)));
+        const userQuery = activeComedorId
+          ? query(collection(firestore, 'users'), where('id', '==', result), where('comedorId', '==', activeComedorId))
+          : query(collection(firestore, 'users'), where('id', '==', result));
+
+        const userSnap = await getDocs(userQuery);
 
         if (userSnap.empty) {
           setStatus('error');
-          setMessage('Usuario no encontrado.');
+          setMessage('Usuario no encontrado en esta sede.');
           setScannedUser(null);
           return;
         }
@@ -87,7 +94,8 @@ export default function ScannerPage() {
         if (attendanceSnap.empty) {
           const newRecord: Omit<AttendanceRecord, 'id'> = {
             userId: result,
-            checkIn: serverTimestamp(),
+            comedorId: activeComedorId || user.comedorId || 'unknown',
+            checkIn: serverTimestamp() as any, // Cast to any to bypass Timestamp vs FieldValue lint
             status: new Date().getHours() > 8 ? 'retardo' : 'presente',
           };
           addDocumentNonBlocking(collection(firestore, 'attendance'), newRecord);

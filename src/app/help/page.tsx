@@ -9,7 +9,7 @@ import {
     Smartphone, Scan, PieChart, Users, Settings,
     CheckCircle2, AlertCircle, ShoppingCart, History,
     Calendar, TrendingUp, Package, ClipboardList,
-    UserPlus, QrCode, BarChart3, FileSpreadsheet, Trash2
+    UserPlus, QrCode, BarChart3, FileSpreadsheet, Trash2, Building2
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 
@@ -70,9 +70,10 @@ export default function HelpPage() {
                             <ul className="text-sm text-green-700 space-y-1.5 ml-6">
                                 <li>• 6. Configuración del Sistema</li>
                                 <li>• 7. Gestión de Usuarios del Sistema</li>
-                                <li>• 8. Solución de Problemas</li>
-                                <li>• 9. Mejores Prácticas</li>
-                                <li>• 10. Preguntas Frecuentes</li>
+                                <li>• 8. Gestión Multi-Sede (Comedores)</li>
+                                <li>• 9. Solución de Problemas</li>
+                                <li>• 10. Mejores Prácticas</li>
+                                <li>• 11. Preguntas Frecuentes</li>
                             </ul>
                         </div>
                     </div>
@@ -137,6 +138,19 @@ export default function HelpPage() {
                         <p className="text-gray-700 leading-relaxed text-lg">
                             El Dashboard es el corazón del sistema. Aquí visualizas en tiempo real el estado completo de tu operación de comedor.
                         </p>
+
+                        <div className="bg-amber-50 p-6 rounded-xl border-l-4 border-amber-600 mb-6">
+                            <h3 className="text-xl font-bold text-amber-900 mb-3 flex items-center gap-2">
+                                <Building2 className="h-5 w-5" /> Vista por Sedes (Multitenancy)
+                            </h3>
+                            <p className="text-sm text-amber-800 mb-2">
+                                El sistema ahora soporta múltiples comedores. Los datos del Dashboard se filtran según la sede seleccionada.
+                            </p>
+                            <ul className="text-sm text-amber-900 space-y-1 ml-4">
+                                <li>• <strong>Selector de Sede:</strong> Ubicado en la parte superior central. Los SuperAdmins pueden cambiar entre sedes o ver una "Vista Global" de la red.</li>
+                                <li>• <strong>Contexto de Datos:</strong> Si eres administrador de una sede específica, solo verás las métricas pertinentes a tu ubicación designada.</li>
+                            </ul>
+                        </div>
 
                         <div className="bg-blue-50 p-6 rounded-xl border-l-4 border-blue-600">
                             <h3 className="text-xl font-bold text-blue-900 mb-3">¿Qué puedes ver en el Dashboard?</h3>
@@ -615,11 +629,60 @@ export default function HelpPage() {
                     </div>
                 </section>
 
-                {/* SECCIÓN 8: SOLUCIÓN DE PROBLEMAS */}
+                {/* SECCIÓN 8: GESTIÓN MULTI-SEDE */}
+                <section className="space-y-6 pt-8">
+                    <h2 className="text-3xl font-bold flex items-center gap-3 border-b-2 border-cyan-600 pb-2 text-gray-900">
+                        <Building2 className="h-7 w-7 text-cyan-600" />
+                        8. Gestión Multi-Sede (Comedores)
+                    </h2>
+
+                    <div className="pl-6 space-y-6">
+                        <p className="text-gray-700 leading-relaxed text-lg">
+                            Esta funcionalidad permite administrar varios comedores de forma aislada y segura, centralizando el control para la directiva mientras se mantiene la privacidad operativa de cada sede.
+                        </p>
+
+                        <div className="grid md:grid-cols-2 gap-6">
+                            <div className="bg-cyan-50 p-6 rounded-xl border border-cyan-200">
+                                <h4 className="font-bold text-cyan-900 mb-3">Creación de Sedes</h4>
+                                <ol className="text-sm text-gray-700 space-y-2 list-decimal ml-4">
+                                    <li>Ve al menú lateral &gt; <strong>"Gestión de Comedores"</strong>.</li>
+                                    <li>Pulsa <strong>"+ Nueva Sede"</strong>.</li>
+                                    <li>Datos requeridos:
+                                        <ul className="ml-4 mt-1 text-xs space-y-1">
+                                            <li>- Nombre del Comedor</li>
+                                            <li>- Slug identificador (ej: comedor-ventas)</li>
+                                            <li>- Dirección física y teléfono</li>
+                                        </ul>
+                                    </li>
+                                    <li>Al guardar, el sistema crea un entorno aislado para esa sede.</li>
+                                </ol>
+                            </div>
+
+                            <div className="bg-indigo-50 p-6 rounded-xl border border-indigo-200">
+                                <h4 className="font-bold text-indigo-900 mb-3">Aislamiento y Seguridad</h4>
+                                <p className="text-sm text-gray-700 mb-3">
+                                    Cada dato (Inventario, Tareas, Asistencia) viaja con una etiqueta de Sede.
+                                </p>
+                                <ul className="text-sm text-gray-700 space-y-2">
+                                    <li className="flex items-start gap-2">
+                                        <CheckCircle2 className="h-4 w-4 text-indigo-600 mt-0.5" />
+                                        <span>Los empleados solo pueden marcar asistencia en su sede asignada.</span>
+                                    </li>
+                                    <li className="flex items-start gap-2">
+                                        <CheckCircle2 className="h-4 w-4 text-indigo-600 mt-0.5" />
+                                        <span>El stock no se mezcla entre almacenes de sedes distintas.</span>
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                {/* SECCIÓN 9: SOLUCIÓN DE PROBLEMAS */}
                 <section className="space-y-6 pt-8">
                     <h2 className="text-3xl font-bold flex items-center gap-3 border-b-2 border-yellow-600 pb-2 text-gray-900">
                         <AlertCircle className="h-7 w-7 text-yellow-600" />
-                        7. Solución de Problemas Comunes
+                        9. Solución de Problemas Comunes
                     </h2>
 
                     <div className="pl-6 space-y-4">
@@ -714,11 +777,11 @@ export default function HelpPage() {
                     </div>
                 </section>
 
-                {/* SECCIÓN 10: FAQ */}
+                {/* SECCIÓN 12: FAQ */}
                 <section className="space-y-6 pt-8">
                     <h2 className="text-3xl font-bold flex items-center gap-3 border-b-2 border-blue-600 pb-2 text-gray-900">
                         <HelpCircle className="h-7 w-7 text-blue-600" />
-                        10. Preguntas Frecuentes
+                        11. Preguntas Frecuentes
                     </h2>
 
                     <div className="pl-6 space-y-4">

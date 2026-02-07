@@ -16,6 +16,7 @@ import {
 import { MainNav } from './main-nav';
 import { useAuth, useUser } from '@/firebase';
 import { useRouter } from 'next/navigation';
+import { ComedorSelector } from './comedor-selector';
 
 export function Header() {
   const auth = useAuth();
@@ -43,8 +44,9 @@ export function Header() {
         </SheetContent>
       </Sheet>
 
-      {/* Espaciador central */}
+      {/* Espaciador central / Selector de Sede */}
       <div className="relative ml-auto flex-1 md:grow-0">
+        <ComedorSelector />
       </div>
 
       {/* --- SECCIÓN DE USUARIO REAL --- */}

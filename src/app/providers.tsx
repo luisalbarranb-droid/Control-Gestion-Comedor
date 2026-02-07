@@ -17,6 +17,7 @@ import { useUser } from '@/firebase';
 import { FirebaseErrorListener } from '@/components/FirebaseErrorListener';
 import { APP_VERSION } from '@/lib/version';
 import { VersionChecker } from '@/components/dashboard/version-checker';
+import { MultiTenantProvider, useMultiTenant } from '@/providers/multi-tenant-provider';
 
 import React from 'react';
 
@@ -33,6 +34,8 @@ function AppContent({ children }: { children: React.ReactNode }) {
     }
   }, [user, isUserLoading, showSidebar, router]);
 
+  const { activeComedor, isSuperAdmin } = useMultiTenant();
+
   return (
     <SidebarProvider>
       {showSidebar ? (
@@ -41,7 +44,9 @@ function AppContent({ children }: { children: React.ReactNode }) {
             <Sidebar>
               <SidebarHeader className="p-4 justify-center flex items-center gap-2">
                 <SquareCheck className="size-8 text-primary" />
-                <h1 className="font-headline text-2xl font-bold">Comedor</h1>
+                <h1 className="font-headline text-xl font-bold uppercase truncate">
+                  {activeComedor?.nombre || (isSuperAdmin ? 'Vista Global' : 'Cargando...')}
+                </h1>
               </SidebarHeader>
               <SidebarContent>
                 <MainNav />
@@ -84,7 +89,9 @@ function AppContent({ children }: { children: React.ReactNode }) {
 export function Providers({ children }: { children: React.ReactNode }) {
   return (
     <FirebaseProvider>
-      <AppContent>{children}</AppContent>
+      <MultiTenantProvider>
+        <AppContent>{children}</AppContent>
+      </MultiTenantProvider>
     </FirebaseProvider>
   );
 }

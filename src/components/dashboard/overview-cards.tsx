@@ -2,8 +2,9 @@
 'use client';
 
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
-import { collection, query } from 'firebase/firestore';
+import { collection, query, where } from 'firebase/firestore';
 import { useCollection, useFirestore, useUser, useMemoFirebase } from '@/firebase';
+import { useMultiTenant } from '@/providers/multi-tenant-provider';
 import { CheckCircle, Clock, TrendingUp, DollarSign, Loader2 } from 'lucide-react';
 import type { Task, InventoryItem } from '@/lib/types';
 import { useMemo, useState, useEffect } from 'react';
@@ -12,6 +13,7 @@ export function OverviewCards() {
   const [isClient, setIsClient] = useState(false);
   const firestore = useFirestore();
   const { user } = useUser();
+  const { activeComedorId } = useMultiTenant();
 
   useEffect(() => {
     setIsClient(true);
@@ -19,13 +21,19 @@ export function OverviewCards() {
 
   const tasksQuery = useMemoFirebase(() => {
     if (!firestore) return null;
-    return collection(firestore, 'tasks');
-  }, [firestore]);
+    const baseRef = collection(firestore, 'tasks');
+    return activeComedorId
+      ? query(baseRef, where('comedorId', '==', activeComedorId))
+      : baseRef;
+  }, [firestore, activeComedorId]);
 
   const inventoryQuery = useMemoFirebase(() => {
     if (!firestore) return null;
-    return collection(firestore, 'inventory');
-  }, [firestore]);
+    const baseRef = collection(firestore, 'inventory');
+    return activeComedorId
+      ? query(baseRef, where('comedorId', '==', activeComedorId))
+      : baseRef;
+  }, [firestore, activeComedorId]);
 
   const { data: tasks, isLoading: isLoadingTasks } = useCollection<Task>(tasksQuery, { disabled: !user });
   const { data: inventory, isLoading: isLoadingInventory } = useCollection<InventoryItem>(inventoryQuery, { disabled: !user });
