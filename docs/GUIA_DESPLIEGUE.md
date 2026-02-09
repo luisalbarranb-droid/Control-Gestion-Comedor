@@ -261,4 +261,4 @@ firebase apphosting:backends:logs [backend-id]
 ---
 
 **Última actualización**: Febrero 2026
-**Versión de la app**: 1.1.0 (con módulo de contratos)
+**Versión de la app**: 1.3.0 (Versión Multi-Sede / Comprehensive Multi-Tenant Support)
