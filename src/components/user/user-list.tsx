@@ -6,7 +6,7 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Trash2, Edit, Shield, User as UserIcon } from 'lucide-react';
-import type { User } from '@/lib/types';
+import type { User, Comedor } from '@/lib/types';
 import { Skeleton } from '../ui/skeleton';
 import {
     AlertDialog,
@@ -28,6 +28,7 @@ interface UserListProps {
     users: User[];
     isLoading: boolean;
     onEdit: (user: User) => void;
+    comedores?: Comedor[];
 }
 
 const roleDisplay: Record<string, { label: string; icon: React.ElementType, className: string }> = {
@@ -36,7 +37,7 @@ const roleDisplay: Record<string, { label: string; icon: React.ElementType, clas
     superadmin: { label: 'Superadmin', icon: Shield, className: 'bg-amber-100 text-amber-700' }
 };
 
-export function UserList({ users, isLoading, onEdit }: UserListProps) {
+export function UserList({ users, isLoading, onEdit, comedores }: UserListProps) {
     const { toast } = useToast();
     const { user: authUser, profile } = useUser();
     const firestore = useFirestore();
@@ -149,6 +150,15 @@ export function UserList({ users, isLoading, onEdit }: UserListProps) {
                                     {roleInfo.label}
                                 </Badge>
                             </div>
+
+                            {user.comedorId && (
+                                <div className="flex justify-between items-center p-2 mt-1 rounded-md bg-slate-50 border border-slate-100">
+                                    <span className="text-[10px] font-medium text-slate-500 uppercase">Sede:</span>
+                                    <span className="text-xs font-semibold text-slate-700">
+                                        {comedores?.find(c => c.id === user.comedorId)?.nombre || 'Sede no encontrada'}
+                                    </span>
+                                </div>
+                            )}
 
                             <div className="flex flex-col gap-2 mt-4">
                                 <Button variant="outline" size="sm" className="w-full" onClick={() => onEdit(user)}>

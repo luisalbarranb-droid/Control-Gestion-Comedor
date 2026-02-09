@@ -9,7 +9,7 @@ import {
     Smartphone, Scan, PieChart, Users, Settings,
     CheckCircle2, AlertCircle, ShoppingCart, History,
     Calendar, TrendingUp, Package, ClipboardList,
-    UserPlus, QrCode, BarChart3, FileSpreadsheet, Trash2, Building2
+    UserPlus, QrCode, BarChart3, FileSpreadsheet, Trash2, Building2, LayoutGrid
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 
@@ -629,51 +629,81 @@ export default function HelpPage() {
                     </div>
                 </section>
 
-                {/* SECCIÓN 8: GESTIÓN MULTI-SEDE */}
-                <section className="space-y-6 pt-8">
+                {/* SECCIÓN 8: GESTIÓN DE COMEDORES */}
+                <section id="section-8" className="space-y-6 pt-8">
                     <h2 className="text-3xl font-bold flex items-center gap-3 border-b-2 border-cyan-600 pb-2 text-gray-900">
                         <Building2 className="h-7 w-7 text-cyan-600" />
-                        8. Gestión Multi-Sede (Comedores)
+                        8. Gestión de Comedores (Multi-Sede)
                     </h2>
 
                     <div className="pl-6 space-y-6">
                         <p className="text-gray-700 leading-relaxed text-lg">
-                            Esta funcionalidad permite administrar varios comedores de forma aislada y segura, centralizando el control para la directiva mientras se mantiene la privacidad operativa de cada sede.
+                            El módulo de <strong>Gestión de Comedores</strong> permite administrar las diferentes sedes de <strong>VELCAR, C.A.</strong> de forma centralizada. Cada sede funciona como un entorno independiente (Multi-tenant), lo que garantiza la privacidad y el orden operativo.
                         </p>
 
+                        <div className="bg-cyan-50 p-6 rounded-xl border-l-4 border-cyan-600">
+                            <h3 className="text-xl font-bold text-cyan-900 mb-3 flex items-center gap-2">
+                                <LayoutGrid className="h-5 w-5" /> Selector de Sede y Vista Global
+                            </h3>
+                            <p className="text-sm text-gray-700 mb-4">
+                                Los <strong>SuperAdmins</strong> cuentan con una herramienta de navegación única en la parte superior del sistema:
+                            </p>
+                            <ul className="text-sm text-gray-800 space-y-2 ml-4">
+                                <li className="flex gap-2">
+                                    <CheckCircle2 className="h-4 w-4 text-cyan-600 flex-shrink-0" />
+                                    <span><strong>Selector de Sede:</strong> Permite filtrar instantáneamente todo el sistema (Inventario, Tareas, Asistencia) para una sede específica.</span>
+                                </li>
+                                <li className="flex gap-2">
+                                    <CheckCircle2 className="h-4 w-4 text-cyan-600 flex-shrink-0" />
+                                    <span><strong>Vista Global:</strong> Al seleccionar "Vista Global", el Dashboard principal muestra un resumen de todas las sedes activas, permitiendo comparar el estado general de la empresa.</span>
+                                </li>
+                            </ul>
+                        </div>
+
                         <div className="grid md:grid-cols-2 gap-6">
-                            <div className="bg-cyan-50 p-6 rounded-xl border border-cyan-200">
-                                <h4 className="font-bold text-cyan-900 mb-3">Creación de Sedes</h4>
+                            <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
+                                <h4 className="font-bold text-gray-900 mb-3">Administración de Sedes</h4>
                                 <ol className="text-sm text-gray-700 space-y-2 list-decimal ml-4">
-                                    <li>Ve al menú lateral &gt; <strong>"Gestión de Comedores"</strong>.</li>
-                                    <li>Pulsa <strong>"+ Nueva Sede"</strong>.</li>
-                                    <li>Datos requeridos:
-                                        <ul className="ml-4 mt-1 text-xs space-y-1">
-                                            <li>- Nombre del Comedor</li>
-                                            <li>- Slug identificador (ej: comedor-ventas)</li>
-                                            <li>- Dirección física y teléfono</li>
+                                    <li>Acceda a <strong>"SuperAdmin"</strong> &gt; <strong>"Comedores"</strong>.</li>
+                                    <li>Para crear: Use el botón <strong>"+ Nueva Sede"</strong>.</li>
+                                    <li>Campos Clave:
+                                        <ul className="ml-4 mt-1 space-y-1 text-xs text-gray-500">
+                                            <li>- <strong>Nombre:</strong> Nombre comercial de la sede.</li>
+                                            <li>- <strong>Slug:</strong> Identificador único para el sistema (ej: sede-puerto).</li>
+                                            <li>- <strong>Ubicación:</strong> Dirección física necesaria para reportes logísticos.</li>
                                         </ul>
                                     </li>
-                                    <li>Al guardar, el sistema crea un entorno aislado para esa sede.</li>
+                                    <li>Estado: Puede desactivar una sede temporalmente sin borrar sus datos históricos.</li>
                                 </ol>
                             </div>
 
-                            <div className="bg-indigo-50 p-6 rounded-xl border border-indigo-200">
-                                <h4 className="font-bold text-indigo-900 mb-3">Aislamiento y Seguridad</h4>
-                                <p className="text-sm text-gray-700 mb-3">
-                                    Cada dato (Inventario, Tareas, Asistencia) viaja con una etiqueta de Sede.
+                            <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
+                                <h4 className="font-bold text-gray-900 mb-3">Privacidad Operativa (Aislamiento)</h4>
+                                <p className="text-sm text-gray-600 mb-4">
+                                    El sistema garantiza que los datos no se mezclen:
                                 </p>
-                                <ul className="text-sm text-gray-700 space-y-2">
-                                    <li className="flex items-start gap-2">
-                                        <CheckCircle2 className="h-4 w-4 text-indigo-600 mt-0.5" />
-                                        <span>Los empleados solo pueden marcar asistencia en su sede asignada.</span>
-                                    </li>
-                                    <li className="flex items-start gap-2">
-                                        <CheckCircle2 className="h-4 w-4 text-indigo-600 mt-0.5" />
-                                        <span>El stock no se mezcla entre almacenes de sedes distintas.</span>
-                                    </li>
-                                </ul>
+                                <div className="space-y-3">
+                                    <div className="flex gap-2 text-sm text-gray-700">
+                                        <Package className="h-4 w-4 text-blue-500" />
+                                        <span><strong>Almacenes:</strong> El stock de carne en la Sede A nunca afectará las alertas de la Sede B.</span>
+                                    </div>
+                                    <div className="flex gap-2 text-sm text-gray-700">
+                                        <Users className="h-4 w-4 text-purple-500" />
+                                        <span><strong>Personal:</strong> Los administradores locales solo gestionan el personal de su propio comedor.</span>
+                                    </div>
+                                    <div className="flex gap-2 text-sm text-gray-700">
+                                        <History className="h-4 w-4 text-green-500" />
+                                        <span><strong>Auditoría:</strong> Cada entrada y salida de inventario queda marcada con el ID del comedor correspondiente.</span>
+                                    </div>
+                                </div>
                             </div>
+                        </div>
+
+                        <div className="bg-gray-100 p-6 rounded-xl border border-dashed border-gray-400">
+                            <h4 className="font-bold text-gray-800 mb-2">Consejo para el SuperAdmin:</h4>
+                            <p className="text-sm text-gray-700 italic">
+                                "Utilice la Vista Global cada mañana para detectar qué sedes tienen inventario bajo o tareas retrasadas sin necesidad de entrar a gestionar cada una individualmente."
+                            </p>
                         </div>
                     </div>
                 </section>

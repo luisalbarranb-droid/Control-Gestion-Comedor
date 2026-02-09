@@ -30,17 +30,19 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { useToast } from '@/components/ui/toast';
-import { useFirestore, setDocumentNonBlocking, updateDocumentNonBlocking, useUser } from '@/firebase';
+import { useFirestore, setDocumentNonBlocking, updateDocumentNonBlocking, useUser, useCollection } from '@/firebase';
 import { collection, doc, serverTimestamp } from 'firebase/firestore';
-import type { User, ModuleId, AreaId } from '@/lib/types';
+import type { User, ModuleId, AreaId, Comedor } from '@/lib/types';
 import { areas } from '@/lib/placeholder-data';
 import { Checkbox } from '../ui/checkbox';
 import { navItems } from '../dashboard/main-nav';
+import { useMultiTenant } from '@/providers/multi-tenant-provider';
 
 const userSchema = z.object({
   name: z.string().min(3, 'El nombre es requerido.'),
   email: z.string().email('Email no válido.'),
   role: z.enum(['comun', 'admin', 'superadmin']),
+  comedorId: z.string().optional(),
   area: z.string().optional(),
   areas: z.array(z.string()).optional(),
   modules: z.array(z.string()).optional(),
@@ -57,13 +59,20 @@ interface UserFormProps {
 export function UserForm({ isOpen, onOpenChange, editingUser }: UserFormProps) {
   const firestore = useFirestore();
   const { user: authUser } = useUser();
+  const { activeComedorId, isSuperAdmin } = useMultiTenant();
   const { toast } = useToast();
+
+  // Fetch comedores list for SuperAdmin assignment
+  const comedoresQuery = isSuperAdmin && firestore ? collection(firestore, 'comedores') : null;
+  const { data: comedoresList } = useCollection<Comedor>(comedoresQuery as any, { disabled: !isSuperAdmin || !firestore });
+
   const form = useForm<UserFormValues>({
     resolver: zodResolver(userSchema),
     defaultValues: {
       name: '',
       email: '',
       role: 'comun',
+      comedorId: activeComedorId || '',
       area: undefined,
       areas: [],
       modules: [],
@@ -78,6 +87,7 @@ export function UserForm({ isOpen, onOpenChange, editingUser }: UserFormProps) {
         name: editingUser.name || '',
         email: editingUser.email || '',
         role: editingUser.role || 'comun',
+        comedorId: editingUser.comedorId || '',
         area: editingUser.area || undefined,
         areas: editingUser.areas || [],
         modules: editingUser.modules || [],
@@ -87,32 +97,34 @@ export function UserForm({ isOpen, onOpenChange, editingUser }: UserFormProps) {
         name: '',
         email: '',
         role: 'comun',
+        comedorId: activeComedorId || '',
         area: undefined,
         areas: [],
         modules: [],
       });
     }
-  }, [editingUser, isOpen, form]);
-  
+  }, [editingUser, isOpen, form, activeComedorId]);
+
   const onSubmit = async (values: UserFormValues) => {
     if (!firestore || !authUser) {
-        toast({ variant: 'destructive', title: 'Error', description: 'No autenticado o sin conexión a la base de datos.'});
-        return;
+      toast({ variant: 'destructive', title: 'Error', description: 'No autenticado o sin conexión a la base de datos.' });
+      return;
     }
-    
+
     let dataToSave: Partial<User> = {
       name: values.name,
       email: values.email,
       role: values.role,
+      comedorId: values.comedorId || activeComedorId || undefined,
     };
 
     if (values.role === 'admin') {
-        dataToSave.areas = values.areas as AreaId[] || [];
-        dataToSave.modules = values.modules as ModuleId[] || [];
+      dataToSave.areas = values.areas as AreaId[] || [];
+      dataToSave.modules = values.modules as ModuleId[] || [];
     } else if (values.role === 'comun') {
-        if (values.area) {
-            dataToSave.area = values.area as AreaId;
-        }
+      if (values.area) {
+        dataToSave.area = values.area as AreaId;
+      }
     }
 
     try {
@@ -125,7 +137,7 @@ export function UserForm({ isOpen, onOpenChange, editingUser }: UserFormProps) {
         const newUserId = isSelfCreation ? authUser.uid : doc(collection(firestore, 'users')).id;
 
         const userRef = doc(firestore, 'users', newUserId);
-        
+
         const newUserData: Partial<User> = {
           ...dataToSave,
           id: newUserId,
@@ -136,10 +148,10 @@ export function UserForm({ isOpen, onOpenChange, editingUser }: UserFormProps) {
         };
 
         await setDocumentNonBlocking(userRef, newUserData);
-        
+
         let toastDescription = `Se ha creado una cuenta para ${values.name}.`;
         if (!isSelfCreation) {
-            toastDescription += ` La contraseña temporal es "password".`;
+          toastDescription += ` La contraseña temporal es "password".`;
         }
 
         toast({ title: 'Usuario creado', description: toastDescription });
@@ -183,128 +195,155 @@ export function UserForm({ isOpen, onOpenChange, editingUser }: UserFormProps) {
               </FormItem>
             )} />
 
+            {isSuperAdmin && (
+              <FormField
+                name="comedorId"
+                control={form.control}
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Sede / Comedor Asignado</FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Seleccionar comedor..." />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {comedoresList?.map((comedor) => (
+                          <SelectItem key={comedor.id} value={comedor.id}>
+                            {comedor.nombre}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            )}
+
             {selectedRole === 'comun' && (
-                 <FormField name="area" control={form.control} render={({ field }) => (
-                    <FormItem>
-                        <FormLabel>Área de Trabajo</FormLabel>
-                        <Select onValueChange={field.onChange} value={field.value}>
-                        <FormControl>
-                            <SelectTrigger>
-                                <SelectValue placeholder="Seleccionar área..." />
-                            </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                            {areas.map(area => <SelectItem key={area.id} value={area.id}>{area.nombre}</SelectItem>)}
-                        </SelectContent>
-                        </Select>
-                        <FormMessage />
-                    </FormItem>
-                )} />
+              <FormField name="area" control={form.control} render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Área de Trabajo</FormLabel>
+                  <Select onValueChange={field.onChange} value={field.value}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Seleccionar área..." />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {areas.map(area => <SelectItem key={area.id} value={area.id}>{area.nombre}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )} />
             )}
-            
+
             {selectedRole === 'admin' && (
-                <div className="space-y-4 rounded-md border p-4">
-                    <h3 className="font-semibold">Permisos de Administrador</h3>
-                           <FormField
-                                control={form.control}
-                                name="areas"
-                                render={() => (
-                                    <FormItem>
-                                        <FormLabel className="text-base">Áreas Asignadas</FormLabel>
-                                        <div className="p-3 border rounded-md grid grid-cols-2 gap-2">
-                                            {areas.map((area) => (
-                                            <FormField
-                                                key={area.id}
-                                                control={form.control}
-                                                name="areas"
-                                                render={({ field }) => {
-                                                return (
-                                                    <FormItem
-                                                        key={area.id}
-                                                        className="flex flex-row items-start space-x-3 space-y-0"
-                                                    >
-                                                    <FormControl>
-                                                        <Checkbox
-                                                            checked={field.value?.includes(area.id)}
-                                                            onCheckedChange={(checked) => {
-                                                                return checked
-                                                                ? field.onChange([...(field.value || []), area.id])
-                                                                : field.onChange(
-                                                                    field.value?.filter(
-                                                                        (value) => value !== area.id
-                                                                    )
-                                                                    )
-                                                            }}
-                                                        />
-                                                    </FormControl>
-                                                    <FormLabel className="font-normal">
-                                                        {area.nombre}
-                                                    </FormLabel>
-                                                    </FormItem>
-                                                )
-                                                }}
-                                            />
-                                            ))}
-                                        </div>
-                                        <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
-                            <FormField
-                                control={form.control}
-                                name="modules"
-                                render={() => (
-                                    <FormItem>
-                                        <FormLabel className="text-base">Acceso a Módulos</FormLabel>
-                                        <div className="p-3 border rounded-md grid grid-cols-2 gap-2">
-                                            {navItems.filter(navItem => navItem.id && navItem.id !== 'users').map((item) => (
-                                            <FormField
-                                                key={item.id}
-                                                control={form.control}
-                                                name="modules"
-                                                render={({ field }) => {
-                                                return (
-                                                    <FormItem
-                                                        key={item.id}
-                                                        className="flex flex-row items-start space-x-3 space-y-0"
-                                                    >
-                                                    <FormControl>
-                                                        <Checkbox
-                                                            checked={field.value?.includes(item.id as ModuleId)}
-                                                            onCheckedChange={(checked) => {
-                                                                return checked
-                                                                ? field.onChange([...(field.value || []), item.id])
-                                                                : field.onChange(
-                                                                    field.value?.filter(
-                                                                        (value) => value !== item.id
-                                                                    )
-                                                                    )
-                                                            }}
-                                                        />
-                                                    </FormControl>
-                                                    <FormLabel className="font-normal">
-                                                        {item.label}
-                                                    </FormLabel>
-                                                    </FormItem>
-                                                )
-                                                }}
-                                            />
-                                            ))}
-                                        </div>
-                                        <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
-                </div>
+              <div className="space-y-4 rounded-md border p-4">
+                <h3 className="font-semibold">Permisos de Administrador</h3>
+                <FormField
+                  control={form.control}
+                  name="areas"
+                  render={() => (
+                    <FormItem>
+                      <FormLabel className="text-base">Áreas Asignadas</FormLabel>
+                      <div className="p-3 border rounded-md grid grid-cols-2 gap-2">
+                        {areas.map((area) => (
+                          <FormField
+                            key={area.id}
+                            control={form.control}
+                            name="areas"
+                            render={({ field }) => {
+                              return (
+                                <FormItem
+                                  key={area.id}
+                                  className="flex flex-row items-start space-x-3 space-y-0"
+                                >
+                                  <FormControl>
+                                    <Checkbox
+                                      checked={field.value?.includes(area.id)}
+                                      onCheckedChange={(checked) => {
+                                        return checked
+                                          ? field.onChange([...(field.value || []), area.id])
+                                          : field.onChange(
+                                            field.value?.filter(
+                                              (value) => value !== area.id
+                                            )
+                                          )
+                                      }}
+                                    />
+                                  </FormControl>
+                                  <FormLabel className="font-normal">
+                                    {area.nombre}
+                                  </FormLabel>
+                                </FormItem>
+                              )
+                            }}
+                          />
+                        ))}
+                      </div>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="modules"
+                  render={() => (
+                    <FormItem>
+                      <FormLabel className="text-base">Acceso a Módulos</FormLabel>
+                      <div className="p-3 border rounded-md grid grid-cols-2 gap-2">
+                        {navItems.filter(navItem => navItem.id && navItem.id !== 'users').map((item) => (
+                          <FormField
+                            key={item.id}
+                            control={form.control}
+                            name="modules"
+                            render={({ field }) => {
+                              return (
+                                <FormItem
+                                  key={item.id}
+                                  className="flex flex-row items-start space-x-3 space-y-0"
+                                >
+                                  <FormControl>
+                                    <Checkbox
+                                      checked={field.value?.includes(item.id as ModuleId)}
+                                      onCheckedChange={(checked) => {
+                                        return checked
+                                          ? field.onChange([...(field.value || []), item.id])
+                                          : field.onChange(
+                                            field.value?.filter(
+                                              (value) => value !== item.id
+                                            )
+                                          )
+                                      }}
+                                    />
+                                  </FormControl>
+                                  <FormLabel className="font-normal">
+                                    {item.label}
+                                  </FormLabel>
+                                </FormItem>
+                              )
+                            }}
+                          />
+                        ))}
+                      </div>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
             )}
-             {selectedRole === 'superadmin' && (
-                 <div className="space-y-4 rounded-md border p-4 bg-amber-50 border-amber-200">
-                    <p className="text-sm text-amber-800">
-                        El rol de <strong>Superadmin</strong> tiene acceso completo a todas las áreas y módulos por defecto. No se requiere configuración de permisos.
-                    </p>
-                </div>
+            {selectedRole === 'superadmin' && (
+              <div className="space-y-4 rounded-md border p-4 bg-amber-50 border-amber-200">
+                <p className="text-sm text-amber-800">
+                  El rol de <strong>Superadmin</strong> tiene acceso completo a todas las áreas y módulos por defecto. No se requiere configuración de permisos.
+                </p>
+              </div>
             )}
-            
+
             <DialogFooter className="pt-4">
               <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
               <Button type="submit" disabled={form.formState.isSubmitting}>

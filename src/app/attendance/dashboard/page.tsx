@@ -28,6 +28,7 @@ import { collection, query, where, Timestamp } from 'firebase/firestore';
 import { useCollection, useFirestore, useMemoFirebase, useUser } from '@/firebase';
 import type { AttendanceRecord, User } from '@/lib/types';
 import { cn } from '@/lib/utils';
+import { useMultiTenant } from '@/providers/multi-tenant-provider';
 
 // --- Helper Functions ---
 function isTimestamp(value: any): value is Timestamp {
@@ -56,6 +57,7 @@ const statusConfig = {
 export default function AttendanceDashboardPage() {
   const firestore = useFirestore();
   const { isUserLoading } = useUser();
+  const { activeComedorId, isSuperAdmin } = useMultiTenant();
   const [currentDate, setCurrentDate] = useState<Date>(() => new Date());
   const [isClient, setIsClient] = useState(false);
 
@@ -72,28 +74,42 @@ export default function AttendanceDashboardPage() {
 
   const attendanceQuery = useMemoFirebase(() => {
     if (!firestore) return null;
-    return query(
-      collection(firestore, 'attendance'),
+    const baseRef = collection(firestore, 'attendance');
+    const dateQuery = query(
+      baseRef,
       where('checkIn', '>=', Timestamp.fromDate(startOfToday)),
       where('checkIn', '<=', Timestamp.fromDate(endOfToday))
     );
-  }, [firestore, startOfToday, endOfToday]);
+
+    if (activeComedorId) {
+      return query(dateQuery, where('comedorId', '==', activeComedorId));
+    } else if (isSuperAdmin) {
+      return dateQuery;
+    }
+    return null;
+  }, [firestore, startOfToday, endOfToday, activeComedorId, isSuperAdmin]);
 
   const usersQuery = useMemoFirebase(() => {
     if (!firestore) return null;
-    return collection(firestore, 'users');
-  }, [firestore]);
+    const baseRef = collection(firestore, 'users');
+    if (activeComedorId) {
+      return query(baseRef, where('comedorId', '==', activeComedorId));
+    } else if (isSuperAdmin) {
+      return baseRef;
+    }
+    return null;
+  }, [firestore, activeComedorId, isSuperAdmin]);
 
   const { data: attendanceRecords, isLoading: isLoadingAttendance } = useCollection<AttendanceRecord>(attendanceQuery, { disabled: isUserLoading });
   const { data: users, isLoading: isLoadingUsers } = useCollection<User>(usersQuery, { disabled: isUserLoading });
 
   const stats = useMemo(() => {
     if (!attendanceRecords || !users) return { present: 0, late: 0, absent: 0, recent: [] };
-    
+
     const presentIds = new Set(attendanceRecords.filter(r => r.status === 'presente' || r.status === 'retardo').map(r => r.userId));
     const present = attendanceRecords.filter(r => r.status === 'presente').length;
     const late = attendanceRecords.filter(r => r.status === 'retardo').length;
-    
+
     const activeUsers = users.filter(u => u.isActive).length;
     const absent = activeUsers > 0 ? activeUsers - presentIds.size : 0;
 
@@ -112,24 +128,24 @@ export default function AttendanceDashboardPage() {
 
   const getUser = (userId: string) => users?.find(u => u.id === userId);
   const getUserInitials = (name?: string) => name ? name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase() : 'U';
-  
+
   if (!isClient) {
     return (
-        <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
-            <div className="flex items-center gap-4">
-                <Skeleton className="h-7 w-7 rounded-full" />
-                <Skeleton className="h-8 w-48" />
-            </div>
-            <div className="grid gap-4 md:grid-cols-3">
-                <Card><CardHeader><Skeleton className="h-5 w-24" /></CardHeader><CardContent><Skeleton className="h-8 w-16" /><Skeleton className="h-4 w-full mt-2" /></CardContent></Card>
-                <Card><CardHeader><Skeleton className="h-5 w-24" /></CardHeader><CardContent><Skeleton className="h-8 w-16" /><Skeleton className="h-4 w-full mt-2" /></CardContent></Card>
-                <Card><CardHeader><Skeleton className="h-5 w-24" /></CardHeader><CardContent><Skeleton className="h-8 w-16" /><Skeleton className="h-4 w-full mt-2" /></CardContent></Card>
-            </div>
-             <Card>
-                <CardHeader><CardTitle>Actividad Reciente</CardTitle><CardDescription>Últimos registros de entrada y salida del día de hoy.</CardDescription></CardHeader>
-                <CardContent><Skeleton className="h-40 w-full" /></CardContent>
-            </Card>
-        </main>
+      <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
+        <div className="flex items-center gap-4">
+          <Skeleton className="h-7 w-7 rounded-full" />
+          <Skeleton className="h-8 w-48" />
+        </div>
+        <div className="grid gap-4 md:grid-cols-3">
+          <Card><CardHeader><Skeleton className="h-5 w-24" /></CardHeader><CardContent><Skeleton className="h-8 w-16" /><Skeleton className="h-4 w-full mt-2" /></CardContent></Card>
+          <Card><CardHeader><Skeleton className="h-5 w-24" /></CardHeader><CardContent><Skeleton className="h-8 w-16" /><Skeleton className="h-4 w-full mt-2" /></CardContent></Card>
+          <Card><CardHeader><Skeleton className="h-5 w-24" /></CardHeader><CardContent><Skeleton className="h-8 w-16" /><Skeleton className="h-4 w-full mt-2" /></CardContent></Card>
+        </div>
+        <Card>
+          <CardHeader><CardTitle>Actividad Reciente</CardTitle><CardDescription>Últimos registros de entrada y salida del día de hoy.</CardDescription></CardHeader>
+          <CardContent><Skeleton className="h-40 w-full" /></CardContent>
+        </Card>
+      </main>
     );
   }
 
@@ -180,46 +196,46 @@ export default function AttendanceDashboardPage() {
 
       <Card>
         <CardHeader>
-            <CardTitle>Actividad Reciente</CardTitle>
-            <CardDescription>Últimos registros de entrada y salida del día de hoy.</CardDescription>
+          <CardTitle>Actividad Reciente</CardTitle>
+          <CardDescription>Últimos registros de entrada y salida del día de hoy.</CardDescription>
         </CardHeader>
         <CardContent>
-             {isLoading ? <p>Cargando actividad...</p> : (
-                <Table>
-                    <TableHeader>
-                        <TableRow>
-                            <TableHead>Empleado</TableHead>
-                            <TableHead>Hora de Entrada</TableHead>
-                            <TableHead>Estado</TableHead>
-                        </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                        {stats.recent.length === 0 && <TableRow><TableCell colSpan={3} className="text-center">No hay actividad reciente.</TableCell></TableRow>}
-                        {stats.recent.map(record => {
-                            const user = getUser(record.userId);
-                            const checkInTime = convertToDate(record.checkIn);
-                            const statusInfo = statusConfig[record.status as keyof typeof statusConfig] || { label: record.status, className: 'bg-gray-100 text-gray-800' };
-                            return (
-                                <TableRow key={record.id}>
-                                    <TableCell>
-                                        <div className="flex items-center gap-3">
-                                            <Avatar>
-                                                <AvatarImage src={user?.avatarUrl} />
-                                                <AvatarFallback>{getUserInitials(user?.name)}</AvatarFallback>
-                                            </Avatar>
-                                            <span>{user?.name || 'Desconocido'}</span>
-                                        </div>
-                                    </TableCell>
-                                    <TableCell>{checkInTime ? format(checkInTime, 'hh:mm:ss a') : 'N/A'}</TableCell>
-                                    <TableCell>
-                                        <Badge className={cn('capitalize', statusInfo.className)}>{statusInfo.label}</Badge>
-                                    </TableCell>
-                                </TableRow>
-                            );
-                        })}
-                    </TableBody>
-                </Table>
-             )}
+          {isLoading ? <p>Cargando actividad...</p> : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Empleado</TableHead>
+                  <TableHead>Hora de Entrada</TableHead>
+                  <TableHead>Estado</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {stats.recent.length === 0 && <TableRow><TableCell colSpan={3} className="text-center">No hay actividad reciente.</TableCell></TableRow>}
+                {stats.recent.map(record => {
+                  const user = getUser(record.userId);
+                  const checkInTime = convertToDate(record.checkIn);
+                  const statusInfo = statusConfig[record.status as keyof typeof statusConfig] || { label: record.status, className: 'bg-gray-100 text-gray-800' };
+                  return (
+                    <TableRow key={record.id}>
+                      <TableCell>
+                        <div className="flex items-center gap-3">
+                          <Avatar>
+                            <AvatarImage src={user?.avatarUrl} />
+                            <AvatarFallback>{getUserInitials(user?.name)}</AvatarFallback>
+                          </Avatar>
+                          <span>{user?.name || 'Desconocido'}</span>
+                        </div>
+                      </TableCell>
+                      <TableCell>{checkInTime ? format(checkInTime, 'hh:mm:ss a') : 'N/A'}</TableCell>
+                      <TableCell>
+                        <Badge className={cn('capitalize', statusInfo.className)}>{statusInfo.label}</Badge>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
+          )}
         </CardContent>
       </Card>
     </main>
