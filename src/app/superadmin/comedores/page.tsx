@@ -1,9 +1,9 @@
 
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useMultiTenant } from '@/providers/multi-tenant-provider';
-import { useCollection, useFirestore, addDocumentNonBlocking } from '@/firebase';
+import { useCollection, useFirestore, useMemoFirebase, addDocumentNonBlocking } from '@/firebase';
 import { collection, serverTimestamp } from 'firebase/firestore';
 import type { Comedor } from '@/lib/types';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -25,7 +25,8 @@ export default function ComedoresPage() {
     const { isSuperAdmin } = useMultiTenant();
     const firestore = useFirestore();
     const { toast } = useToast();
-    const { data: comedores, isLoading } = useCollection<Comedor>(collection(firestore, 'comedores'));
+    const comedoresRef = useMemoFirebase(() => collection(firestore, 'comedores'), [firestore]);
+    const { data: comedores, isLoading } = useCollection<Comedor>(comedoresRef);
     const [isAdding, setIsAdding] = useState(false);
     const [formData, setFormData] = useState({
         nombre: '',

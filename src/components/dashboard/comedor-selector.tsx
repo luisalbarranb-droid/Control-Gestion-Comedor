@@ -1,9 +1,9 @@
 
 'use client';
 
-import React from 'react';
+import React, { useMemo } from 'react';
 import { useMultiTenant } from '@/providers/multi-tenant-provider';
-import { useCollection, useFirestore } from '@/firebase';
+import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
 import { collection } from 'firebase/firestore';
 import type { Comedor } from '@/lib/types';
 import {
@@ -20,7 +20,7 @@ export function ComedorSelector() {
     const firestore = useFirestore();
 
     // Suscribirse a todos los comedores (solo si es superadmin)
-    const comedoresQuery = isSuperAdmin ? collection(firestore, 'comedores') : null;
+    const comedoresQuery = useMemoFirebase(() => isSuperAdmin ? collection(firestore, 'comedores') : null, [firestore, isSuperAdmin]);
     const { data: comedores, isLoading } = useCollection<Comedor>(comedoresQuery);
 
     if (!isSuperAdmin) return null;

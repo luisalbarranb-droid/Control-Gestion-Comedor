@@ -1,9 +1,9 @@
 
 'use client';
 
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, useMemo, ReactNode } from 'react';
 import { useUser } from '@/firebase/auth/use-user';
-import { useDoc, useFirestore } from '@/firebase';
+import { useDoc, useFirestore, useMemoFirebase } from '@/firebase';
 import { doc } from 'firebase/firestore';
 import type { Comedor } from '@/lib/types';
 
@@ -31,7 +31,7 @@ export function MultiTenantProvider({ children }: { children: ReactNode }) {
         ? manualComedorId
         : (profile?.comedorId || null);
 
-    const comedorRef = effectiveComedorId ? doc(firestore, 'comedores', effectiveComedorId) : null;
+    const comedorRef = useMemoFirebase(() => effectiveComedorId ? doc(firestore, 'comedores', effectiveComedorId) : null, [firestore, effectiveComedorId]);
     const { data: activeComedor, isLoading: isLoadingComedor } = useDoc<Comedor>(comedorRef, { disabled: !effectiveComedorId });
 
     const value: MultiTenantContextValue = {
