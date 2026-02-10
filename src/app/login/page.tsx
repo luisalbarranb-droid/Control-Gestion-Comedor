@@ -185,10 +185,10 @@ export default function LoginPage() {
 
         <footer className="text-center space-y-1">
           <p className="text-xs text-muted-foreground font-semibold">
-            © 2026 VELCAR, C.A. Todos los derechos reservados.
+            © 2026 Luis E. Albarrán B. Todos los derechos reservados.
           </p>
           <p className="text-[10px] text-muted-foreground opacity-70">
-            Diseñado y desarrollado por <span className="font-bold text-primary/80">Luis E. Albarrán B.</span>
+            Desarrollado para <span className="font-bold text-primary/80">Inversora Velcar, C.A.</span>
           </p>
         </footer>
       </div>

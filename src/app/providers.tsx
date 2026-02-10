@@ -54,15 +54,15 @@ function AppContent({ children }: { children: React.ReactNode }) {
               <SidebarFooter className="p-4 border-t bg-slate-50/80 mt-auto">
                 <div className="flex flex-col gap-1 text-[11px] text-slate-500 leading-tight">
                   <div className="flex items-center justify-between mb-1">
-                    <p className="font-bold text-slate-900">© 2026 VELCAR, C.A.</p>
+                    <p className="font-bold text-slate-900">© 2026 Luis E. Albarrán B.</p>
                     <span className="px-1.5 py-0.5 bg-slate-200 text-slate-700 rounded-full text-[9px] font-mono font-bold">
                       v{APP_VERSION}
                     </span>
                   </div>
                   <p>Todos los derechos reservados.</p>
                   <div className="mt-1 pt-1 border-t border-slate-200">
-                    <p className="opacity-70">Desarrollado por:</p>
-                    <p className="font-semibold text-primary">Luis E. Albarrán B.</p>
+                    <p className="opacity-70">Desarrollado para:</p>
+                    <p className="font-semibold text-primary">Inversora Velcar, C.A.</p>
                   </div>
                 </div>
               </SidebarFooter>

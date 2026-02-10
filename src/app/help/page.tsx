@@ -859,10 +859,10 @@ export default function HelpPage() {
                         <p className="text-sm text-gray-600 font-semibold">Soporte Técnico</p>
                         <p className="text-sm text-gray-500">Email: arvecladu@gmail.com</p>
                         <div className="mt-8 space-y-1">
-                            <p className="text-sm text-gray-600 font-bold tracking-tight">© 2026 VELCAR, C.A.</p>
+                            <p className="text-sm text-gray-600 font-bold tracking-tight">© 2026 Luis E. Albarrán B.</p>
                             <p className="text-xs text-gray-500">Todos los derechos reservados.</p>
                             <p className="text-xs text-gray-400 font-medium italic mt-2">
-                                Diseñado y desarrollado por <span className="text-blue-600 not-italic font-bold">Luis E. Albarrán B.</span>
+                                Desarrollado para <span className="text-blue-600 not-italic font-bold">Inversora Velcar, C.A.</span>
                             </p>
                         </div>
                     </div>
