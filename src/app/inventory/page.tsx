@@ -101,7 +101,8 @@ export default function InventoryPage() {
   const filteredItems = useMemo(() => {
     if (!items) return [];
     return items.filter(item => {
-      const matchesSearch = item.nombre.toLowerCase().includes(searchQuery.toLowerCase());
+      const nombre = item.nombre || '';
+      const matchesSearch = nombre.toLowerCase().includes(searchQuery.toLowerCase());
       const matchesCategory = categoryFilter === 'all' || item.categoriaId === categoryFilter;
       return matchesSearch && matchesCategory;
     });
@@ -337,8 +338,9 @@ export default function InventoryPage() {
   const totalInventoryValue = useMemo(() => {
     if (!items) return 0;
     return items.reduce((sum, item) => {
+      const quantity = typeof item.cantidad === 'number' ? item.cantidad : 0;
       const costPerRecipeUnit = (item.costoUnitario || 0) / (item.factorConversion || 1);
-      return sum + (item.cantidad * costPerRecipeUnit);
+      return sum + (quantity * costPerRecipeUnit);
     }, 0);
   }, [items]);
 
@@ -510,11 +512,11 @@ export default function InventoryPage() {
                     <TableCell className="font-medium">{item.nombre}</TableCell>
                     <TableCell><Badge variant="secondary">{getCategoryName(item.categoriaId)}</Badge></TableCell>
                     <TableCell className={cn("text-center font-bold", isLowStock ? 'text-red-500' : 'text-current')}>
-                      {item.cantidad.toFixed(2)}
+                      {(item.cantidad || 0).toFixed(2)}
                       <span className="text-xs text-muted-foreground ml-1 uppercase">{item.unidadReceta}</span>
                     </TableCell>
                     <TableCell className="text-center">
-                      {item.stockMinimo.toFixed(2)}
+                      {(item.stockMinimo || 0).toFixed(2)}
                       <span className="text-xs text-muted-foreground ml-1 uppercase">{item.unidadReceta}</span>
                     </TableCell>
                     {isAdmin && <TableCell className="text-right">
@@ -551,13 +553,15 @@ export default function InventoryPage() {
 
       <InventoryImportDialog isOpen={isImportOpen} onOpenChange={setIsImportOpen} onImport={handleImport} />
 
-      {items && (
-        <>
-          <InventoryEntryForm isOpen={activeForm === 'entry'} onOpenChange={handleCloseForm} onSave={(data) => handleSaveTransaction(data, 'entrada')} inventoryItems={items} />
-          <InventoryExitForm isOpen={activeForm === 'exit'} onOpenChange={handleCloseForm} onSave={(data) => handleSaveTransaction(data, 'salida')} inventoryItems={items} />
-        </>
-      )}
+      {
+        items && (
+          <>
+            <InventoryEntryForm isOpen={activeForm === 'entry'} onOpenChange={handleCloseForm} onSave={(data) => handleSaveTransaction(data, 'entrada')} inventoryItems={items} />
+            <InventoryExitForm isOpen={activeForm === 'exit'} onOpenChange={handleCloseForm} onSave={(data) => handleSaveTransaction(data, 'salida')} inventoryItems={items} />
+          </>
+        )
+      }
 
-    </div>
+    </div >
   );
 }

@@ -25,7 +25,7 @@ export default function ComedoresPage() {
     const { isSuperAdmin } = useMultiTenant();
     const firestore = useFirestore();
     const { toast } = useToast();
-    const comedoresRef = useMemoFirebase(() => collection(firestore, 'comedores'), [firestore]);
+    const comedoresRef = useMemoFirebase(() => firestore ? collection(firestore, 'comedores') : null, [firestore]);
     const { data: comedores, isLoading } = useCollection<Comedor>(comedoresRef);
     const [isAdding, setIsAdding] = useState(false);
     const [formData, setFormData] = useState({

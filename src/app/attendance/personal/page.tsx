@@ -9,12 +9,13 @@ import { Input } from '@/components/ui/input';
 import { EmployeeList } from '@/components/attendance/employee-list';
 import { EmployeeForm } from '@/components/attendance/employee-form';
 import { useCollection, useFirestore, useMemoFirebase, useUser } from '@/firebase';
-import { collection, query, orderBy, writeBatch, doc, serverTimestamp, Timestamp } from 'firebase/firestore';
+import { collection, query, orderBy, where, writeBatch, doc, serverTimestamp, Timestamp } from 'firebase/firestore';
 import type { User } from '@/lib/types';
 import { EmployeeImportDialog } from '@/components/attendance/employee-import-dialog';
 import { useToast } from '@/components/ui/toast';
 import { BirthdayCalendar } from '@/components/attendance/birthday-calendar';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { useMultiTenant } from '@/providers/multi-tenant-provider';
 
 export default function PersonalManagementPage() {
     const [isFormOpen, setIsFormOpen] = useState(false);
@@ -22,13 +23,22 @@ export default function PersonalManagementPage() {
     const [editingEmployee, setEditingEmployee] = useState<User | null>(null);
     const [searchTerm, setSearchTerm] = useState('');
     const firestore = useFirestore();
+    const { activeComedorId, isSuperAdmin } = useMultiTenant();
     const { toast } = useToast();
-    const { isUserLoading } = useUser();
+    const { isUserLoading, profile } = useUser();
 
     const usersQuery = useMemoFirebase(() => {
         if (!firestore) return null;
-        return query(collection(firestore, 'users'), orderBy('name', 'asc'));
-    }, [firestore]);
+        const usersRef = collection(firestore, 'users');
+
+        if (activeComedorId) {
+            return query(usersRef, where('comedorId', '==', activeComedorId), orderBy('name', 'asc'));
+        } else if (isSuperAdmin) {
+            return query(usersRef, orderBy('name', 'asc'));
+        }
+
+        return null;
+    }, [firestore, activeComedorId, isSuperAdmin]);
 
     const { data: employees, isLoading } = useCollection<User>(usersQuery, { disabled: isUserLoading });
 
@@ -61,6 +71,12 @@ export default function PersonalManagementPage() {
         try {
             const batch = writeBatch(firestore);
             let importedCount = 0;
+            const targetComedorId = activeComedorId || profile?.comedorId;
+
+            if (!targetComedorId) {
+                toast({ variant: 'destructive', title: 'Error', description: 'No se ha seleccionado un comedor de destino.' });
+                return;
+            }
 
             importedData.forEach((row: any) => {
                 if (row.name && row.cedula && row.email && row.role) {
@@ -76,6 +92,7 @@ export default function PersonalManagementPage() {
                         address: String(row.address || ''),
                         role: row.role as User['role'],
                         area: row.area as User['area'],
+                        comedorId: targetComedorId,
                         workerType: row.workerType as User['workerType'],
                         contractType: row.contractType as User['contractType'],
                         position: row.position ? String(row.position) : undefined,

@@ -29,7 +29,7 @@ export function VersionChecker() {
         return doc(firestore, 'system', 'config');
     }, [firestore]);
 
-    const { data: config } = useDoc<any>(versionRef);
+    const { data: config } = useDoc<any>(versionRef, { disabled: !user });
 
     useEffect(() => {
         if (config?.latestVersion) {

@@ -10,8 +10,8 @@ export default function SharePage() {
   const [appUrl, setAppUrl] = useState('');
 
   useEffect(() => {
-    // Establecemos manualmente la IP del servidor para asegurar que el QR sea accesible desde otros dispositivos
-    setAppUrl('http://192.168.3.101:3000');
+    // Usamos la URL de producción de Vercel para el código QR
+    setAppUrl('https://sistema-comedor11-2026.vercel.app');
   }, []);
 
   return (

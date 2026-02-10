@@ -43,6 +43,7 @@ export async function createUserAccount(email: string): Promise<{ user?: UserCre
  */
 export async function resetUserPassword(email: string): Promise<{ success: boolean, error?: string }> {
     const auth = getAuth();
+    auth.languageCode = 'es'; // Asegurar que el correo se envíe en español
     try {
         await sendPasswordResetEmail(auth, email);
         return { success: true };
