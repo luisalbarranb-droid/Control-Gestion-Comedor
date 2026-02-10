@@ -638,7 +638,7 @@ export default function HelpPage() {
 
                     <div className="pl-6 space-y-6">
                         <p className="text-gray-700 leading-relaxed text-lg">
-                            El módulo de <strong>Gestión de Comedores</strong> permite administrar las diferentes sedes de <strong>VELCAR, C.A.</strong> de forma centralizada. Cada sede funciona como un entorno independiente (Multi-tenant), lo que garantiza la privacidad y el orden operativo.
+                            El módulo de <strong>Gestión de Comedores</strong> permite administrar las diferentes sedes de <strong>Inversora Velcar, C.A.</strong> de forma centralizada. Cada sede funciona como un entorno independiente (Multi-tenant), lo que garantiza la privacidad y el orden operativo.
                         </p>
 
                         <div className="bg-cyan-50 p-6 rounded-xl border-l-4 border-cyan-600">

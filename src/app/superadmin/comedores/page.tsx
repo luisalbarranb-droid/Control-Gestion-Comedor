@@ -68,7 +68,7 @@ export default function ComedoresPage() {
             <div className="flex justify-between items-center">
                 <div>
                     <h1 className="text-3xl font-bold tracking-tight">Gestión de Comedores</h1>
-                    <p className="text-muted-foreground">Administra las diferentes sedes de VELCAR, C.A.</p>
+                    <p className="text-muted-foreground">Administra las diferentes sedes de Inversora Velcar, C.A.</p>
                 </div>
 
                 <Dialog open={isAdding} onOpenChange={setIsAdding}>
