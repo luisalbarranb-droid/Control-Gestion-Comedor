@@ -34,7 +34,7 @@ export default function Page() {
     <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
       <div className="flex items-center justify-between">
         <h1 className="font-headline text-2xl font-bold md:text-3xl">
-          Dashboard v1.3.1
+          Dashboard
         </h1>
         <div className="flex gap-2">
           <AIPrioritizer />
