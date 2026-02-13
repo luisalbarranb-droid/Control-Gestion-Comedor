@@ -1,47 +1,53 @@
 
 'use server';
 
-import { ai } from '@/ai/genkit';
-import { z } from 'genkit';
+import { GoogleGenerativeAI } from '@google/generative-ai';
 
-const HRSalaryExpertInputSchema = z.object({
-    question: z.string().describe('The user question about Venezuelan labor law or payroll.'),
-    context: z.object({
-        employeeName: z.string().optional(),
-        baseSalary: z.number().optional(),
-        normalSalary: z.number().optional(),
-        integralSalary: z.number().optional(),
-        fechaIngreso: z.string().optional(),
-    }).optional().describe('Relevant employee context for specific calculations.'),
-});
+export interface HRSalaryExpertInput {
+    question: string;
+    context?: {
+        employeeName?: string;
+        baseSalary?: number;
+        normalSalary?: number;
+        integralSalary?: number;
+        fechaIngreso?: string;
+    };
+}
 
-export type HRSalaryExpertInput = z.infer<typeof HRSalaryExpertInputSchema>;
+export interface HRSalaryExpertOutput {
+    answer: string;
+    recommendation?: string;
+    legalArticles?: string[];
+}
 
-const HRSalaryExpertOutputSchema = z.object({
-    answer: z.string().describe('The detailed explanation provided by the expert.'),
-    recommendation: z.string().optional().describe('Actionable advice or specific formula recommendation.'),
-    legalArticles: z.array(z.string()).optional().describe('Relevant LOTTT articles cited.'),
-});
+export async function askSalaryExpert(input: HRSalaryExpertInput): Promise<HRSalaryExpertOutput> {
+    const apiKey = process.env.GOOGLE_GENAI_API_KEY;
 
-export type HRSalaryExpertOutput = z.infer<typeof HRSalaryExpertOutputSchema>;
+    if (!apiKey) {
+        throw new Error('GOOGLE_GENAI_API_KEY is not configured');
+    }
 
-const prompt = ai.definePrompt({
-    name: 'hrSalaryExpertPrompt',
-    input: { schema: HRSalaryExpertInputSchema },
-    output: { schema: HRSalaryExpertOutputSchema },
-    prompt: `Eres un Asistente Experto en Gestión de Recursos Humanos y Ley Orgánica del Trabajo, los Trabajadores y las Trabajadoras (LOTTT) de la República Bolivariana de Venezuela.
+    const genAI = new GoogleGenerativeAI(apiKey);
+    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+
+    let contextBlock = '';
+    if (input.context) {
+        contextBlock = `
+Contexto del Empleado Actual:
+- Nombre: ${input.context.employeeName || 'No especificado'}
+- Salario Base: ${input.context.baseSalary || 'No especificado'}
+- Salario Normal: ${input.context.normalSalary || 'No especificado'}
+- Salario Integral: ${input.context.integralSalary || 'No especificado'}
+- Fecha de Ingreso: ${input.context.fechaIngreso || 'No especificado'}
+`;
+    }
+
+    const prompt = `Eres un Asistente Experto en Gestión de Recursos Humanos y Ley Orgánica del Trabajo, los Trabajadores y las Trabajadoras (LOTTT) de la República Bolivariana de Venezuela.
 Tu objetivo es guiar al usuario de forma cómoda y segura en la gestión de nómina, cálculos de salarios y beneficios sociales.
 
-Pregunta del usuario: "{{question}}"
+Pregunta del usuario: "${input.question}"
 
-{{#if context}}
-Contexto del Empleado Actual:
-- Nombre: {{context.employeeName}}
-- Salario Base: {{context.baseSalary}}
-- Salario Normal: {{context.normalSalary}}
-- Salario Integral: {{context.integralSalary}}
-- Fecha de Ingreso: {{context.fechaIngreso}}
-{{/if}}
+${contextBlock}
 
 Instrucciones:
 1. Responde con precisión legal basándote en la LOTTT vigente (Venezuela).
@@ -50,22 +56,50 @@ Instrucciones:
 4. Sé amable, profesional y motivador. Asegura al usuario que los cálculos deben ser precisos para evitar sanciones legales.
 5. Si el usuario pide redactar una constancia, proporciona los puntos clave que debe llevar.
 
-Respuesta:
-`,
-});
+IMPORTANTE: Responde ÚNICAMENTE con un JSON válido con esta estructura exacta (sin markdown, sin bloques de código):
+{
+  "answer": "tu respuesta detallada aquí",
+  "recommendation": "consejo práctico aquí",
+  "legalArticles": ["Art. X LOTTT", "Art. Y LOTTT"]
+}`;
 
-export const hrSalaryExpertFlow = ai.defineFlow(
-    {
-        name: 'hrSalaryExpertFlow',
-        inputSchema: HRSalaryExpertInputSchema,
-        outputSchema: HRSalaryExpertOutputSchema,
-    },
-    async (input) => {
-        const { output } = await prompt(input);
-        return output!;
+    try {
+        const result = await model.generateContent(prompt);
+        const response = result.response;
+        const text = response.text();
+
+        // Clean the response text - remove markdown code blocks if present
+        let cleanText = text.trim();
+        if (cleanText.startsWith('```json')) {
+            cleanText = cleanText.slice(7);
+        } else if (cleanText.startsWith('```')) {
+            cleanText = cleanText.slice(3);
+        }
+        if (cleanText.endsWith('```')) {
+            cleanText = cleanText.slice(0, -3);
+        }
+        cleanText = cleanText.trim();
+
+        const parsed = JSON.parse(cleanText) as HRSalaryExpertOutput;
+        return {
+            answer: parsed.answer || 'Sin respuesta disponible.',
+            recommendation: parsed.recommendation || undefined,
+            legalArticles: parsed.legalArticles || undefined,
+        };
+    } catch (parseError) {
+        console.error('Error parsing AI response:', parseError);
+        // If JSON parsing fails, return the raw text as the answer
+        try {
+            const result = await model.generateContent(input.question);
+            const text = result.response.text();
+            return {
+                answer: text,
+                recommendation: undefined,
+                legalArticles: undefined,
+            };
+        } catch (fallbackError) {
+            console.error('Fallback also failed:', fallbackError);
+            throw new Error('La IA no pudo procesar la consulta.');
+        }
     }
-);
-
-export async function askSalaryExpert(input: HRSalaryExpertInput): Promise<HRSalaryExpertOutput> {
-    return hrSalaryExpertFlow(input);
 }
