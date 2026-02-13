@@ -205,8 +205,8 @@ export default function SalaryAssistantPage() {
                         </Link>
                     </Button>
                     <div>
-                        <h1 className="text-2xl font-bold tracking-tight">Asistente de Salarios y Prestaciones</h1>
-                        <p className="text-muted-foreground">Experticia legal LOTTT (Venezuela) para tu gestión de nómina.</p>
+                        <h1 className="text-2xl font-bold tracking-tight">Asistente Digital de RRHH</h1>
+                        <p className="text-muted-foreground">Gestión inteligente de nómina y asesoría legal digital LOTTT.</p>
                     </div>
                 </div>
                 <div className="flex gap-2">
@@ -300,7 +300,7 @@ export default function SalaryAssistantPage() {
                         <TabsList className="grid w-full grid-cols-4 mb-4 h-12 print:hidden">
                             <TabsTrigger value="calculator" className="gap-2"><Calculator className="h-4 w-4" /> Cálculos</TabsTrigger>
                             <TabsTrigger value="docs" className="gap-2"><FileText className="h-4 w-4" /> Documentos</TabsTrigger>
-                            <TabsTrigger value="expert" className="gap-2 bg-purple-50 text-purple-700 data-[state=active]:bg-purple-100"><MessageSquare className="h-4 w-4" /> Guía Experta</TabsTrigger>
+                            <TabsTrigger value="expert" className="gap-2 bg-purple-50 text-purple-700 data-[state=active]:bg-purple-100"><MessageSquare className="h-4 w-4" /> Consultar Experto</TabsTrigger>
                             <TabsTrigger value="history" className="gap-2"><HelpCircle className="h-4 w-4" /> Ayuda Legal</TabsTrigger>
                         </TabsList>
 

@@ -58,8 +58,8 @@ const attendanceModules = [
     cta: 'Configurar Matriz'
   },
   {
-    title: 'Asistente de Salarios',
-    description: 'Calcula salarios base, normal e integral. Gestión de prestaciones, vacaciones y utilidades según la LOTTT.',
+    title: 'Asistente Digital de RRHH',
+    description: 'Calcula salarios, prestaciones, vacaciones y utilidades según la LOTTT con soporte de IA.',
     link: '/attendance/salary-assistant',
     icon: DollarSign,
     cta: 'Ir al Asistente'
