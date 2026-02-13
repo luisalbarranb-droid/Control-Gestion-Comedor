@@ -28,7 +28,7 @@ export async function askSalaryExpert(input: HRSalaryExpertInput): Promise<HRSal
     }
 
     const genAI = new GoogleGenerativeAI(apiKey);
-    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+    const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
 
     let contextBlock = '';
     if (input.context) {
