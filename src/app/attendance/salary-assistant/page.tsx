@@ -131,7 +131,7 @@ export default function SalaryAssistantPage() {
                 employeeName: selectedEmployee.name,
                 baseSalary: baseMonthlySalary,
                 normalSalary: normalSalary,
-                integralDaily: integralDaily,
+                integralSalary: integralSalary,
                 fechaIngreso: selectedEmployee.fechaIngreso?.toString()
             } : undefined;
 
