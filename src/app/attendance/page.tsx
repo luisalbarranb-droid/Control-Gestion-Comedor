@@ -64,6 +64,13 @@ const attendanceModules = [
     icon: DollarSign,
     cta: 'Ir al Asistente'
   },
+  {
+    title: 'Reporte Consolidado',
+    description: 'Genera reportes de asistencia semanal, quincenal y mensual con días trabajados, permisos y netos.',
+    link: '/attendance/reports',
+    icon: ClipboardList,
+    cta: 'Ver Reportes'
+  },
 ]
 
 export default function AttendancePage() {
