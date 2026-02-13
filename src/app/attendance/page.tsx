@@ -4,7 +4,7 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { Calendar, Users, BarChart, ClipboardList, QrCode, ClipboardEdit, Star, FileText } from 'lucide-react';
+import { Calendar, Users, BarChart, ClipboardList, QrCode, ClipboardEdit, Star, FileText, DollarSign } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
 
 const attendanceModules = [
@@ -58,11 +58,11 @@ const attendanceModules = [
     cta: 'Configurar Matriz'
   },
   {
-    title: 'Reportes de Asistencia',
-    description: 'Genera y descarga reportes consolidados de asistencia por período.',
-    link: '/attendance/reports',
-    icon: ClipboardList,
-    cta: 'Generar Reporte'
+    title: 'Asistente de Salarios',
+    description: 'Calcula salarios base, normal e integral. Gestión de prestaciones, vacaciones y utilidades según la LOTTT.',
+    link: '/attendance/salary-assistant',
+    icon: DollarSign,
+    cta: 'Ir al Asistente'
   },
 ]
 

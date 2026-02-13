@@ -87,6 +87,11 @@ export interface User {
   bankName?: string;
   bankAccountNumber?: string;
   bankAccountType?: 'Savings' | 'Current';
+
+  // Wages & Benefits (Venezuela specific)
+  baseSalary?: number;
+  foodAllocation?: number; // Cestaticket
+  otherBonuses?: number;
 }
 
 export interface Area {
