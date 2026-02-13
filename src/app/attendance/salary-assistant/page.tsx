@@ -115,6 +115,14 @@ export default function SalaryAssistantPage() {
         }
     };
 
+    // VENEZUELAN LABOR LAW CALCULATIONS (LOTTT)
+    const normalSalary = useMemo(() => baseMonthlySalary + otherBonuses, [baseMonthlySalary, otherBonuses]);
+    const normalDaily = useMemo(() => normalSalary / 30, [normalSalary]);
+    const utilidadesAliquot = useMemo(() => (normalSalary * utilidadesDays) / 360, [normalSalary, utilidadesDays]);
+    const vacationBonusAliquot = useMemo(() => (normalSalary * vacationBonusDays) / 360, [normalSalary, vacationBonusDays]);
+    const integralSalary = useMemo(() => normalSalary + utilidadesAliquot + vacationBonusAliquot, [normalSalary, utilidadesAliquot, vacationBonusAliquot]);
+    const integralDaily = useMemo(() => integralSalary / 30, [integralSalary]);
+
     const handleAskExpert = async () => {
         if (!aiQuestion.trim()) return;
         setIsAiLoading(true);
@@ -123,7 +131,7 @@ export default function SalaryAssistantPage() {
                 employeeName: selectedEmployee.name,
                 baseSalary: baseMonthlySalary,
                 normalSalary: normalSalary,
-                integralSalary: integralSalary,
+                integralDaily: integralDaily,
                 fechaIngreso: selectedEmployee.fechaIngreso?.toString()
             } : undefined;
 
@@ -137,21 +145,23 @@ export default function SalaryAssistantPage() {
         }
     };
 
-    // VENEZUELAN LABOR LAW CALCULATIONS (LOTTT)
-    const normalSalary = useMemo(() => baseMonthlySalary + otherBonuses, [baseMonthlySalary, otherBonuses]);
-    const normalDaily = useMemo(() => normalSalary / 30, [normalSalary]);
-    const utilidadesAliquot = useMemo(() => (normalSalary * utilidadesDays) / 360, [normalSalary, utilidadesDays]);
-    const vacationBonusAliquot = useMemo(() => (normalSalary * vacationBonusDays) / 360, [normalSalary, vacationBonusDays]);
-    const integralSalary = useMemo(() => normalSalary + utilidadesAliquot + vacationBonusAliquot, [normalSalary, utilidadesAliquot, vacationBonusAliquot]);
-    const integralDaily = useMemo(() => integralSalary / 30, [integralSalary]);
-
     const estimatedPrestaciones = useMemo(() => {
         if (!selectedEmployee?.fechaIngreso) return 0;
-        const ingreso = selectedEmployee.fechaIngreso instanceof Date
-            ? selectedEmployee.fechaIngreso
-            : (selectedEmployee.fechaIngreso as any).toDate?.() || new Date(selectedEmployee.fechaIngreso as any || Date.now());
 
-        const diffTime = Math.abs(new Date().getTime() - ingreso.getTime());
+        let ingresoDate: Date;
+        if (selectedEmployee.fechaIngreso instanceof Date) {
+            ingresoDate = selectedEmployee.fechaIngreso;
+        } else if (selectedEmployee.fechaIngreso && typeof (selectedEmployee.fechaIngreso as any).toDate === 'function') {
+            ingresoDate = (selectedEmployee.fechaIngreso as any).toDate();
+        } else if (typeof selectedEmployee.fechaIngreso === 'string' || typeof selectedEmployee.fechaIngreso === 'number') {
+            ingresoDate = new Date(selectedEmployee.fechaIngreso);
+        } else {
+            return 0;
+        }
+
+        if (isNaN(ingresoDate.getTime())) return 0;
+
+        const diffTime = Math.abs(new Date().getTime() - ingresoDate.getTime());
         const years = diffTime / (1000 * 60 * 60 * 24 * 365.25);
         return years * 30 * integralDaily;
     }, [selectedEmployee, integralDaily]);
@@ -159,6 +169,21 @@ export default function SalaryAssistantPage() {
     // EXPORT FUNCTIONS
     const exportToExcel = () => {
         if (!mounted) return;
+
+        let displayFechaIngreso = "N/A";
+        if (selectedEmployee?.fechaIngreso) {
+            try {
+                let d: Date;
+                if (selectedEmployee.fechaIngreso instanceof Date) d = selectedEmployee.fechaIngreso;
+                else if ((selectedEmployee.fechaIngreso as any).toDate) d = (selectedEmployee.fechaIngreso as any).toDate();
+                else d = new Date(selectedEmployee.fechaIngreso as any);
+
+                if (!isNaN(d.getTime())) displayFechaIngreso = format(d, 'dd/MM/yyyy');
+            } catch (e) {
+                console.error("Error formatting date for excel", e);
+            }
+        }
+
         const data = [
             ["SISTEMA DE CONTROL COMEDOR - REPORTE DE SALARIOS"],
             ["FECHA:", format(new Date(), 'dd/MM/yyyy HH:mm')],
@@ -167,7 +192,7 @@ export default function SalaryAssistantPage() {
             ["Nombre:", selectedEmployee?.name || "N/A"],
             ["Cédula:", selectedEmployee?.cedula || "N/A"],
             ["Cargo:", selectedEmployee?.position || "N/A"],
-            ["Fecha Ingreso:", selectedEmployee?.fechaIngreso ? format(new Date(selectedEmployee.fechaIngreso as any), 'dd/MM/yyyy') : "N/A"],
+            ["Fecha Ingreso:", displayFechaIngreso],
             [],
             ["DESGlose DE SALARIO"],
             ["Salario Base Mensual:", baseMonthlySalary],
@@ -374,7 +399,17 @@ export default function SalaryAssistantPage() {
                                         </Button>
                                         <h3 className="font-bold mb-4 underline">CONSTANCIA DE TRABAJO</h3>
                                         <div className="text-sm space-y-4 text-justify">
-                                            <p>Por medio de la presente se hace constar que el ciudadano(a) <strong>{selectedEmployee?.name || "_________________"}</strong>, titular de la Cédula de Identidad N° <strong>{selectedEmployee?.cedula || "__________"}</strong>, trabaja en esta empresa desde el día <strong>{selectedEmployee?.fechaIngreso ? format(new Date(selectedEmployee.fechaIngreso as any), 'dd/MM/yyyy') : "___/___/_____"}</strong>, desempeñando el cargo de <strong>{selectedEmployee?.position || "_________________"}</strong>.</p>
+                                            <p>Por medio de la presente se hace constar que el ciudadano(a) <strong>{selectedEmployee?.name || "_________________"}</strong>, titular de la Cédula de Identidad N° <strong>{selectedEmployee?.cedula || "__________"}</strong>, trabaja en esta empresa desde el día <strong>{selectedEmployee?.fechaIngreso ? (
+                                                (() => {
+                                                    try {
+                                                        let d: Date;
+                                                        if (selectedEmployee.fechaIngreso instanceof Date) d = selectedEmployee.fechaIngreso;
+                                                        else if ((selectedEmployee.fechaIngreso as any).toDate) d = (selectedEmployee.fechaIngreso as any).toDate();
+                                                        else d = new Date(selectedEmployee.fechaIngreso as any);
+                                                        return !isNaN(d.getTime()) ? format(d, 'dd/MM/yyyy') : "___/___/_____";
+                                                    } catch (e) { return "___/___/_____"; }
+                                                })()
+                                            ) : "___/___/_____"}</strong>, desempeñando el cargo de <strong>{selectedEmployee?.position || "_________________"}</strong>.</p>
                                             <p>Devengando un salario mensual de <strong>Bs. {baseMonthlySalary.toLocaleString()}</strong>.</p>
                                             <p>Constancia que se expide a petición de la parte interesada en la ciudad de Caracas, a los {format(new Date(), "dd 'días del mes de' MMMM 'de' yyyy", { locale: es })}.</p>
                                         </div>
