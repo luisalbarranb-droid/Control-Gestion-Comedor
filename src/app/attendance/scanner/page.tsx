@@ -9,6 +9,8 @@ import type { User, AttendanceRecord } from '@/lib/types';
 import { CameraOff, CheckCircle, XCircle } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { format } from 'date-fns';
+import { es } from 'date-fns/locale';
+import { ManualCheckIn } from '@/components/attendance/manual-checkin';
 
 const QrScanner = dynamic(() => import('react-qr-scanner'), { ssr: false });
 
@@ -136,100 +138,134 @@ export default function ScannerPage() {
   const getUserInitials = (name?: string) => name ? name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase() : 'U';
 
   return (
-    <div className="w-full h-screen bg-gray-900 flex flex-col items-center justify-center p-4 relative">
+    <div className="w-full h-screen bg-[#0f172a] flex flex-col items-center justify-center p-4 relative overflow-hidden">
+      {/* Animated Background decorative elements */}
+      <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-blue-500/10 blur-[120px] rounded-full pointer-events-none" />
+      <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-green-500/10 blur-[120px] rounded-full pointer-events-none" />
+
       {!status && hasCamera && isClient && (
         <>
           {/* Check for MediaDevices support (Secure Context) */}
           {typeof navigator !== 'undefined' && !navigator.mediaDevices ? (
-            <div className="text-center text-white max-w-lg mx-auto">
+            <div className="text-center text-white max-w-lg mx-auto z-10">
               <CameraOff className="h-24 w-24 text-yellow-400 mx-auto" />
-              <h2 className="text-3xl font-bold mt-4 text-yellow-500">HTTPS Requerido</h2>
+              <h2 className="text-3xl font-bold mt-4 text-yellow-500 font-headline">HTTPS Requerido</h2>
               <p className="text-lg text-gray-300 mt-2">
                 El navegador bloqueó la cámara porque la conexión (HTTP) no es segura.
               </p>
-              <div className="bg-gray-800 p-6 rounded-lg text-left text-sm mt-6 border border-gray-700">
+              <div className="bg-gray-800/80 backdrop-blur-md p-6 rounded-2xl text-left text-sm mt-6 border border-gray-700 shadow-2xl">
                 <p className="font-bold text-lg mb-2 text-white">Solución rápida en Android (Chrome):</p>
                 <ol className="list-decimal pl-5 space-y-2 text-gray-300">
-                  <li>Abre una nueva pestaña y ve a: <br /><code className="bg-black/50 px-1 text-green-400 select-all">chrome://flags</code></li>
-                  <li>Busca: <span className="text-yellow-300">unsafely-treat-insecure-origin-as-secure</span></li>
+                  <li>Abre una nueva pestaña y ve a: <br /><code className="bg-black/50 px-1 text-green-400 select-all font-mono">chrome://flags</code></li>
+                  <li>Busca: <span className="text-yellow-300 italic">unsafely-treat-insecure-origin-as-secure</span></li>
                   <li>Cambia a <span className="text-blue-400 font-bold">Enabled</span></li>
-                  <li>En el cuadro de texto escribe tu IP local (ej: <code className="text-green-400">http://192.168.3.101:3000</code>)</li>
+                  <li>En el cuadro de texto escribe tu IP local (ej: <code className="text-green-400">http://192.168.1.10:3000</code>)</li>
                   <li>Toca el botón <span className="text-blue-400 font-bold">Relaunch</span> abajo a la derecha.</li>
                 </ol>
               </div>
             </div>
           ) : (
             <>
-              <div className="absolute top-4 left-4 text-white z-10">
-                <h1 className="text-3xl font-bold">Registro de Asistencia</h1>
-                <p className="text-gray-300">Apunta el código QR de tu credencial a la cámara.</p>
+              <div className="absolute top-8 left-8 text-white z-10">
+                <h1 className="text-4xl font-bold font-headline tracking-tight">Kiosko de Asistencia</h1>
+                <p className="text-blue-300/80 mt-1 font-medium">Escanea tu código QR para marcar entrada o salida</p>
               </div>
-              <div className="w-full max-w-md h-auto aspect-square overflow-hidden rounded-2xl border-4 border-dashed border-gray-600 bg-gray-800 relative">
+
+              <div className="absolute top-8 right-8 z-10">
+                <div className="flex flex-col items-end gap-2">
+                  <div className="text-white text-right mb-2">
+                    <p className="text-2xl font-bold">{format(new Date(), 'HH:mm')}</p>
+                    <p className="text-xs text-blue-300 uppercase tracking-widest">{format(new Date(), 'EEEE, d MMMM', { locale: es })}</p>
+                  </div>
+                  <ManualCheckIn />
+                </div>
+              </div>
+
+              <div className="w-full max-w-md h-auto aspect-square overflow-hidden rounded-[2.5rem] border-8 border-white/5 bg-gray-800/50 relative shadow-[0_0_50px_rgba(0,0,0,0.5)] group">
+                <div className="absolute inset-0 z-10 pointer-events-none border-2 border-white/10 rounded-[2rem] m-1" />
                 <QrScanner
                   delay={300}
                   onError={handleError}
                   onScan={handleScan}
-                  style={{ width: '100%', height: '100%' }}
+                  style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                   constraints={{
                     video: { facingMode: 'environment' }
                   }}
                 />
-                <div className="absolute inset-0 border-2 border-green-500/50 pointer-events-none animate-pulse"></div>
+
+                {/* Scanner Frame UI */}
+                <div className="absolute inset-0 flex items-center justify-center z-20 pointer-events-none">
+                  <div className="w-64 h-64 border-2 border-white/20 rounded-3xl relative">
+                    <div className="absolute top-0 left-0 w-8 h-8 border-t-4 border-l-4 border-blue-500 rounded-tl-xl" />
+                    <div className="absolute top-0 right-0 w-8 h-8 border-t-4 border-r-4 border-blue-500 rounded-tr-xl" />
+                    <div className="absolute bottom-0 left-0 w-8 h-8 border-b-4 border-l-4 border-blue-500 rounded-bl-xl" />
+                    <div className="absolute bottom-0 right-0 w-8 h-8 border-b-4 border-r-4 border-blue-500 rounded-br-xl" />
+
+                    {/* Scanning Line Animation */}
+                    <div className="absolute top-0 left-0 right-0 h-0.5 bg-blue-400 shadow-[0_0_15px_rgba(96,165,250,0.8)] animate-[scan_3s_ease-in-out_infinite]" />
+                  </div>
+                </div>
+
+                <div className="absolute inset-0 bg-gradient-to-t from-gray-900/80 via-transparent to-gray-900/40 pointer-events-none" />
               </div>
+
+              <p className="text-white/40 mt-8 text-sm font-medium tracking-wide animate-pulse">ESPERANDO ESCANEO...</p>
             </>
           )}
         </>
       )}
 
-      {!hasCamera && isClient && navigator.mediaDevices && (
-        <div className="text-center text-white">
-          <CameraOff className="h-24 w-24 text-red-400 mx-auto" />
-          <h2 className="text-4xl font-bold mt-4">Error de Cámara</h2>
-          <p className="text-2xl text-gray-300">No se pudo acceder a la cámara. Revisa los permisos.</p>
+      {status === 'success_in' && scannedUser && (
+        <div className="text-center text-white z-20 animate-in zoom-in duration-300">
+          <div className="mb-6 relative">
+            <div className="absolute inset-0 bg-green-500/20 blur-3xl rounded-full scale-150" />
+            <CheckCircle className="h-40 w-40 text-green-400 mx-auto relative drop-shadow-[0_0_15px_rgba(74,222,128,0.5)]" />
+          </div>
+          <h2 className="text-5xl font-bold mt-4 font-headline tracking-tight">¡Bienvenido!</h2>
+          <p className="text-3xl font-medium mt-2 text-green-100">{scannedUser.name}</p>
+          <div className="mt-8 inline-block px-6 py-3 bg-green-500/10 border border-green-500/20 rounded-full">
+            <p className="text-xl text-green-300 font-semibold">{message}</p>
+          </div>
         </div>
       )}
 
-      {status === 'success_in' && scannedUser && (
-        <div className="text-center text-white">
-          <CheckCircle className="h-24 w-24 text-green-400 mx-auto animate-pulse" />
-          <h2 className="text-4xl font-bold mt-4">¡Bienvenido, {scannedUser.name}!</h2>
-          <p className="text-2xl text-gray-300">{message}</p>
-        </div>
-      )}
       {status === 'success_out' && scannedUser && (
-        <div className="text-center text-white">
-          <CheckCircle className="h-24 w-24 text-blue-400 mx-auto animate-pulse" />
-          <h2 className="text-4xl font-bold mt-4">¡Hasta luego, {scannedUser.name}!</h2>
-          <p className="text-2xl text-gray-300">{message}</p>
+        <div className="text-center text-white z-20 animate-in zoom-in duration-300">
+          <div className="mb-6 relative">
+            <div className="absolute inset-0 bg-blue-500/20 blur-3xl rounded-full scale-150" />
+            <CheckCircle className="h-40 w-40 text-blue-400 mx-auto relative drop-shadow-[0_0_15px_rgba(96,165,250,0.5)]" />
+          </div>
+          <h2 className="text-5xl font-bold mt-4 font-headline tracking-tight">¡Hasta luego!</h2>
+          <p className="text-3xl font-medium mt-2 text-blue-100">{scannedUser.name}</p>
+          <div className="mt-8 inline-block px-6 py-3 bg-blue-500/10 border border-blue-500/20 rounded-full">
+            <p className="text-xl text-blue-300 font-semibold">{message}</p>
+          </div>
+          <p className="mt-4 text-blue-400/60 italic">Buen viaje de regreso a casa</p>
         </div>
       )}
 
       {status === 'error' && (
-        <div className="text-center text-white">
-          <XCircle className="h-24 w-24 text-red-400 mx-auto" />
-          <h2 className="text-4xl font-bold mt-4">Error de Registro</h2>
-          <p className="text-2xl text-gray-300">{message}</p>
+        <div className="text-center text-white z-20 animate-in zoom-in duration-300">
+          <div className="mb-6 relative">
+            <div className="absolute inset-0 bg-red-500/20 blur-3xl rounded-full scale-150" />
+            <XCircle className="h-40 w-40 text-red-500 mx-auto relative drop-shadow-[0_0_15px_rgba(239,68,68,0.5)]" />
+          </div>
+          <h2 className="text-5xl font-bold mt-4 font-headline text-red-400 tracking-tight">Registro Fallido</h2>
+          <p className="text-2xl mt-4 text-red-200/80 px-8 py-4 bg-red-500/10 border border-red-500/20 rounded-2xl max-w-lg">
+            {message}
+          </p>
+          <p className="mt-6 text-white/40">Por favor, intenta de nuevo o solicita ayuda al supervisor.</p>
         </div>
       )}
 
-      <div className="absolute bottom-4 left-4 bg-black/50 p-4 rounded-lg text-white max-w-sm">
-        <h3 className="font-bold mb-2">Último Registro</h3>
-        {scannedUser ? (
-          <div className="flex items-center gap-3">
-            <Avatar>
-              <AvatarImage src={(scannedUser as any).avatarUrl} />
-              <AvatarFallback>{getUserInitials(scannedUser.name)}</AvatarFallback>
-            </Avatar>
-            <div>
-              <p className="font-semibold">{scannedUser.name}</p>
-              <p className="text-xs text-gray-400">{message}</p>
-            </div>
-          </div>
-        ) : (
-          <p className="text-sm text-gray-400">Esperando escaneo...</p>
-        )}
-      </div>
-
+      {/* Style for scanning animation */}
+      <style jsx global>{`
+        @keyframes scan {
+          0% { top: 0; }
+          50% { top: 100%; }
+          100% { top: 0; }
+        }
+      `}</style>
     </div>
   );
 }

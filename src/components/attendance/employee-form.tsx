@@ -63,6 +63,7 @@ const employeeSchema = z.object({
   diasContrato: z.coerce.number().optional(),
   avatarUrl: z.string().url().optional().or(z.literal('')),
   comedorId: z.string().optional(),
+  password: z.string().min(6, 'La contraseña debe tener al menos 6 caracteres.').optional(),
 
   // New Fields
   gender: z.enum(['M', 'F', 'Other']).optional(),
@@ -148,6 +149,7 @@ export function EmployeeForm({ isOpen, onOpenChange, employee }: EmployeeFormPro
       bankName: '',
       bankAccountNumber: '',
       bankAccountType: 'Savings',
+      password: '',
     },
   });
 
@@ -220,6 +222,7 @@ export function EmployeeForm({ isOpen, onOpenChange, employee }: EmployeeFormPro
         bankName: '',
         bankAccountNumber: '',
         bankAccountType: 'Savings',
+        password: '',
       });
       setPreviewUrl(null);
     }
@@ -257,7 +260,10 @@ export function EmployeeForm({ isOpen, onOpenChange, employee }: EmployeeFormPro
         toast({ title: 'Empleado actualizado', description: `${values.name} ha sido actualizado.` });
 
       } else { // --- CREATE NEW USER ---
-        const { user: newUserAuth, error: authError } = await createUserAccount(values.email);
+        if (!values.password) {
+          throw new Error('Debes asignar una contraseña para el nuevo empleado.');
+        }
+        const { user: newUserAuth, error: authError } = await createUserAccount(values.email, values.password);
         if (authError || !newUserAuth) {
           throw new Error(authError || 'No se pudo crear la cuenta de autenticación.');
         }
@@ -289,7 +295,7 @@ export function EmployeeForm({ isOpen, onOpenChange, employee }: EmployeeFormPro
 
         toast({
           title: 'Empleado Creado Exitosamente',
-          description: `${values.name} ha sido agregado. La contraseña temporal es "password".`
+          description: `${values.name} ha sido agregado. Ya puede ingresar con su correo y la clave asignada.`
         });
       }
 
@@ -462,6 +468,16 @@ export function EmployeeForm({ isOpen, onOpenChange, employee }: EmployeeFormPro
                   <FormField name="position" control={form.control} render={({ field }) => (
                     <FormItem><FormLabel>Cargo (Posición)</FormLabel><FormControl><Input {...field} placeholder="Ej. Supervisor de Cocina" /></FormControl><FormMessage /></FormItem>
                   )} />
+                  {!employee && (
+                    <FormField name="password" control={form.control} render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Contraseña Inicial (Para Login)</FormLabel>
+                        <FormControl><Input type="password" {...field} placeholder="Mínimo 6 caracteres" /></FormControl>
+                        <FormDescription>Asigna una clave si este trabajador necesita ingresar a la aplicación.</FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )} />
+                  )}
                 </TabsContent>
 
                 <TabsContent value="personal" className="space-y-4 mt-0">

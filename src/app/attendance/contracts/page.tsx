@@ -48,6 +48,7 @@ export default function ContractsPage() {
     const [generatorDialogOpen, setGeneratorDialogOpen] = useState(false);
     const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
     const [itemToDelete, setItemToDelete] = useState<{ id: string; type: 'template' | 'contract' } | null>(null);
+    const [editingTemplate, setEditingTemplate] = useState<ContractTemplate | null>(null);
 
     // Fetch templates
     const templatesQuery = useMemoFirebase(() => {
@@ -130,6 +131,16 @@ export default function ContractsPage() {
         return template?.name || 'Plantilla desconocida';
     };
 
+    const handleEditTemplate = (template: ContractTemplate) => {
+        setEditingTemplate(template);
+        setUploadDialogOpen(true);
+    };
+
+    const handleNewTemplate = () => {
+        setEditingTemplate(null);
+        setUploadDialogOpen(true);
+    };
+
     const isLoading = isLoadingTemplates || isLoadingContracts || isLoadingEmployees;
 
     return (
@@ -143,7 +154,7 @@ export default function ContractsPage() {
                     </p>
                 </div>
                 <div className="flex flex-wrap gap-2">
-                    <Button variant="outline" onClick={() => setUploadDialogOpen(true)}>
+                    <Button variant="outline" onClick={handleNewTemplate}>
                         <Upload className="mr-2 h-4 w-4" />
                         Subir Plantilla
                     </Button>
@@ -156,10 +167,10 @@ export default function ContractsPage() {
 
             {/* Stats Cards */}
             <div className="grid gap-4 md:grid-cols-3">
-                <Card>
+                <Card className="bg-gradient-to-br from-blue-50 to-white dark:from-blue-900/10 dark:to-background border-blue-100 dark:border-blue-900/30">
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                         <CardTitle className="text-sm font-medium">Plantillas Activas</CardTitle>
-                        <FileText className="h-4 w-4 text-muted-foreground" />
+                        <FileText className="h-4 w-4 text-blue-500" />
                     </CardHeader>
                     <CardContent>
                         <div className="text-2xl font-bold">
@@ -167,10 +178,10 @@ export default function ContractsPage() {
                         </div>
                     </CardContent>
                 </Card>
-                <Card>
+                <Card className="bg-gradient-to-br from-green-50 to-white dark:from-green-900/10 dark:to-background border-green-100 dark:border-green-900/30">
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                         <CardTitle className="text-sm font-medium">Contratos Generados</CardTitle>
-                        <FileText className="h-4 w-4 text-muted-foreground" />
+                        <FileText className="h-4 w-4 text-green-500" />
                     </CardHeader>
                     <CardContent>
                         <div className="text-2xl font-bold">
@@ -246,16 +257,25 @@ export default function ContractsPage() {
                                             {format(convertToDate(template.createdAt), 'dd/MM/yyyy', { locale: es })}
                                         </TableCell>
                                         <TableCell className="text-right">
-                                            <Button
-                                                variant="ghost"
-                                                size="icon"
-                                                onClick={() => {
-                                                    setItemToDelete({ id: template.id, type: 'template' });
-                                                    setDeleteDialogOpen(true);
-                                                }}
-                                            >
-                                                <Trash2 className="h-4 w-4 text-destructive" />
-                                            </Button>
+                                            <div className="flex justify-end gap-1">
+                                                <Button
+                                                    variant="ghost"
+                                                    size="icon"
+                                                    onClick={() => handleEditTemplate(template)}
+                                                >
+                                                    <Edit className="h-4 w-4 text-blue-500" />
+                                                </Button>
+                                                <Button
+                                                    variant="ghost"
+                                                    size="icon"
+                                                    onClick={() => {
+                                                        setItemToDelete({ id: template.id, type: 'template' });
+                                                        setDeleteDialogOpen(true);
+                                                    }}
+                                                >
+                                                    <Trash2 className="h-4 w-4 text-destructive" />
+                                                </Button>
+                                            </div>
                                         </TableCell>
                                     </TableRow>
                                 ))}
@@ -265,7 +285,7 @@ export default function ContractsPage() {
                         <div className="text-center py-8">
                             <FileText className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
                             <p className="text-muted-foreground mb-4">No hay plantillas disponibles</p>
-                            <Button onClick={() => setUploadDialogOpen(true)}>
+                            <Button onClick={handleNewTemplate}>
                                 <Upload className="mr-2 h-4 w-4" />
                                 Subir Primera Plantilla
                             </Button>
@@ -324,10 +344,11 @@ export default function ContractsPage() {
                                             </Badge>
                                         </TableCell>
                                         <TableCell className="text-right">
-                                            <div className="flex justify-end gap-2">
+                                            <div className="flex justify-end gap-1">
                                                 <Button
                                                     variant="ghost"
                                                     size="icon"
+                                                    title="Descargar HTML"
                                                     onClick={() => handleDownloadContract(contract)}
                                                 >
                                                     <Download className="h-4 w-4" />
@@ -335,12 +356,13 @@ export default function ContractsPage() {
                                                 <Button
                                                     variant="ghost"
                                                     size="icon"
+                                                    className="text-destructive"
                                                     onClick={() => {
                                                         setItemToDelete({ id: contract.id, type: 'contract' });
                                                         setDeleteDialogOpen(true);
                                                     }}
                                                 >
-                                                    <Trash2 className="h-4 w-4 text-destructive" />
+                                                    <Trash2 className="h-4 w-4" />
                                                 </Button>
                                             </div>
                                         </TableCell>
@@ -365,11 +387,13 @@ export default function ContractsPage() {
             <ContractTemplateUpload
                 isOpen={uploadDialogOpen}
                 onOpenChange={setUploadDialogOpen}
+                editingTemplate={editingTemplate}
                 onSuccess={() => {
                     toast({
                         title: 'Éxito',
-                        description: 'La plantilla se ha guardado correctamente.',
+                        description: `La plantilla se ha ${editingTemplate ? 'actualizado' : 'guardado'} correctamente.`,
                     });
+                    setEditingTemplate(null);
                 }}
             />
 

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { useDropzone } from 'react-dropzone';
 import { Button } from '@/components/ui/button';
 import {
@@ -23,14 +23,15 @@ import {
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/components/ui/toast';
 import { UploadCloud, File, X, FileText, AlertCircle } from 'lucide-react';
-import type { ContractType } from '@/lib/types';
-import { collection, addDoc, Timestamp } from 'firebase/firestore';
-import { useFirestore, useUser } from '@/firebase';
+import type { ContractType, ContractTemplate } from '@/lib/types';
+import { collection, addDoc, Timestamp, doc } from 'firebase/firestore';
+import { useFirestore, useUser, updateDocumentNonBlocking } from '@/firebase';
 
 interface ContractTemplateUploadProps {
     isOpen: boolean;
     onOpenChange: (isOpen: boolean) => void;
     onSuccess?: () => void;
+    editingTemplate?: ContractTemplate | null;
 }
 
 // Available placeholders that can be used in contracts
@@ -63,7 +64,7 @@ const AVAILABLE_PLACEHOLDERS = [
     { key: '{{fechaActual}}', description: 'Fecha actual (al generar el contrato)' },
 ];
 
-export function ContractTemplateUpload({ isOpen, onOpenChange, onSuccess }: ContractTemplateUploadProps) {
+export function ContractTemplateUpload({ isOpen, onOpenChange, onSuccess, editingTemplate }: ContractTemplateUploadProps) {
     const { toast } = useToast();
     const firestore = useFirestore();
     const { user } = useUser();
@@ -75,6 +76,47 @@ export function ContractTemplateUpload({ isOpen, onOpenChange, onSuccess }: Cont
     const [content, setContent] = useState('');
     const [detectedPlaceholders, setDetectedPlaceholders] = useState<string[]>([]);
     const [isLoading, setIsLoading] = useState(false);
+
+    // Populate form when editing
+    useState(() => {
+        if (editingTemplate) {
+            setTemplateName(editingTemplate.name);
+            setDescription(editingTemplate.description || '');
+            setContractType(editingTemplate.contractType);
+            setContent(editingTemplate.content);
+            setDetectedPlaceholders(editingTemplate.placeholders);
+            // Simulate a file presence if there is a content
+            if (editingTemplate.content) {
+                setFile({ name: 'Plantilla Guardada' } as File);
+            }
+        }
+    });
+
+    // Reset form when dialog opens/closes
+    useState(() => {
+        if (!isOpen) {
+            handleClose();
+        }
+    });
+
+    // Using useEffect to handle reset properly
+    useEffect(() => {
+        if (isOpen && editingTemplate) {
+            setTemplateName(editingTemplate.name);
+            setDescription(editingTemplate.description || '');
+            setContractType(editingTemplate.contractType);
+            setContent(editingTemplate.content);
+            setDetectedPlaceholders(editingTemplate.placeholders);
+            setFile({ name: 'Plantilla existente' } as File);
+        } else if (isOpen && !editingTemplate) {
+            setTemplateName('');
+            setDescription('');
+            setContractType('determinado');
+            setContent('');
+            setDetectedPlaceholders([]);
+            setFile(null);
+        }
+    }, [isOpen, editingTemplate]);
 
     const onDrop = useCallback((acceptedFiles: File[]) => {
         if (acceptedFiles.length > 0) {
@@ -118,22 +160,34 @@ export function ContractTemplateUpload({ isOpen, onOpenChange, onSuccess }: Cont
 
         setIsLoading(true);
         try {
-            await addDoc(collection(firestore, 'contractTemplates'), {
+            const data = {
                 name: templateName,
                 description,
                 content,
                 contractType,
                 placeholders: detectedPlaceholders,
-                createdBy: user.uid,
-                createdAt: Timestamp.now(),
                 updatedAt: Timestamp.now(),
                 isActive: true,
-            });
+            };
 
-            toast({
-                title: 'Plantilla Guardada',
-                description: 'La plantilla de contrato se ha guardado exitosamente.',
-            });
+            if (editingTemplate) {
+                const docRef = doc(firestore, 'contractTemplates', editingTemplate.id);
+                await updateDocumentNonBlocking(docRef, data);
+                toast({
+                    title: 'Plantilla Actualizada',
+                    description: 'Los cambios se han guardado exitosamente.',
+                });
+            } else {
+                await addDoc(collection(firestore, 'contractTemplates'), {
+                    ...data,
+                    createdBy: user.uid,
+                    createdAt: Timestamp.now(),
+                });
+                toast({
+                    title: 'Plantilla Guardada',
+                    description: 'La nueva plantilla se ha guardado exitosamente.',
+                });
+            }
 
             handleClose();
             onSuccess?.();

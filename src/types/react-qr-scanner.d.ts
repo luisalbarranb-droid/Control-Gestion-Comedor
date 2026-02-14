@@ -3,8 +3,15 @@ declare module 'react-qr-scanner' {
         delay?: number | false;
         onError?: (error: any) => void;
         onScan?: (data: any) => void;
-        style?: any;
+        style?: React.CSSProperties;
         facingMode?: 'user' | 'environment';
+        constraints?: {
+            video: {
+                facingMode?: 'user' | 'environment';
+                [key: string]: any;
+            };
+            audio?: boolean;
+        };
         legacyMode?: boolean;
         maxImageSize?: number;
         className?: string;

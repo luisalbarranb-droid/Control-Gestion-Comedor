@@ -79,50 +79,47 @@ export default function HelpPage() {
                     </div>
                 </nav>
 
-                {/* SECCIÓN 0: PRIMER ACCESO */}
+                {/* SECCIÓN 0: ENTRADA AL SISTEMA */}
                 <section className="space-y-6 pt-8">
                     <h2 className="text-3xl font-bold flex items-center gap-3 border-b-2 border-indigo-600 pb-2 text-gray-900">
                         <UserPlus className="h-7 w-7 text-indigo-600" />
-                        0. Inicio de Sesión y Primer Acceso
+                        0. Inicio de Sesión y Acceso Directo
                     </h2>
 
                     <div className="pl-6 space-y-6">
                         <p className="text-gray-700 leading-relaxed text-lg">
-                            Para garantizar la máxima seguridad, el sistema no utiliza contraseñas genéricas. Cada integrante debe definir su propia clave privada mediante el proceso de activación por correo electrónico.
+                            Para facilitar el ingreso y evitar problemas con correos institucionales, el sistema permite que el responsable (Superadmin o Admin) asigne una <strong>Contraseña Inicial</strong> al momento de crear cualquier cuenta.
                         </p>
 
-                        <div className="bg-indigo-50 p-6 rounded-xl border-l-4 border-indigo-600">
-                            <h3 className="text-xl font-bold text-indigo-900 mb-3">Guía paso a paso para el Primer Ingreso</h3>
+                        <div className="bg-indigo-50 p-6 rounded-xl border-l-4 border-indigo-600 font-medium">
+                            <h3 className="text-xl font-bold text-indigo-900 mb-3">¿Cómo ingresar por primera vez?</h3>
                             <div className="space-y-4">
                                 <div className="flex gap-4 items-start">
                                     <div className="bg-indigo-600 text-white p-2 rounded-lg font-bold">1</div>
                                     <div>
-                                        <p className="font-bold text-gray-900">Creación del Perfil</p>
-                                        <p className="text-sm text-gray-600">El SuperAdmin registra al nuevo miembro en el módulo de <strong>Gestión de Personal</strong>.</p>
+                                        <p className="font-bold text-gray-900">Asignación de Credenciales</p>
+                                        <p className="text-sm text-gray-600">El Administrador crea tu perfil y te asigna una clave de acceso (ej: <code className="bg-slate-200 px-1 rounded">V12345678</code> o similar).</p>
                                     </div>
                                 </div>
                                 <div className="flex gap-4 items-start">
                                     <div className="bg-indigo-600 text-white p-2 rounded-lg font-bold">2</div>
                                     <div>
-                                        <p className="font-bold text-gray-900">Activación de Cuenta</p>
-                                        <p className="text-sm text-gray-600">El Administrador debe ir a <strong>Gestión de Usuarios</strong> y presionar el botón <span className="text-blue-600 font-bold italic">"Restablecer Contraseña"</span> en la tarjeta del nuevo integrante.</p>
+                                        <p className="font-bold text-gray-900">Primer Inicio de Sesión</p>
+                                        <p className="text-sm text-gray-600">Ingresa a la aplicación con tu correo electrónico y la contraseña que te fue entregada.</p>
                                     </div>
                                 </div>
                                 <div className="flex gap-4 items-start">
                                     <div className="bg-indigo-600 text-white p-2 rounded-lg font-bold">3</div>
                                     <div>
-                                        <p className="font-bold text-gray-900">Definición de Contraseña</p>
-                                        <p className="text-sm text-gray-600">El usuario recibirá un email con un enlace seguro. Al pulsarlo, podrá elegir la contraseña que desee.</p>
-                                    </div>
-                                </div>
-                                <div className="flex gap-4 items-start">
-                                    <div className="bg-indigo-600 text-white p-2 rounded-lg font-bold">4</div>
-                                    <div>
-                                        <p className="font-bold text-gray-900">Ingreso Final</p>
-                                        <p className="text-sm text-gray-600">Con su email y clave personal, ya puede entrar desde la pantalla de Login.</p>
+                                        <p className="font-bold text-gray-900">Cambio Obligatorio (Recomendado)</p>
+                                        <p className="text-sm text-gray-600">Una vez dentro, dirígete al módulo de <strong>Configuración</strong> para cambiar tu clave por una que solo tú conozcas.</p>
                                     </div>
                                 </div>
                             </div>
+                        </div>
+
+                        <div className="bg-amber-50 p-4 rounded-lg border border-amber-200 text-sm text-amber-800">
+                            <strong>Nota para administradores:</strong> Si un usuario olvida su clave o no se le asignó una al inicio, aún puede usar el botón <strong>"Olvidé mi contraseña"</strong> en la pantalla de login para recibir un enlace de recuperación en su correo.
                         </div>
                     </div>
                 </section>
@@ -361,16 +358,16 @@ export default function HelpPage() {
                                     <h4 className="font-bold text-purple-900 mb-3">Agregar Empleado Individual</h4>
                                     <ol className="text-sm text-gray-700 space-y-2 list-decimal ml-4">
                                         <li>Ve a <strong>"Asistencia y RRHH"</strong> &gt; <strong>"Gestión de Personal"</strong></li>
-                                        <li>Haz clic en <strong>"Agregar Empleado"</strong> (botón negro)</li>
-                                        <li>Completa el formulario en 3 pestañas:
+                                        <li>Haz clic en <strong>"Agregar Empleado"</strong></li>
+                                        <li>Completa el formulario y asegúrate de asignar una <strong>"Contraseña Inicial"</strong> para su acceso.</li>
+                                        <li>Completa los datos en las 3 pestañas:
                                             <ul className="ml-4 mt-1 space-y-1 text-xs">
-                                                <li>- <strong>Información General:</strong> Nombre, Cédula, RIF, Email, Cargo, Rol, Área</li>
-                                                <li>- <strong>Detalles y Dotación:</strong> Tallas, Fecha de Nacimiento, Género, Estado Civil</li>
-                                                <li>- <strong>Financiero y Médico:</strong> Datos bancarios, Tipo de sangre, Contacto de emergencia</li>
+                                                <li>- <strong>Información General:</strong> Nombre, Cédula, RIF, Email, Cargo y <strong>Clave</strong>.</li>
+                                                <li>- <strong>Detalles y Dotación:</strong> Tallas, Fecha de Nacimiento, Género.</li>
+                                                <li>- <strong>Financiero y Médico:</strong> Datos bancarios, Contacto de emergencia.</li>
                                             </ul>
                                         </li>
-                                        <li>Sube una foto del empleado (opcional pero recomendado para el carnet)</li>
-                                        <li>Guarda. El sistema creará automáticamente una cuenta de acceso.</li>
+                                        <li>Guarda. El sistema creará tanto el expediente como la cuenta de usuario simultáneamente.</li>
                                     </ol>
                                 </div>
 
@@ -618,12 +615,13 @@ export default function HelpPage() {
                         </div>
 
                         <div className="bg-indigo-50 p-6 rounded-xl border-l-4 border-indigo-600">
-                            <h4 className="font-bold text-indigo-900 mb-3">Cómo Gestionar un Usuario:</h4>
+                            <h4 className="font-bold text-indigo-900 mb-3">Cómo Crear un Nuevo Usuario:</h4>
                             <ol className="text-sm text-gray-700 space-y-2 list-decimal ml-4">
                                 <li>Ve al menú lateral &gt; <strong>"Gestión de Usuario"</strong>.</li>
-                                <li>Para crear: Pulsa <strong>"+ Agregar Usuario"</strong>. La clave temporal será <code className="bg-white px-1 font-mono">password</code>.</li>
-                                <li>Para editar: Pulsa <strong>"Gestionar Rol"</strong> en la tarjeta del usuario.</li>
-                                <li>Para activar: Si es un usuario nuevo, pulsa <strong>"Recuperar Clave"</strong> para enviarle el email de activación.</li>
+                                <li>Pulsa <strong>"+ Agregar Usuario"</strong>.</li>
+                                <li>Ingresa el correo y asigna una <strong>"Contraseña Inicial"</strong> (mínimo 6 caracteres).</li>
+                                <li>Define el <strong>Rol</strong> y los <strong>Módulos</strong> a los que tendrá acceso.</li>
+                                <li>Guarda los cambios. El acceso es inmediato con esa clave.</li>
                             </ol>
                         </div>
                     </div>

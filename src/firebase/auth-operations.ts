@@ -1,3 +1,4 @@
+import { initializeApp, getApps, deleteApp } from 'firebase/app';
 import {
     createUserWithEmailAndPassword,
     getAuth,
@@ -7,32 +8,43 @@ import {
     reauthenticateWithCredential,
     EmailAuthProvider,
 } from 'firebase/auth';
+import { firebaseConfig } from './config';
 
 /**
  * Creates a new user account in Firebase Authentication.
- * This function should ideally be called from a secure backend environment
- * in a real production app, but is client-side for this prototype.
+ * Uses a secondary Firebase app instance to avoid signing out the current admin user.
  * 
  * @param email The new user's email.
+ * @param password The password for the new user.
  * @returns An object containing the new user credential or an error message.
  */
-export async function createUserAccount(email: string): Promise<{ user?: UserCredential, error?: string }> {
+export async function createUserAccount(email: string, password: string): Promise<{ user?: UserCredential, error?: string }> {
+    let secondaryApp;
     try {
-        // For demonstration, we'll use a default, non-secure password.
-        const tempPassword = "password";
+        const appName = `secondary-app-${Date.now()}`;
+        secondaryApp = initializeApp(firebaseConfig, appName);
+        const secondaryAuth = getAuth(secondaryApp);
 
-        // NOTE: This will likely fail without proper Admin SDK setup or specific client-side permissions if restricted.
-        const auth = getAuth();
-        const userCredential = await createUserWithEmailAndPassword(auth, email, tempPassword);
+        const userCredential = await createUserWithEmailAndPassword(secondaryAuth, email, password);
+
+        await deleteApp(secondaryApp);
+
         return { user: userCredential };
 
     } catch (error: any) {
+        if (secondaryApp) {
+            await deleteApp(secondaryApp).catch(console.error);
+        }
+
         console.error("Error in createUserAccount:", error);
         if (error.code === 'auth/email-already-in-use') {
             return { error: 'Este correo electrónico ya está en uso en Firebase Authentication.' };
         }
         if (error.code === 'auth/operation-not-allowed') {
             return { error: 'El método de inicio de sesión con correo y contraseña no está habilitado en la consola de Firebase.' };
+        }
+        if (error.code === 'auth/weak-password') {
+            return { error: 'La contraseña es demasiado débil (mínimo 6 caracteres).' };
         }
         return { error: `No se pudo crear la cuenta: ${error.message}` };
     }
