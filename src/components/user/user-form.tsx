@@ -30,7 +30,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { useToast } from '@/components/ui/toast';
-import { useFirestore, setDocumentNonBlocking, updateDocumentNonBlocking, useUser, useCollection } from '@/firebase';
+import { useFirestore, setDocumentNonBlocking, updateDocumentNonBlocking, useUser, useCollection, createUserAccount } from '@/firebase';
 import { collection, doc, serverTimestamp } from 'firebase/firestore';
 import type { User, ModuleId, AreaId, Comedor } from '@/lib/types';
 import { areas } from '@/lib/placeholder-data';
@@ -42,6 +42,7 @@ const userSchema = z.object({
   name: z.string().min(3, 'El nombre es requerido.'),
   email: z.string().email('Email no válido.'),
   role: z.enum(['comun', 'admin', 'superadmin']),
+  password: z.string().min(6, 'La contraseña debe tener al menos 6 caracteres.').optional(),
   comedorId: z.string().optional(),
   area: z.string().optional(),
   areas: z.array(z.string()).optional(),
@@ -111,11 +112,11 @@ export function UserForm({ isOpen, onOpenChange, editingUser }: UserFormProps) {
       return;
     }
 
-    let dataToSave: Partial<User> = {
+    let dataToSave: any = {
       name: values.name,
       email: values.email,
       role: values.role,
-      comedorId: values.comedorId || activeComedorId || undefined,
+      comedorId: values.comedorId || activeComedorId || null,
     };
 
     if (values.role === 'admin') {
@@ -134,14 +135,48 @@ export function UserForm({ isOpen, onOpenChange, editingUser }: UserFormProps) {
         toast({ title: 'Usuario actualizado', description: `${values.name} ha sido actualizado.` });
       } else {
         const isSelfCreation = values.email === authUser.email;
-        const newUserId = isSelfCreation ? authUser.uid : doc(collection(firestore, 'users')).id;
 
-        const userRef = doc(firestore, 'users', newUserId);
+        // 1. Create the Auth account first if not self-creation
+        let finalUserId: string;
+
+        if (!isSelfCreation) {
+          if (!values.password) {
+            toast({ variant: 'destructive', title: 'Error', description: 'Debes asignar una contraseña para el nuevo usuario.' });
+            return;
+          }
+
+          const { user: newUserAuth, error: authError } = await createUserAccount(values.email, values.password);
+
+          if (authError) {
+            // Si el error es que ya existe en Auth, intentamos proceder de todas formas
+            // para recrear el documento en Firestore si es que falta.
+            if (authError.includes('ya está en uso')) {
+              console.log('El usuario ya existe en Auth, procediendo a intentar crear el perfil en Firestore...');
+              // Nota: En este estado no tenemos el UID directamente del 'createUserAccount' fallido
+              // pero como es una situación excepcional, informamos al usuario.
+              toast({
+                variant: 'default',
+                title: 'Cuenta existente detectada',
+                description: 'La cuenta de acceso ya existe. Intentaremos vincular el perfil de datos.'
+              });
+
+              // Intentamos obtener el ID de alguna manera o simplemente lanzamos error con guía
+              throw new Error('El usuario ya tiene una cuenta de seguridad. Por favor, elimínalo primero de la Consola de Firebase o contacta a soporte para sincronizar el ID.');
+            }
+            throw new Error(authError || 'No se pudo crear la cuenta de autenticación.');
+          }
+          finalUserId = newUserAuth!.user.uid;
+        } else {
+          finalUserId = authUser.uid;
+        }
+
+        // 2. Create the Firestore document
+        const userRef = doc(firestore, 'users', finalUserId);
 
         const newUserData: Partial<User> = {
           ...dataToSave,
-          id: newUserId,
-          userId: newUserId, // Ensure userId is also set
+          id: finalUserId,
+          userId: finalUserId,
           isActive: true,
           creationDate: serverTimestamp(),
           createdBy: authUser.uid
@@ -151,7 +186,7 @@ export function UserForm({ isOpen, onOpenChange, editingUser }: UserFormProps) {
 
         let toastDescription = `Se ha creado una cuenta para ${values.name}.`;
         if (!isSelfCreation) {
-          toastDescription += ` La contraseña temporal es "password".`;
+          toastDescription += ` Ya puede ingresar con su correo y la clave asignada.`;
         }
 
         toast({ title: 'Usuario creado', description: toastDescription });
@@ -159,7 +194,7 @@ export function UserForm({ isOpen, onOpenChange, editingUser }: UserFormProps) {
       onOpenChange(false);
     } catch (error: any) {
       console.error('Error saving user:', error);
-      toast({ variant: 'destructive', title: 'Error al Guardar', description: error.message || 'No se pudo guardar el usuario.' });
+      toast({ variant: 'destructive', title: 'Error al procesar', description: error.message || 'No se pudo completar el registro.' });
     }
   };
 
@@ -180,6 +215,18 @@ export function UserForm({ isOpen, onOpenChange, editingUser }: UserFormProps) {
             <FormField name="email" control={form.control} render={({ field }) => (
               <FormItem><FormLabel>Email</FormLabel><FormControl><Input type="email" {...field} disabled={!!editingUser} /></FormControl><FormMessage /></FormItem>
             )} />
+            {!editingUser && (
+              <FormField name="password" control={form.control} render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Contraseña Inicial</FormLabel>
+                  <FormControl>
+                    <Input type="password" placeholder="Mínimo 6 caracteres" {...field} />
+                  </FormControl>
+                  <p className="text-[10px] text-muted-foreground">Esta será la clave con la que el usuario ingresará por primera vez.</p>
+                  <FormMessage />
+                </FormItem>
+              )} />
+            )}
             <FormField name="role" control={form.control} render={({ field }) => (
               <FormItem>
                 <FormLabel>Rol en el Sistema</FormLabel>
