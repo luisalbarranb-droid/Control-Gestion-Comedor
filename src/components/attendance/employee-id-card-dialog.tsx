@@ -1,10 +1,9 @@
-import { useState, useRef } from 'react';
-import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/dialog';
+import { useRef } from 'react';
+import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { User } from '@/lib/types';
 import QRCode from 'react-qr-code';
-import { Printer, X } from 'lucide-react';
-import Image from 'next/image';
+import { Printer, Utensils } from 'lucide-react';
 
 interface EmployeeIdCardDialogProps {
     employee: User;
@@ -16,63 +15,50 @@ export function EmployeeIdCardDialog({ employee, isOpen, onOpenChange }: Employe
     const printRef = useRef<HTMLDivElement>(null);
 
     const handlePrint = () => {
-        const printContent = printRef.current;
-        if (printContent) {
-            const originalContents = document.body.innerHTML;
-            const printContents = printContent.innerHTML;
-
-            // Create a temporary style for printing
-            const style = document.createElement('style');
-            style.innerHTML = `
-        @media print {
-          body * {
-            visibility: hidden;
-          }
-          .print-area, .print-area * {
-            visibility: visible;
-          }
-          .print-area {
-            position: absolute;
-            left: 50%;
-            top: 50%;
-            transform: translate(-50%, -50%);
-            width: 53.98mm;
-            height: 85.6mm;
-            border: 1px solid #000;
-            display: flex;
-            flex-direction: column;
-            overflow: hidden;
-            background-color: white;
-            box-sizing: border-box;
-          }
-          @page {
-            size: auto;
-            margin: 0;
-          }
-        }
-      `;
-            document.head.appendChild(style);
-
-            // Add a specific class to the print content wrapper
-            const wrapper = document.createElement('div');
-            wrapper.className = 'print-area';
-            wrapper.innerHTML = printContents;
-            document.body.appendChild(wrapper);
-
-            window.print();
-
-            // Cleanup
-            document.body.removeChild(wrapper);
-            document.head.removeChild(style);
-        }
+        // Simple and robust printing: use window.print() and CSS media queries
+        // instead of DOM manipulation which can break React state
+        window.print();
     };
 
     return (
         <Dialog open={isOpen} onOpenChange={onOpenChange}>
             <DialogContent className="sm:max-w-sm bg-white p-0 overflow-hidden">
                 <div className="flex flex-col h-full bg-slate-50">
+                    {/* Estilos para impresión */}
+                    <style dangerouslySetInnerHTML={{
+                        __html: `
+                        @media print {
+                            body * {
+                                visibility: hidden !important;
+                            }
+                            #id-card-to-print, #id-card-to-print * {
+                                visibility: visible !important;
+                            }
+                            #id-card-to-print {
+                                position: fixed !important;
+                                left: 50% !important;
+                                top: 50% !important;
+                                transform: translate(-50%, -50%) !important;
+                                width: 53.98mm !important;
+                                height: 85.6mm !important;
+                                border: none !important;
+                                box-shadow: none !important;
+                                margin: 0 !important;
+                                padding: 0 !important;
+                                z-index: 9999 !important;
+                            }
+                            .no-print {
+                                display: none !important;
+                            }
+                            @page {
+                                size: auto;
+                                margin: 0;
+                            }
+                        }
+                    `}} />
+
                     {/* Header / Actions */}
-                    <div className="p-4 flex justify-between items-center border-b bg-white">
+                    <div className="p-4 flex justify-between items-center border-b bg-white no-print">
                         <h2 className="text-lg font-semibold">Carnet Digital</h2>
                         <div className="flex gap-2">
                             <Button onClick={handlePrint} size="sm" className="gap-2">
@@ -85,7 +71,11 @@ export function EmployeeIdCardDialog({ employee, isOpen, onOpenChange }: Employe
                     {/* Preview Area */}
                     <div className="p-8 flex justify-center items-center flex-grow bg-slate-100/50">
                         {/* ID Card Container - Aspect Ratio of a standard ID card (CR80: 53.98 x 85.60 mm) */}
-                        <div ref={printRef} className="w-[240px] h-[380px] bg-white rounded-xl shadow-lg relative overflow-hidden flex flex-col border border-slate-200">
+                        <div
+                            id="id-card-to-print"
+                            ref={printRef}
+                            className="w-[240px] h-[380px] bg-white rounded-xl shadow-lg relative overflow-hidden flex flex-col border border-slate-200"
+                        >
 
                             {/* Background Design Elements */}
                             <div className="absolute top-0 left-0 w-full h-2 bg-[#1e293b]"></div>
@@ -96,8 +86,8 @@ export function EmployeeIdCardDialog({ employee, isOpen, onOpenChange }: Employe
                             <div className="h-[70%] p-5 z-10 flex flex-col items-center text-center relative">
                                 {/* Header: Logo and Company Name */}
                                 <div className="flex items-center justify-center gap-2 mb-4 w-full">
-                                    <div className="relative w-8 h-8 flex-shrink-0">
-                                        <img src="/logo-carnet.png" alt="Logo" className="object-contain w-full h-full" />
+                                    <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-slate-900 text-white flex-shrink-0">
+                                        <Utensils className="h-5 w-5" />
                                     </div>
                                     <div className="flex flex-col text-left">
                                         <span className="text-[10px] font-bold uppercase tracking-wider text-slate-700 leading-tight">Control</span>
