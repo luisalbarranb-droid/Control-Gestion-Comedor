@@ -11,14 +11,16 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { cn } from '@/lib/utils';
 import { useCollection, useFirestore, useUser, useMemoFirebase } from '@/firebase';
-import { collection } from 'firebase/firestore';
+import { collection, query, where } from 'firebase/firestore';
 import type { Task, User } from '@/lib/types';
 import { useMemo, useState, useEffect } from 'react';
+import { useMultiTenant } from '@/providers/multi-tenant-provider';
 
 export function TopPerformers() {
   const [isClient, setIsClient] = useState(false);
   const firestore = useFirestore();
   const { user } = useUser();
+  const { activeComedorId } = useMultiTenant();
 
   useEffect(() => {
     setIsClient(true);
@@ -26,20 +28,26 @@ export function TopPerformers() {
 
   const usersQuery = useMemoFirebase(() => {
     if (!firestore) return null;
-    return collection(firestore, 'users');
-  }, [firestore]);
+    const baseRef = collection(firestore, 'users');
+    return activeComedorId
+      ? query(baseRef, where('comedorId', '==', activeComedorId))
+      : baseRef;
+  }, [firestore, activeComedorId]);
 
   const tasksQuery = useMemoFirebase(() => {
     if (!firestore) return null;
-    return collection(firestore, 'tasks');
-  }, [firestore]);
+    const baseRef = collection(firestore, 'tasks');
+    return activeComedorId
+      ? query(baseRef, where('comedorId', '==', activeComedorId))
+      : baseRef;
+  }, [firestore, activeComedorId]);
 
   const { data: users, isLoading: isLoadingUsers } = useCollection<User>(usersQuery, { disabled: !user });
   const { data: tasks, isLoading: isLoadingTasks } = useCollection<Task>(tasksQuery, { disabled: !user });
 
   const topUsers = useMemo(() => {
     if (!users || !tasks) return [];
-    
+
     const userStats: Record<string, { completed: number, total: number }> = {};
 
     tasks.forEach(task => {

@@ -37,7 +37,7 @@ export default function UsersManagementPage() {
         return null;
     }, [firestore, authUser, activeComedorId, isSuperAdmin]);
 
-    const { data: users, isLoading } = useCollection<User>(usersQuery, { disabled: isUserLoading || !authUser });
+    const { data: users, isLoading, error: usersError } = useCollection<User>(usersQuery, { disabled: isUserLoading || !authUser });
 
     // Fetch comedores for display names
     const comedoresQuery = isSuperAdmin && firestore ? collection(firestore, 'comedores') : null;
@@ -60,6 +60,16 @@ export default function UsersManagementPage() {
     const handleCloseForm = () => {
         setIsFormOpen(false);
         setEditingUser(null);
+    }
+
+    if (usersError) {
+        return (
+            <div className="flex flex-col items-center justify-center p-8 bg-red-50 border border-red-200 rounded-lg m-8">
+                <h2 className="text-xl font-bold text-red-700 mb-2">Error al cargar usuarios</h2>
+                <p className="text-red-600 mb-4">{usersError.message}</p>
+                <Button onClick={() => window.location.reload()}>Reintentar</Button>
+            </div>
+        );
     }
 
     return (

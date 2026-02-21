@@ -91,7 +91,7 @@ export function EmployeeList({ employees, isLoading, onEdit }: EmployeeListProps
 
                             <div className="flex gap-2 mt-4">
                                 <Button variant="outline" size="sm" className="flex-1" asChild>
-                                    <Link href={`/attendance/personal/${employee.id}`}>Expediente</Link>
+                                    <Link href={`/attendance/personal/details?id=${employee.id}`}>Expediente</Link>
                                 </Button>
                                 <Button variant="secondary" size="icon" className="h-9 w-9" onClick={() => setIdCardEmployee(employee)} title="Ver Carnet">
                                     <CreditCard className="h-4 w-4" />

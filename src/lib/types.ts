@@ -9,7 +9,7 @@ export type TaskPriority = 'baja' | 'media' | 'alta' | 'urgente';
 export type TaskPeriodicity = 'diaria' | 'semanal' | 'quincenal' | 'mensual' | 'unica';
 export type WorkerType = 'obrero' | 'empleado';
 export type ContractType = 'determinado' | 'indeterminado' | 'prueba';
-export type ModuleId = 'dashboard' | 'tasks' | 'menus' | 'daily-closing' | 'inventory' | 'attendance' | 'recognition' | 'reports' | 'stats' | 'users' | 'share' | 'settings' | 'comedores' | 'help';
+export type ModuleId = 'dashboard' | 'tasks' | 'menus' | 'daily-closing' | 'inventory' | 'inventory-history' | 'attendance' | 'recognition' | 'reports' | 'stats' | 'users' | 'share' | 'settings' | 'comedores' | 'help';
 
 export interface Comedor {
   id: string;

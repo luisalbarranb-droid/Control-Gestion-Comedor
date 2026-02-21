@@ -1,7 +1,7 @@
 'use client';
 
-import React, { useMemo, useState, useEffect } from 'react';
-import { useParams, notFound } from 'next/navigation';
+import React, { useMemo, useState, useEffect, Suspense } from 'react';
+import { useSearchParams, notFound } from 'next/navigation';
 import { useDoc, useCollection, useFirestore, useMemoFirebase } from '@/firebase';
 import { doc, collection, query, where, Timestamp } from 'firebase/firestore';
 import type { User, AttendanceRecord, DayOff } from '@/lib/types';
@@ -43,19 +43,19 @@ const statusConfig: Record<string, { label: string; className: string }> = {
     'no-justificado': { label: 'No Justificado', className: 'bg-orange-100 text-orange-800 border-orange-200' },
 };
 
-export default function EmployeeDetailPage() {
-    const params = useParams();
-    const employeeId = params.employeeId as string;
+function EmployeeDetailPageContent() {
+    const searchParams = useSearchParams();
+    const employeeId = searchParams.get('id');
     const firestore = useFirestore();
 
     const [currentMonth, setCurrentMonth] = useState<Date | undefined>();
     const [selectedDay, setSelectedDay] = useState<Date | undefined>();
 
     useEffect(() => {
-		const today = new Date();
+        const today = new Date();
         setCurrentMonth(today);
         setSelectedDay(today);
-	}, []);
+    }, []);
 
 
     const employeeDocRef = useMemoFirebase(() => {
@@ -66,10 +66,10 @@ export default function EmployeeDetailPage() {
 
     const { start, end } = useMemo(() => {
         if (!currentMonth) return { start: null, end: null };
-		const startDate = startOfMonth(currentMonth)
-		const endDate = endOfMonth(currentMonth)
+        const startDate = startOfMonth(currentMonth)
+        const endDate = endOfMonth(currentMonth)
         return { start: startDate, end: endDate };
-	}, [currentMonth]);
+    }, [currentMonth]);
 
 
     const attendanceQuery = useMemoFirebase(() => {
@@ -81,7 +81,7 @@ export default function EmployeeDetailPage() {
             where('checkIn', '<=', Timestamp.fromDate(end))
         );
     }, [firestore, employeeId, start, end]);
-    
+
     const daysOffQuery = useMemoFirebase(() => {
         if (!firestore || !employeeId || !start || !end) return null;
         const startStr = format(start, 'yyyy-MM-dd');
@@ -103,7 +103,7 @@ export default function EmployeeDetailPage() {
         };
         attendance?.forEach(rec => {
             const date = convertToDate(rec.checkIn);
-            if(date && rec.status && modifiers[rec.status]) {
+            if (date && rec.status && modifiers[rec.status]) {
                 modifiers[rec.status].push(date);
             }
         });
@@ -139,8 +139,8 @@ export default function EmployeeDetailPage() {
     }
 
     return (
-         <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
-             <div className="flex items-center gap-4">
+        <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
+            <div className="flex items-center gap-4">
                 <Button variant="outline" size="icon" className="h-7 w-7" asChild>
                     <Link href="/attendance/personal">
                         <ArrowLeft className="h-4 w-4" />
@@ -152,7 +152,7 @@ export default function EmployeeDetailPage() {
 
             <div className="grid gap-8 lg:grid-cols-3">
                 <div className="lg:col-span-1 space-y-8">
-                     <Card>
+                    <Card>
                         <CardContent className="pt-6">
                             <div className="flex flex-col items-center gap-4 text-center">
                                 <Avatar className="h-24 w-24 border-2 border-primary">
@@ -171,14 +171,14 @@ export default function EmployeeDetailPage() {
                                 <div className="flex items-center gap-3"><MapPin className="h-4 w-4 text-muted-foreground" /><span>{employee.address || 'N/A'}</span></div>
                                 <Dialog>
                                     <DialogTrigger asChild>
-                                        <Button variant="outline" className="w-full mt-4"><QrCode className="mr-2 h-4 w-4"/> Ver Código QR</Button>
+                                        <Button variant="outline" className="w-full mt-4"><QrCode className="mr-2 h-4 w-4" /> Ver Código QR</Button>
                                     </DialogTrigger>
                                     <DialogContent>
                                         <DialogHeader>
                                             <DialogTitle>Código QR de Asistencia para {employee.name}</DialogTitle>
                                         </DialogHeader>
                                         <div className="p-4 bg-white flex justify-center">
-                                            <QRCode value={employee.id} size={256}/>
+                                            <QRCode value={employee.id} size={256} />
                                         </div>
                                     </DialogContent>
                                 </Dialog>
@@ -186,19 +186,19 @@ export default function EmployeeDetailPage() {
                         </CardContent>
                     </Card>
 
-                     <Card>
-                         <CardHeader>
-                             <CardTitle>Leyenda del Calendario</CardTitle>
-                         </CardHeader>
-                         <CardContent className="grid grid-cols-2 gap-2">
-                             {Object.entries(statusConfig).map(([status, {label, className}]) => (
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>Leyenda del Calendario</CardTitle>
+                        </CardHeader>
+                        <CardContent className="grid grid-cols-2 gap-2">
+                            {Object.entries(statusConfig).map(([status, { label, className }]) => (
                                 <div key={status} className="flex items-center gap-2">
-                                    <span className={cn('block h-4 w-4 rounded-full border', className.replace('text-', 'border-').replace('bg-','bg-opacity-100 '))}></span>
+                                    <span className={cn('block h-4 w-4 rounded-full border', className.replace('text-', 'border-').replace('bg-', 'bg-opacity-100 '))}></span>
                                     <span className="text-sm">{label}</span>
                                 </div>
-                             ))}
-                         </CardContent>
-                     </Card>
+                            ))}
+                        </CardContent>
+                    </Card>
                 </div>
 
                 <div className="lg:col-span-2">
@@ -208,7 +208,7 @@ export default function EmployeeDetailPage() {
                             <CardDescription>Visualiza el historial de asistencia del empleado para el mes seleccionado.</CardDescription>
                         </CardHeader>
                         <CardContent>
-                             <CalendarComponent
+                            <CalendarComponent
                                 mode="single"
                                 month={currentMonth}
                                 onMonthChange={setCurrentMonth}
@@ -227,6 +227,14 @@ export default function EmployeeDetailPage() {
                 </div>
 
             </div>
-         </main>
+        </main>
+    );
+}
+
+export default function EmployeeDetailPage() {
+    return (
+        <Suspense fallback={<div className="flex h-screen w-full items-center justify-center">Cargando expediente...</div>}>
+            <EmployeeDetailPageContent />
+        </Suspense>
     );
 }

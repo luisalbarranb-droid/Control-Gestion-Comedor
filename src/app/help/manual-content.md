@@ -19,7 +19,9 @@ El Dashboard es tu centro de comando. Aquí verás:
 - **Historial de Movimientos**: Registro auditado de quién, qué y cuándo se movió mercadería.
 
 ## 3. RRHH y Asistencia
-- **Registro de Asistencia**: Los empleados pueden marcar entrada y salida mediante QR.
+- **Registro de Asistencia**: Los empleados pueden marcar entrada y salida mediante QR con validación visual mejorada.
+- **Registro Manual**: Soporte para registro de asistencia manual en caso de fallos técnicos.
+- **Gestión de Contratos**: Creación, edición y generación de contratos automatizada con marcadores inteligentes.
 - **Planificación Semanal**: Gestión de días libres y rotación de turnos.
 - **Evaluaciones**: Módulo para calificar el desempeño mensual del personal.
 

@@ -55,6 +55,23 @@ export function GlobalComedoresSummary() {
 }
 
 function ComedorSummaryCard({ comedor, onSelect }: { comedor: Comedor; onSelect: () => void }) {
+    const firestore = useFirestore();
+
+    // Query for users in this comedor
+    const usersQuery = useMemoFirebase(() => {
+        if (!firestore) return null;
+        return query(collection(firestore, 'users'), where('comedorId', '==', comedor.id));
+    }, [firestore, comedor.id]);
+
+    // Query for inventory items in this comedor
+    const inventoryQuery = useMemoFirebase(() => {
+        if (!firestore) return null;
+        return query(collection(firestore, 'inventory'), where('comedorId', '==', comedor.id));
+    }, [firestore, comedor.id]);
+
+    const { data: users, isLoading: isLoadingUsers } = useCollection(usersQuery);
+    const { data: inventory, isLoading: isLoadingInventory } = useCollection(inventoryQuery);
+
     return (
         <Card className="overflow-hidden hover:shadow-lg transition-all duration-300 border-primary/10">
             <CardHeader className="bg-gradient-to-r from-primary/5 to-transparent pb-4">
@@ -73,11 +90,23 @@ function ComedorSummaryCard({ comedor, onSelect }: { comedor: Comedor; onSelect:
                 <div className="grid grid-cols-2 gap-4 mb-6">
                     <div className="flex items-center gap-2">
                         <Users className="h-4 w-4 text-slate-400" />
-                        <span className="text-sm font-medium">Personal: --</span>
+                        <span className="text-sm font-medium">
+                            Personal: {isLoadingUsers ? (
+                                <Loader2 className="h-3 w-3 animate-spin inline ml-1" />
+                            ) : (
+                                users?.length || 0
+                            )}
+                        </span>
                     </div>
                     <div className="flex items-center gap-2">
                         <Package className="h-4 w-4 text-slate-400" />
-                        <span className="text-sm font-medium">Inventario: --</span>
+                        <span className="text-sm font-medium">
+                            Inventario: {isLoadingInventory ? (
+                                <Loader2 className="h-3 w-3 animate-spin inline ml-1" />
+                            ) : (
+                                inventory?.length || 0
+                            )}
+                        </span>
                     </div>
                 </div>
 

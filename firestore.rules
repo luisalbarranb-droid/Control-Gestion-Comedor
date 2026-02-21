@@ -15,11 +15,12 @@ service cloud.firestore {
 
     function isSuperUserByEmail() {
        return request.auth.token.email == 'arvecladu@gmail.com' || 
-              request.auth.token.email == 'luisalbarranb@gmail.com';
+              request.auth.token.email == 'luisalbarranb@gmail.com' ||
+              request.auth.uid == 'mDxrwbpW4qYCDXYeHRleZNBk5qg2';
     }
 
     function isSuperAdmin() {
-      return isAuthenticated() && (isSuperUserByEmail() || getUserProfile().role == 'superadmin');
+      return isAuthenticated() && isSuperUserByEmail();
     }
 
     function isAdmin() {

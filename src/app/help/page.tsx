@@ -9,7 +9,7 @@ import {
     Smartphone, Scan, PieChart, Users, Settings,
     CheckCircle2, AlertCircle, ShoppingCart, History,
     Calendar, TrendingUp, Package, ClipboardList,
-    UserPlus, QrCode, BarChart3, FileSpreadsheet, Trash2, Building2, LayoutGrid
+    UserPlus, QrCode, BarChart3, FileSpreadsheet, Trash2, Building2, LayoutGrid, Upload
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 
@@ -412,37 +412,66 @@ export default function HelpPage() {
                             </h3>
 
                             <div className="bg-green-50 p-6 rounded-xl border border-green-200">
-                                <p className="text-gray-700 mb-4">El sistema de asistencia funciona mediante escaneo de códigos QR únicos para cada empleado.</p>
+                                <p className="text-gray-700 mb-4">El sistema de asistencia funciona mediante escaneo de códigos QR únicos o registro manual para contingencias.</p>
 
                                 <div className="grid md:grid-cols-2 gap-6">
                                     <div>
                                         <h5 className="font-bold text-green-900 mb-2">Para el Empleado:</h5>
                                         <ol className="text-sm text-gray-700 space-y-1 list-decimal ml-4">
-                                            <li>Al llegar al comedor, presenta tu carnet</li>
-                                            <li>El supervisor escanea tu código QR</li>
-                                            <li>El sistema registra automáticamente: Hora de entrada, Fecha, Estado (Puntual/Retraso)</li>
+                                            <li>Al llegar al comedor, presenta tu carnet ante el escáner.</li>
+                                            <li>Espera la validación visual: <strong>Verde</strong> para entrada, <strong>Azul</strong> para salida.</li>
+                                            <li>El sistema registra automáticamente: Hora exacta, Fecha y Estado.</li>
                                         </ol>
                                     </div>
                                     <div>
                                         <h5 className="font-bold text-green-900 mb-2">Para el Supervisor:</h5>
                                         <ol className="text-sm text-gray-700 space-y-1 list-decimal ml-4">
-                                            <li>Abre el módulo <strong>"Asistencia"</strong></li>
-                                            <li>Haz clic en <strong>"Escanear QR"</strong></li>
-                                            <li>Permite acceso a la cámara</li>
-                                            <li>Apunta al código QR del carnet</li>
-                                            <li>El sistema confirmará el registro con un sonido y mensaje visual</li>
+                                            <li>Abre el módulo <strong>"Escanear QR"</strong>.</li>
+                                            <li>Si el QR falla (carnet dañado), presiona <strong>"Registro Manual"</strong>.</li>
+                                            <li>Busca al empleado por nombre o cédula y selecciona su acción (Entrada/Salida).</li>
+                                            <li>Confirma el registro para que se refleje en el dashboard.</li>
                                         </ol>
                                     </div>
                                 </div>
 
-                                <div className="mt-4 bg-white p-4 rounded-lg">
-                                    <p className="text-xs font-semibold text-gray-800 mb-2">REPORTES DE ASISTENCIA:</p>
-                                    <ul className="text-sm text-gray-700 space-y-1 ml-4">
-                                        <li>• Consulta asistencia diaria, semanal o mensual</li>
-                                        <li>• Identifica patrones de ausentismo</li>
-                                        <li>• Exporta datos para nómina</li>
-                                        <li>• Genera certificados de asistencia</li>
-                                    </ul>
+                                <div className="mt-4 bg-white p-4 rounded-lg border border-green-100 italic text-xs text-green-700">
+                                    💡 <strong>Nota sobre Seguridad:</strong> Si accedes desde un navegador móvil sin HTTPS, revisa la sección 9 (Solución de Problemas) para habilitar la cámara.
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* 3.3 Gestión de Contratos */}
+                        <div>
+                            <h3 className="text-2xl font-bold text-gray-800 mb-4 flex items-center gap-2">
+                                <FileText className="h-6 w-6 text-blue-600" />
+                                3.3 Gestión de Contratos Automatizada
+                            </h3>
+
+                            <div className="bg-blue-50 p-6 rounded-xl border border-blue-200">
+                                <p className="text-gray-700 mb-4">Centraliza la creación y administración de documentos legales de tu personal.</p>
+
+                                <div className="space-y-4">
+                                    <div className="bg-white p-4 rounded-lg shadow-sm">
+                                        <h4 className="font-bold text-blue-900 mb-2 flex items-center gap-2">
+                                            <Upload className="h-4 w-4" /> Plantillas y Edición
+                                        </h4>
+                                        <p className="text-sm text-gray-600 mb-2">Sube tus modelos en HTML para que el sistema detecte automáticamente marcadores como <code className="bg-gray-100 px-1">{"{{nombre}}"}</code> o <code className="bg-gray-100 px-1">{"{{cedula}}"}</code>.</p>
+                                        <ul className="text-xs text-gray-500 space-y-1 ml-4">
+                                            <li>• <strong>Editar:</strong> Usa el botón de lápiz azul para corregir textos sin subir un archivo nuevo.</li>
+                                            <li>• <strong>Tipos:</strong> Clasifica por Determinado, Indeterminado o Prueba.</li>
+                                        </ul>
+                                    </div>
+
+                                    <div className="bg-white p-4 rounded-lg shadow-sm">
+                                        <h4 className="font-bold text-blue-900 mb-2 flex items-center gap-2">
+                                            <FileSpreadsheet className="h-4 w-4" /> Generación Masiva
+                                        </h4>
+                                        <p className="text-sm text-gray-600 mb-2">Selecciona la plantilla, elige al empleado y el sistema creará el contrato personalizado en segundos.</p>
+                                        <ul className="text-xs text-gray-500 space-y-1 ml-4">
+                                            <li>• <strong>Descarga:</strong> Obtén el archivo HTML listo para imprimir.</li>
+                                            <li>• <strong>Control:</strong> Visualiza el historial de contratos generados por sede.</li>
+                                        </ul>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -728,11 +757,12 @@ export default function HelpPage() {
                                 </div>
 
                                 <div className="bg-white p-4 rounded-lg">
-                                    <p className="font-semibold text-gray-800 mb-2">❌ "El código QR no se escanea"</p>
+                                    <p className="font-semibold text-gray-800 mb-2">❌ "El código QR no se escanea o cámara no activa"</p>
                                     <ul className="text-sm text-gray-700 space-y-1 ml-4">
-                                        <li>✓ Verifica que el navegador tenga permiso para usar la cámara</li>
-                                        <li>✓ Asegúrate de que el carnet esté limpio y sin reflejos</li>
-                                        <li>✓ Mantén el código QR a 15-20 cm de la cámara</li>
+                                        <li>✓ Verifica que el navegador tenga permiso para usar la cámara.</li>
+                                        <li>✓ <strong>Si usas Android/Chrome sin HTTPS:</strong> Ingresa a <code className="bg-gray-100 px-1">chrome://flags</code> y busca "Insecure origins treated as secure". Agrega la dirección del servidor (ej: <code className="bg-gray-100 px-1">http://192.168.1.50:3000</code>).</li>
+                                        <li>✓ Asegúrate de que el carnet esté limpio y sin reflejos.</li>
+                                        <li>✓ Mantén el código QR a 15-20 cm de la cámara.</li>
                                     </ul>
                                 </div>
 

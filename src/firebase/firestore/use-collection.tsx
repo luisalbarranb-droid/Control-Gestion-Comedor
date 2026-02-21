@@ -105,17 +105,27 @@ export function useCollection<T = any>(
           console.warn('Could not extract path for Firestore error:', e);
         }
 
-        const contextualError = new FirestorePermissionError({
-          operation: 'list',
-          path,
-        })
+        console.error("Firestore error in useCollection:", error);
 
-        setError(contextualError)
-        setData(null)
-        setIsLoading(false)
+        if (error.code === 'permission-denied') {
+          const contextualError = new FirestorePermissionError({
+            operation: 'list',
+            path,
+          })
 
-        // trigger global error propagation
-        errorEmitter.emit('permission-error', contextualError);
+          setError(contextualError)
+          setData(null)
+          setIsLoading(false)
+
+          // trigger global error propagation
+          errorEmitter.emit('permission-error', contextualError);
+        } else {
+          // For other errors (limit-exceeded, failed-precondition, etc), just set local error
+          // This prevents the global ErrorListener from crashing the app on non-fatal errors
+          setError(error)
+          setData(null)
+          setIsLoading(false)
+        }
       }
     );
 

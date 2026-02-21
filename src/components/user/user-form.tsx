@@ -343,13 +343,18 @@ export function UserForm({ isOpen, onOpenChange, editingUser }: UserFormProps) {
                     <FormItem>
                       <FormLabel className="text-base">Acceso a Módulos</FormLabel>
                       <div className="p-3 border rounded-md grid grid-cols-2 gap-2">
-                        {navItems.filter(navItem => navItem.id && navItem.id !== 'users').map((item) => (
-                          <FormField
-                            key={item.id}
-                            control={form.control}
-                            name="modules"
-                            render={({ field }) => {
-                              return (
+                        {navItems
+                          .filter(navItem => navItem.id && navItem.id !== 'users')
+                          .reduce((acc, item) => {
+                            if (!acc.find(i => i.id === item.id)) acc.push(item);
+                            return acc;
+                          }, [] as typeof navItems)
+                          .map((item) => (
+                            <FormField
+                              key={item.id}
+                              control={form.control}
+                              name="modules"
+                              render={({ field }) => (
                                 <FormItem
                                   key={item.id}
                                   className="flex flex-row items-start space-x-3 space-y-0"
@@ -368,14 +373,13 @@ export function UserForm({ isOpen, onOpenChange, editingUser }: UserFormProps) {
                                       }}
                                     />
                                   </FormControl>
-                                  <FormLabel className="font-normal">
+                                  <FormLabel className="font-normal text-xs">
                                     {item.label}
                                   </FormLabel>
                                 </FormItem>
-                              )
-                            }}
-                          />
-                        ))}
+                              )}
+                            />
+                          ))}
                       </div>
                       <FormMessage />
                     </FormItem>

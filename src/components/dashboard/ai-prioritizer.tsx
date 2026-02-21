@@ -24,15 +24,17 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/components/ui/toast';
 import { aiPrioritizeTasks, type AIPrioritizeTasksOutput } from '@/ai/flows/ai-prioritize-tasks';
-import { tasks as mockTasks, users as mockUsers } from '@/lib/placeholder-data';
-import type { TaskPriority } from '@/lib/types';
+import { useCollection, useFirestore, useUser, useMemoFirebase } from '@/firebase';
+import { collection, query, where } from 'firebase/firestore';
+import { useMultiTenant } from '@/providers/multi-tenant-provider';
+import type { Task, User, TaskPriority } from '@/lib/types';
 import { cn } from '@/lib/utils';
 
 const priorityVariant: Record<TaskPriority, string> = {
-    baja: 'bg-green-100 text-green-800 border-green-200',
-    media: 'bg-yellow-100 text-yellow-800 border-yellow-200',
-    alta: 'bg-orange-100 text-orange-800 border-orange-200',
-    urgente: 'bg-red-100 text-red-800 border-red-200'
+  baja: 'bg-green-100 text-green-800 border-green-200',
+  media: 'bg-yellow-100 text-yellow-800 border-yellow-200',
+  alta: 'bg-orange-100 text-orange-800 border-orange-200',
+  urgente: 'bg-red-100 text-red-800 border-red-200'
 }
 
 export default function AIPrioritizer() {
@@ -40,13 +42,35 @@ export default function AIPrioritizer() {
   const [isPending, startTransition] = useTransition();
   const [prioritizedTasks, setPrioritizedTasks] = useState<AIPrioritizeTasksOutput | null>(null);
   const { toast } = useToast();
+  const firestore = useFirestore();
+  const { user } = useUser();
+  const { activeComedorId } = useMultiTenant();
+
+  const tasksQuery = useMemoFirebase(() => {
+    if (!firestore) return null;
+    const baseRef = collection(firestore, 'tasks');
+    return activeComedorId ? query(baseRef, where('comedorId', '==', activeComedorId)) : baseRef;
+  }, [firestore, activeComedorId]);
+
+  const usersQuery = useMemoFirebase(() => {
+    if (!firestore) return null;
+    const baseRef = collection(firestore, 'users');
+    return activeComedorId ? query(baseRef, where('comedorId', '==', activeComedorId)) : baseRef;
+  }, [firestore, activeComedorId]);
+
+  const { data: tasks } = useCollection<Task>(tasksQuery, { disabled: !user });
+  const { data: users } = useCollection<User>(usersQuery, { disabled: !user });
 
   const handlePrioritize = () => {
+    if (!tasks || !users) {
+      toast({ title: 'Cargando datos', description: 'Por favor espera a que se carguen las tareas y usuarios.' });
+      return;
+    }
+
     startTransition(async () => {
       try {
-        // Map mock data to AI input schema
         const aiInput = {
-          tasks: mockTasks.map(t => ({
+          tasks: tasks.map(t => ({
             taskId: t.id,
             titulo: t.titulo,
             description: t.descripcion,
@@ -54,16 +78,18 @@ export default function AIPrioritizer() {
             asignadoA: t.asignadoA,
             estado: t.estado,
             prioridad: t.prioridad,
-            fechaVencimiento: t.fechaVencimiento.toISOString(),
+            fechaVencimiento: t.fechaVencimiento && (t.fechaVencimiento as any).toDate
+              ? (t.fechaVencimiento as any).toDate().toISOString()
+              : new Date(t.fechaVencimiento as any).toISOString(),
             tiempoEstimado: t.tiempoEstimado,
           })),
-          users: mockUsers.map(u => ({
+          users: users.map(u => ({
             userId: u.id,
             rol: u.role,
             area: u.area,
           })),
         }
-        
+
         const result = await aiPrioritizeTasks(aiInput);
         setPrioritizedTasks(result);
       } catch (error) {
@@ -111,7 +137,7 @@ export default function AIPrioritizer() {
               </TableHeader>
               <TableBody>
                 {prioritizedTasks?.map((suggestion) => {
-                  const originalTask = mockTasks.find(t => t.id === suggestion.taskId);
+                  const originalTask = tasks?.find(t => t.id === suggestion.taskId);
                   if (!originalTask) return null;
 
                   return (

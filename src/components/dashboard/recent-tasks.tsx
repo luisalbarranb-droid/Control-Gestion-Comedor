@@ -16,31 +16,34 @@ import { cn } from '@/lib/utils';
 import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
 import { format } from 'date-fns';
 import { useCollection, useFirestore, useUser, useMemoFirebase } from '@/firebase';
-import { collection, query, orderBy, limit } from 'firebase/firestore';
+import { collection, query, orderBy, limit, where } from 'firebase/firestore';
 import { areas } from '@/lib/placeholder-data';
 import { Loader2 } from 'lucide-react';
 import { useState, useEffect } from 'react';
+import { useMultiTenant } from '@/providers/multi-tenant-provider';
 
 
 const priorityVariant: Record<TaskPriority, string> = {
-    baja: 'bg-green-100 text-green-800 border-green-200 dark:bg-green-900/50 dark:text-green-300 dark:border-green-700',
-    media: 'bg-yellow-100 text-yellow-800 border-yellow-200 dark:bg-yellow-900/50 dark:text-yellow-300 dark:border-yellow-700',
-    alta: 'bg-orange-100 text-orange-800 border-orange-200 dark:bg-orange-900/50 dark:text-orange-300 dark:border-orange-700',
-    urgente: 'bg-red-100 text-red-800 border-red-200 dark:bg-red-900/50 dark:text-red-300 dark:border-red-700'
+  // ... existing priorityVariant
+  baja: 'bg-green-100 text-green-800 border-green-200 dark:bg-green-900/50 dark:text-green-300 dark:border-green-700',
+  media: 'bg-yellow-100 text-yellow-800 border-yellow-200 dark:bg-yellow-900/50 dark:text-yellow-300 dark:border-yellow-700',
+  alta: 'bg-orange-100 text-orange-800 border-orange-200 dark:bg-orange-900/50 dark:text-orange-300 dark:border-orange-700',
+  urgente: 'bg-red-100 text-red-800 border-red-200 dark:bg-red-900/50 dark:text-red-300 dark:border-red-700'
 }
 
 const statusVariant: Record<TaskStatus, string> = {
-    pendiente: 'bg-yellow-100 text-yellow-800',
-    'en-progreso': 'bg-blue-100 text-blue-800',
-    completada: 'bg-green-100 text-green-800',
-    verificada: 'bg-teal-100 text-teal-800',
-    rechazada: 'bg-red-100 text-red-800'
+  pendiente: 'bg-yellow-100 text-yellow-800',
+  'en-progreso': 'bg-blue-100 text-blue-800',
+  completada: 'bg-green-100 text-green-800',
+  verificada: 'bg-teal-100 text-teal-800',
+  rechazada: 'bg-red-100 text-red-800'
 }
 
 export function RecentTasks() {
   const [isClient, setIsClient] = useState(false);
   const firestore = useFirestore();
   const { user } = useUser();
+  const { activeComedorId } = useMultiTenant();
 
   useEffect(() => {
     setIsClient(true);
@@ -48,13 +51,20 @@ export function RecentTasks() {
 
   const usersQuery = useMemoFirebase(() => {
     if (!firestore) return null;
-    return collection(firestore, 'users');
-  }, [firestore]);
+    const baseRef = collection(firestore, 'users');
+    return activeComedorId
+      ? query(baseRef, where('comedorId', '==', activeComedorId))
+      : baseRef;
+  }, [firestore, activeComedorId]);
 
   const tasksQuery = useMemoFirebase(() => {
     if (!firestore) return null;
-    return query(collection(firestore, 'tasks'), orderBy('fechaCreacion', 'desc'), limit(5));
-  }, [firestore]);
+    const baseRef = collection(firestore, 'tasks');
+    const q = activeComedorId
+      ? query(baseRef, where('comedorId', '==', activeComedorId), orderBy('fechaCreacion', 'desc'), limit(5))
+      : query(baseRef, orderBy('fechaCreacion', 'desc'), limit(5));
+    return q;
+  }, [firestore, activeComedorId]);
 
   const { data: users, isLoading: isLoadingUsers } = useCollection<User>(usersQuery, { disabled: !user });
   const { data: recentTasks, isLoading: isLoadingTasks } = useCollection<Task>(tasksQuery, { disabled: !user });
@@ -71,7 +81,7 @@ export function RecentTasks() {
         <CardDescription>Un vistazo rápido a las últimas tareas asignadas y su estado.</CardDescription>
       </CardHeader>
       <CardContent>
-         {!isClient || isLoading ? (
+        {!isClient || isLoading ? (
           <div className="flex justify-center items-center h-40">
             <Loader2 className="h-6 w-6 animate-spin" />
           </div>
@@ -93,40 +103,42 @@ export function RecentTasks() {
                 </TableRow>
               )}
               {recentTasks && recentTasks.map((task) => {
-                  const user = getUser(task.asignadoA);
-                  const area = getArea(task.area);
-                  const fechaVencimientoObj = task.fechaVencimiento?.toDate ? task.fechaVencimiento.toDate() : new Date(task.fechaVencimiento as any);
+                const user = getUser(task.asignadoA);
+                const area = getArea(task.area);
+                const fechaVencimientoObj = task.fechaVencimiento && (task.fechaVencimiento as any).toDate
+                  ? (task.fechaVencimiento as any).toDate()
+                  : new Date(task.fechaVencimiento as any);
 
-                  return (
-                      <TableRow key={task.id}>
-                          <TableCell>
-                              <div className="font-medium">{task.titulo}</div>
-                              <div className="hidden text-sm text-muted-foreground md:inline">
-                                  Vence: {format(fechaVencimientoObj, 'dd/MM/yyyy')}
-                              </div>
-                          </TableCell>
-                           <TableCell className="hidden sm:table-cell">{area?.nombre}</TableCell>
-                          <TableCell className="hidden sm:table-cell">
-                              <Badge variant="outline" className={cn(priorityVariant[task.prioridad], 'capitalize')}>
-                                  {task.prioridad}
-                              </Badge>
-                          </TableCell>
-                          <TableCell className="hidden md:table-cell">
-                               <Badge variant="secondary" className={cn(statusVariant[task.estado], 'capitalize')}>
-                                  {task.estado.replace('-', ' ')}
-                              </Badge>
-                          </TableCell>
-                          <TableCell className="text-right">
-                             <div className="flex items-center justify-end gap-2">
-                               <span className="hidden lg:inline">{user?.name}</span>
-                               <Avatar className="h-8 w-8">
-                                  <AvatarImage src={user?.avatarUrl} />
-                                  <AvatarFallback>{user?.name?.split(' ').map(n => n[0]).join('')}</AvatarFallback>
-                               </Avatar>
-                             </div>
-                          </TableCell>
-                      </TableRow>
-                  )
+                return (
+                  <TableRow key={task.id}>
+                    <TableCell>
+                      <div className="font-medium">{task.titulo}</div>
+                      <div className="hidden text-sm text-muted-foreground md:inline">
+                        Vence: {format(fechaVencimientoObj, 'dd/MM/yyyy')}
+                      </div>
+                    </TableCell>
+                    <TableCell className="hidden sm:table-cell">{area?.nombre}</TableCell>
+                    <TableCell className="hidden sm:table-cell">
+                      <Badge variant="outline" className={cn(priorityVariant[task.prioridad], 'capitalize')}>
+                        {task.prioridad}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="hidden md:table-cell">
+                      <Badge variant="secondary" className={cn(statusVariant[task.estado], 'capitalize')}>
+                        {task.estado.replace('-', ' ')}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <div className="flex items-center justify-end gap-2">
+                        <span className="hidden lg:inline">{user?.name}</span>
+                        <Avatar className="h-8 w-8">
+                          <AvatarImage src={user?.avatarUrl} />
+                          <AvatarFallback>{user?.name?.split(' ').map(n => n[0]).join('')}</AvatarFallback>
+                        </Avatar>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                )
               })}
             </TableBody>
           </Table>

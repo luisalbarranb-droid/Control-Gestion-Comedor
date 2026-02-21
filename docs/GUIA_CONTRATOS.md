@@ -20,6 +20,7 @@ El módulo de **Gestión de Contratos** permite crear plantillas de contratos pe
 - Historial de contratos generados
 
 ### ✅ Gestión de Contratos
+- Edición de plantillas existentes para correcciones rápidas
 - Visualización de todas las plantillas activas
 - Historial completo de contratos generados
 - Estados de contrato (Borrador, Firmado, Archivado)
@@ -67,17 +68,17 @@ Usa estos marcadores en tu plantilla HTML. Serán reemplazados automáticamente 
 
 ## 📋 Cómo Usar
 
-### 1. Subir una Plantilla de Contrato
+### 1. Subir o Editar una Plantilla de Contrato
 
 1. Ve a **RRHH y Asistencia** → **Gestión de Contratos**
-2. Haz clic en **"Subir Plantilla"**
-3. Completa la información:
+2. Para una nueva: Haz clic en **"Subir Plantilla"**. Para editar: Haz clic en el ícono de **lápiz azul** junto a la plantilla.
+3. Completa o modifica la información:
    - **Nombre de la Plantilla**: Ej. "Contrato Laboral Estándar"
    - **Descripción**: Breve descripción de cuándo usar esta plantilla
    - **Tipo de Contrato**: Selecciona el tipo (Determinado, Indeterminado, Prueba)
-4. Arrastra y suelta tu archivo HTML o TXT, o haz clic para seleccionarlo
-5. Revisa los marcadores detectados automáticamente
-6. Haz clic en **"Guardar Plantilla"**
+4. Si es nueva, arrastra y suelta tu archivo HTML o TXT. Si estás editando, verás el contenido actual en el área de texto.
+5. Revisa los marcadores detectados automáticamente.
+6. Haz clic en **"Guardar Plantilla"** o **"Actualizar Plantilla"**.
 
 ### 2. Generar un Contrato Individual
 
