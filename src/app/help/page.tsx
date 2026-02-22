@@ -835,7 +835,109 @@ export default function HelpPage() {
                     </div>
                 </section>
 
+                {/* SECCIÓN 12: IMPORTACIÓN MASIVA */}
+                <section id="section-12" className="space-y-6 pt-8">
+                    <h2 className="text-3xl font-bold flex items-center gap-3 border-b-2 border-emerald-600 pb-2 text-gray-900">
+                        <FileSpreadsheet className="h-7 w-7 text-emerald-600" />
+                        12. Importación Masiva de Datos (Excel)
+                    </h2>
+
+                    <div className="pl-6 space-y-8">
+                        <p className="text-gray-700 leading-relaxed text-lg">
+                            Para facilitar la carga de grandes volúmenes de información, el sistema permite la importación mediante archivos de Excel (.xlsx). Es <strong>crítico</strong> seguir el formato exacto para asegurar el éxito del proceso.
+                        </p>
+
+                        <div className="grid md:grid-cols-1 gap-6">
+                            <Card className="border-emerald-100 border-2">
+                                <CardHeader className="bg-emerald-50">
+                                    <CardTitle className="text-lg flex items-center gap-2 text-emerald-900">
+                                        <Calendar className="h-5 w-5" /> 12.1 Formato de Menús (Planificación Semanal)
+                                    </CardTitle>
+                                </CardHeader>
+                                <CardContent className="pt-4 space-y-4">
+                                    <p className="text-sm text-gray-700">
+                                        Este es el formato más detallado. La regla principal es: <strong>Una fila por cada ingrediente</strong>. Si un plato tiene 5 ingredientes, aparecerá en 5 filas, repitiendo la fecha y nombre del plato.
+                                    </p>
+                                    <div className="overflow-x-auto">
+                                        <table className="w-full text-xs text-left border-collapse">
+                                            <thead>
+                                                <tr className="bg-gray-100">
+                                                    <th className="p-2 border">Columna</th>
+                                                    <th className="p-2 border">Descripción</th>
+                                                    <th className="p-2 border">Ejemplo / Valores</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                <tr><td className="p-2 border font-mono font-bold text-blue-700">date</td><td className="p-2 border text-gray-600">Fecha del menú</td><td className="p-2 border italic text-gray-500">2024-08-01</td></tr>
+                                                <tr><td className="p-2 border font-mono font-bold text-blue-700">pax</td><td className="p-2 border text-gray-600">N° de comensales</td><td className="p-2 border italic text-gray-500">150</td></tr>
+                                                <tr><td className="p-2 border font-mono font-bold text-blue-700">time</td><td className="p-2 border text-gray-600">Tipo de servicio</td><td className="p-2 border italic text-gray-500 text-emerald-600">almuerzo, cena, desayuno...</td></tr>
+                                                <tr><td className="p-2 border font-mono font-bold text-blue-700">itemName</td><td className="p-2 border text-gray-600">Nombre del plato</td><td className="p-2 border italic text-gray-500">Pollo al Horno</td></tr>
+                                                <tr><td className="p-2 border font-mono font-bold text-blue-700">itemCategory</td><td className="p-2 border text-gray-600">Tipo de plato</td><td className="p-2 border italic text-gray-500 text-emerald-600">proteico, acompanante1, entrada...</td></tr>
+                                                <tr><td className="p-2 border font-mono font-bold text-blue-700">ingredientName</td><td className="p-2 border text-gray-600">Ingrediente</td><td className="p-2 border italic text-gray-500">Pechuga de Pollo</td></tr>
+                                                <tr><td className="p-2 border font-mono font-bold text-blue-700">ingredientQuantity</td><td className="p-2 border text-gray-600">Cant. neta por PAX</td><td className="p-2 border italic text-gray-500">0.25 (para 250g)</td></tr>
+                                                <tr><td className="p-2 border font-mono font-bold text-blue-700">ingredientWasteFactor</td><td className="p-2 border text-gray-600">Factor desperdicio</td><td className="p-2 border italic text-gray-500">0.05 (para 5%)</td></tr>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </CardContent>
+                            </Card>
+
+                            <div className="grid md:grid-cols-2 gap-6">
+                                <Card className="border-blue-100 border-2">
+                                    <CardHeader className="bg-blue-50">
+                                        <CardTitle className="text-lg flex items-center gap-2 text-blue-900">
+                                            <Package className="h-5 w-5" /> 12.2 Formato de Inventario
+                                        </CardTitle>
+                                    </CardHeader>
+                                    <CardContent className="pt-4 text-xs space-y-2">
+                                        <p className="text-gray-700">Columnas obligatorias estrictas:</p>
+                                        <ul className="space-y-1 ml-4 list-disc text-gray-600">
+                                            <li><strong>codigo:</strong> ID único (ej: INV-001)</li>
+                                            <li><strong>nombre:</strong> Descripción del producto</li>
+                                            <li><strong>categoriaId:</strong> carnes, viveres, verduras, etc.</li>
+                                            <li><strong>cantidad:</strong> Stock inicial numérico</li>
+                                            <li><strong>unidadReceta:</strong> kg, lt, unidad, etc.</li>
+                                            <li><strong>stockMinimo:</strong> Para alertas de reposición</li>
+                                        </ul>
+                                    </CardContent>
+                                </Card>
+
+                                <Card className="border-purple-100 border-2">
+                                    <CardHeader className="bg-purple-50">
+                                        <CardTitle className="text-lg flex items-center gap-2 text-purple-900">
+                                            <Users className="h-5 w-5" /> 12.3 Formato de Empleados
+                                        </CardTitle>
+                                    </CardHeader>
+                                    <CardContent className="pt-4 text-xs space-y-2">
+                                        <p className="text-gray-700">Datos esenciales para el expediente:</p>
+                                        <ul className="space-y-1 ml-4 list-disc text-gray-600">
+                                            <li><strong>name, cedula, email:</strong> Datos de identidad</li>
+                                            <li><strong>role:</strong> comun, admin o superadmin</li>
+                                            <li><strong>area:</strong> cocina, servicio, limpieza, etc.</li>
+                                            <li><strong>workerType:</strong> obrero o empleado</li>
+                                            <li><strong>Datos bancarios:</strong> Para nómina y pagos</li>
+                                        </ul>
+                                    </CardContent>
+                                </Card>
+                            </div>
+                        </div>
+
+                        <div className="bg-amber-50 p-6 rounded-xl border-l-4 border-amber-500">
+                            <h4 className="font-bold text-amber-900 mb-2 flex items-center gap-2">
+                                <AlertCircle className="h-5 w-5" /> Consejos para el Éxito en la Importación
+                            </h4>
+                            <ul className="text-sm text-amber-800 space-y-2 ml-4">
+                                <li>• <strong>Usa las Plantillas:</strong> Descarga siempre el archivo de ejemplo desde el botón "Descargar Plantilla" en la ventana de importación.</li>
+                                <li>• <strong>Formatos de Celda:</strong> Asegúrate de que las columnas de números sean de tipo "Número" y las fechas sean "Fecha" en Excel.</li>
+                                <li>• <strong>Encabezados:</strong> No cambies los nombres de los encabezados (la primera fila), el sistema no los reconocerá si cambian.</li>
+                                <li>• <strong>Una Hoja:</strong> El sistema procesará siempre la primera pestaña del archivo de Excel.</li>
+                            </ul>
+                        </div>
+                    </div>
+                </section>
+
                 {/* SECCIÓN 12: FAQ */}
+
                 <section className="space-y-6 pt-8">
                     <h2 className="text-3xl font-bold flex items-center gap-3 border-b-2 border-blue-600 pb-2 text-gray-900">
                         <HelpCircle className="h-7 w-7 text-blue-600" />
