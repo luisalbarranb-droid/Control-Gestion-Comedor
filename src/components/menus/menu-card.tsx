@@ -20,6 +20,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
+import { Timestamp } from 'firebase/firestore';
 import type { Menu, MenuItemCategory, InventoryItem as TInventoryItem } from '@/lib/types';
 import { MenuItemCard } from './menu-item-card';
 
@@ -29,20 +30,20 @@ interface MenuCardProps {
 }
 
 const categoryOrder: MenuItemCategory[] = [
-    'entrada',
-    'proteico',
-    'acompanante1',
-    'acompanante2',
-    'acompanante3',
-    'bebida',
-    'postre'
+  'entrada',
+  'proteico',
+  'acompanante1',
+  'acompanante2',
+  'acompanante3',
+  'bebida',
+  'postre'
 ];
 
 export function MenuCard({ menu, inventoryItems }: MenuCardProps) {
   const sortedItems = [...menu.items].sort((a, b) => categoryOrder.indexOf(a.category) - categoryOrder.indexOf(b.category));
-  const menuDateObj = menu.date.toDate ? menu.date.toDate() : new Date(menu.date as any);
+  const menuDateObj = menu.date instanceof Timestamp ? menu.date.toDate() : new Date(menu.date as any);
   const menuDate = format(menuDateObj, 'yyyy-MM-dd');
-  
+
   return (
     <Card className="flex flex-col">
       <CardHeader>
@@ -75,19 +76,19 @@ export function MenuCard({ menu, inventoryItems }: MenuCardProps) {
       </CardHeader>
       <CardContent className="flex-grow">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-          {sortedItems.map(item => (
-            <MenuItemCard key={item.id} menuItem={item} pax={menu.pax} inventoryItems={inventoryItems} />
+          {sortedItems.map((item, index) => (
+            <MenuItemCard key={item.id || `menu-item-${index}`} menuItem={item} pax={menu.pax} inventoryItems={inventoryItems} />
           ))}
           {sortedItems.length === 0 && (
             <div className="col-span-full flex items-center justify-center h-40 border-2 border-dashed rounded-md">
-                <p className="text-muted-foreground">Este menú aún no tiene platos asignados.</p>
+              <p className="text-muted-foreground">Este menú aún no tiene platos asignados.</p>
             </div>
           )}
         </div>
       </CardContent>
       <CardFooter className="gap-2">
         <Button variant="outline">Ver Necesidades de Compra</Button>
-         <Button asChild>
+        <Button asChild>
           <Link href={`/menus/report?date=${menuDate}`}>
             <FileText className="mr-2 h-4 w-4" />
             Ver Reporte
