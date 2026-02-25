@@ -183,7 +183,18 @@ export default function MenusPage() {
                 .normalize("NFD").replace(/[\u0300-\u036f]/g, "") // Remove accents
                 .replace(/\s+/g, '');
 
-            if (normalized === 'acompanante' || normalized === 'acompanante1') return 'acompanante1';
+            // Handle Spanish labels: "1er Acompañante" -> "1eracompanante", "2do Acompañante" -> "2doacompanante", etc.
+            if (normalized.includes('1er') && normalized.includes('acomp')) return 'acompanante1';
+            if (normalized.includes('2do') && normalized.includes('acomp')) return 'acompanante2';
+            if (normalized.includes('2da') && normalized.includes('acomp')) return 'acompanante2';
+            if (normalized.includes('3er') && normalized.includes('acomp')) return 'acompanante3';
+            if (normalized.includes('3ra') && normalized.includes('acomp')) return 'acompanante3';
+            // Handle "Acompañante 1", "Acompañante 2", "Acompañante 3"
+            if (normalized.includes('acomp') && normalized.includes('1')) return 'acompanante1';
+            if (normalized.includes('acomp') && normalized.includes('2')) return 'acompanante2';
+            if (normalized.includes('acomp') && normalized.includes('3')) return 'acompanante3';
+            // Handle plain "acompañante" (no number)
+            if (normalized === 'acompanante' || normalized === 'acomp') return 'acompanante1';
 
             const validCategories: MenuItemCategory[] = ['entrada', 'proteico', 'acompanante1', 'acompanante2', 'acompanante3', 'bebida', 'postre'];
             return validCategories.includes(normalized as MenuItemCategory) ? (normalized as MenuItemCategory) : 'entrada';
