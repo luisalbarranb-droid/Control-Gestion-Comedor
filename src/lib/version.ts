@@ -1,5 +1,5 @@
-export const APP_VERSION = '1.3.3';
-export const RELEASE_DATE = '2026-02-23';
+export const APP_VERSION = '1.3.4';
+export const RELEASE_DATE = '2026-02-24';
 export const VERSION_NOTES = [
     'Sistema Multi-Sede (Multitenancy) completo',
     'Nueva gestión de Comedores para Superadmins',

@@ -74,8 +74,8 @@ export function MenuCard({ menu, inventoryItems }: MenuCardProps) {
           </DropdownMenu>
         </div>
       </CardHeader>
-      <CardContent className="flex-grow">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+      <CardContent className="p-4 pt-0">
+        <div className="flex flex-col gap-3">
           {sortedItems.map((item, index) => (
             <MenuItemCard key={item.id || `menu-item-${index}`} menuItem={item} pax={menu.pax} inventoryItems={inventoryItems} />
           ))}

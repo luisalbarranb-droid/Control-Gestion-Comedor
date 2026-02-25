@@ -3,7 +3,7 @@
 
 import React, { useCallback, useMemo, useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, ArrowRight, FileSpreadsheet, Plus, Settings, Calendar as CalendarIcon, Upload, Users, Utensils } from 'lucide-react';
+import { ArrowLeft, ArrowRight, FileSpreadsheet, Plus, Settings, Calendar as CalendarIcon, Upload, Users, Utensils, LayoutGrid, CalendarDays, ChevronLeft, ChevronRight } from 'lucide-react';
 import {
     Table,
     TableBody,
@@ -12,7 +12,7 @@ import {
     TableHeader,
     TableRow,
 } from '@/components/ui/table';
-import { format, startOfWeek, endOfWeek, addWeeks, subWeeks, isSameDay, isToday, differenceInDays, addDays, isValid } from 'date-fns';
+import { format, startOfWeek, endOfWeek, addWeeks, subWeeks, isSameDay, isToday, differenceInDays, addDays, subDays, isValid } from 'date-fns';
 import { es } from 'date-fns/locale';
 import {
     collection,
@@ -38,12 +38,13 @@ import {
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Edit, MoreVertical, Trash } from 'lucide-react';
-import type { Menu, User, MenuImportRow, InventoryItem, MenuItem as TMenuItem, MealType } from '@/lib/types';
+import type { Menu, User, MenuImportRow, InventoryItem, MenuItem as TMenuItem, MealType, MenuItemCategory } from '@/lib/types';
 import { MenuImportDialog } from '@/components/menus/menu-import-dialog';
 import { useToast } from '@/components/ui/toast';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { MenuSummaryCard } from '@/components/menus/menu-summary-card';
 import { MenuCard } from '@/components/menus/menu-card';
+import { cn } from '@/lib/utils';
 
 
 function convertToDate(date: Date | Timestamp | undefined): Date | undefined {
@@ -63,6 +64,8 @@ export default function MenusPage() {
     const [dialogOpen, setDialogOpen] = useState(false);
     const [importDialogOpen, setImportDialogOpen] = useState(false);
     const [editingMenu, setEditingMenu] = useState<Menu | null>(null);
+    const [viewMode, setViewMode] = useState<'week' | 'day'>('day');
+    const [selectedDay, setSelectedDay] = useState<Date>(new Date());
 
     const { start, end } = useMemo(() => {
         const start = startOfWeek(currentWeek, { weekStartsOn: 1 });
@@ -174,8 +177,20 @@ export default function MenusPage() {
 
         const batch = writeBatch(firestore);
 
+        // Normalize category helper
+        const normalizeCategory = (cat: string): MenuItemCategory => {
+            const normalized = cat.toLowerCase().trim()
+                .normalize("NFD").replace(/[\u0300-\u036f]/g, "") // Remove accents
+                .replace(/\s+/g, '');
+
+            if (normalized === 'acompanante' || normalized === 'acompanante1') return 'acompanante1';
+
+            const validCategories: MenuItemCategory[] = ['entrada', 'proteico', 'acompanante1', 'acompanante2', 'acompanante3', 'bebida', 'postre'];
+            return validCategories.includes(normalized as MenuItemCategory) ? (normalized as MenuItemCategory) : 'entrada';
+        };
+
         // Group by date and time
-        const menusToCreate = data.reduce((acc, row) => {
+        const menusByDayAndTime = data.reduce((acc, row) => {
             const dateStr = format(new Date(row.date), 'yyyy-MM-dd');
             const key = `${dateStr}_${row.time}`;
             if (!acc[key]) {
@@ -183,20 +198,24 @@ export default function MenusPage() {
                     date: new Date(row.date),
                     pax: row.pax,
                     time: row.time,
-                    items: {}
+                    items: {} as Record<string, TMenuItem>
                 };
             }
+
+            const itemCategory = normalizeCategory(row.itemCategory);
 
             if (!acc[key].items[row.itemName]) {
                 acc[key].items[row.itemName] = {
                     id: crypto.randomUUID(),
                     name: row.itemName,
-                    category: row.itemCategory,
+                    category: itemCategory,
                     ingredients: []
                 };
             }
 
-            const inventoryItem = inventoryItems.find(i => i.nombre.toLowerCase() === row.ingredientName.toLowerCase());
+            const inventoryItem = inventoryItems.find(i =>
+                i.nombre.toLowerCase().trim() === row.ingredientName.toLowerCase().trim()
+            );
 
             if (inventoryItem) {
                 acc[key].items[row.itemName].ingredients.push({
@@ -209,15 +228,22 @@ export default function MenusPage() {
             }
 
             return acc;
-        }, {} as Record<string, any>);
+        }, {} as Record<string, { date: Date, pax: number, time: MealType, items: Record<string, TMenuItem> }>);
 
         try {
-            for (const key in menusToCreate) {
-                const menuData = menusToCreate[key];
-                const newMenuRef = doc(collection(firestore, 'menus'));
+            const comedorId = currentUser?.comedorId || '';
 
-                const finalMenu: Omit<Menu, 'id'> = {
-                    comedorId: currentUser?.comedorId || '',
+            for (const key in menusByDayAndTime) {
+                const menuData = menusByDayAndTime[key];
+                const dateStr = format(menuData.date, 'yyyy-MM-dd');
+
+                // Deterministic ID for deduplication: [comedorId]_[date]_[time]
+                const deterministicId = `${comedorId}_${dateStr}_${menuData.time}`.replace(/\s+/g, '_');
+                const menuRef = doc(firestore, 'menus', deterministicId);
+
+                const finalMenu: Menu = {
+                    id: deterministicId,
+                    comedorId: comedorId,
                     name: menuData.time,
                     date: Timestamp.fromDate(menuData.date),
                     pax: menuData.pax,
@@ -225,15 +251,16 @@ export default function MenusPage() {
                     items: Object.values(menuData.items),
                 };
 
-                batch.set(newMenuRef, {
+                batch.set(menuRef, {
                     ...finalMenu,
                     createdBy: authUser?.uid,
-                    createdAt: Timestamp.now(),
-                });
+                    updatedAt: Timestamp.now(), // Use updatedAt for existing ones
+                    createdAt: Timestamp.now(), // This will be overwritten if it already exists, unless we check docs
+                }, { merge: true });
             }
 
             await batch.commit();
-            toast({ title: 'Importación Exitosa', description: `${Object.keys(menusToCreate).length} menús han sido creados/actualizados.` });
+            toast({ title: 'Importación Exitosa', description: `${Object.keys(menusByDayAndTime).length} menús han sido procesados.` });
             setImportDialogOpen(false);
         } catch (e) {
             console.error('Error al importar menús:', e);
@@ -317,58 +344,184 @@ export default function MenusPage() {
                 </Card>
             </div>
 
-            {/* Week Navigation */}
-            <div className="flex justify-between items-center bg-card p-4 rounded-xl shadow-sm border">
-                <Button onClick={handlePrevWeek} variant="ghost" size="icon">
-                    <ArrowLeft className="h-5 w-5" />
-                </Button>
-                <span className="font-semibold text-center text-lg">
-                    Semana del {format(start, 'dd MMM', { locale: es })} al {' '}
-                    {format(end, 'dd MMM, yyyy', { locale: es })}
-                </span>
-                <Button onClick={handleNextWeek} variant="ghost" size="icon">
-                    <ArrowRight className="h-5 w-5" />
-                </Button>
+            {/* Week Navigation + View Toggle */}
+            <div className="flex flex-col gap-3">
+                <div className="flex justify-between items-center bg-card p-4 rounded-xl shadow-sm border">
+                    <Button onClick={handlePrevWeek} variant="ghost" size="icon">
+                        <ArrowLeft className="h-5 w-5" />
+                    </Button>
+                    <span className="font-semibold text-center text-lg">
+                        Semana del {format(start, 'dd MMM', { locale: es })} al {' '}
+                        {format(end, 'dd MMM, yyyy', { locale: es })}
+                    </span>
+                    <Button onClick={handleNextWeek} variant="ghost" size="icon">
+                        <ArrowRight className="h-5 w-5" />
+                    </Button>
+                </div>
+
+                {/* View Mode Toggle */}
+                <div className="flex items-center gap-2">
+                    <div className="flex rounded-lg border bg-card p-1 gap-1">
+                        <Button
+                            variant={viewMode === 'week' ? 'default' : 'ghost'}
+                            size="sm"
+                            onClick={() => setViewMode('week')}
+                            className="gap-1.5"
+                        >
+                            <LayoutGrid className="h-4 w-4" /> Semana
+                        </Button>
+                        <Button
+                            variant={viewMode === 'day' ? 'default' : 'ghost'}
+                            size="sm"
+                            onClick={() => setViewMode('day')}
+                            className="gap-1.5"
+                        >
+                            <CalendarDays className="h-4 w-4" /> Día
+                        </Button>
+                    </div>
+                </div>
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-4 xl:grid-cols-7 gap-4">
-                {isLoading && Array.from({ length: 7 }).map((_, i) => (
-                    <Card key={i} className="h-64 animate-pulse bg-muted/50"></Card>
-                ))}
-                {!isLoading && menusByDay.map(({ date, menus }, index) => (
-                    <Card key={index} className="flex flex-col">
-                        <CardHeader className="pb-2">
-                            <CardTitle className="text-base capitalize">{format(date, 'EEEE dd', { locale: es })}</CardTitle>
-                        </CardHeader>
-                        <CardContent className="flex-grow space-y-2">
-                            {menus.length > 0 ? (
-                                menus.map(menu => (
+            {/* Day Selector (visible in day mode) */}
+            {viewMode === 'day' && (
+                <div className="flex items-center gap-2">
+                    <Button
+                        variant="ghost"
+                        size="icon"
+                        className="shrink-0"
+                        onClick={() => setSelectedDay(prev => subDays(prev, 1))}
+                    >
+                        <ChevronLeft className="h-5 w-5" />
+                    </Button>
+                    <div className="flex gap-1.5 overflow-x-auto flex-1 pb-1">
+                        {weekDays.map((day, index) => {
+                            const isSelected = isSameDay(day, selectedDay);
+                            const dayIsToday = isToday(day);
+                            return (
+                                <button
+                                    key={index}
+                                    onClick={() => setSelectedDay(day)}
+                                    className={cn(
+                                        'flex flex-col items-center justify-center rounded-xl px-3 py-2 min-w-[70px] transition-all border text-sm font-medium',
+                                        isSelected
+                                            ? 'bg-blue-600 text-white border-blue-600 shadow-md scale-105'
+                                            : dayIsToday
+                                                ? 'bg-blue-50 border-blue-200 text-blue-700 hover:bg-blue-100'
+                                                : 'bg-card border-border hover:bg-muted/50'
+                                    )}
+                                >
+                                    <span className="text-[10px] uppercase tracking-wider opacity-80">
+                                        {format(day, 'EEE', { locale: es })}
+                                    </span>
+                                    <span className="text-lg font-bold">{format(day, 'dd')}</span>
+                                    <span className="text-[10px] opacity-70">
+                                        {format(day, 'MMM', { locale: es })}
+                                    </span>
+                                </button>
+                            );
+                        })}
+                    </div>
+                    <Button
+                        variant="ghost"
+                        size="icon"
+                        className="shrink-0"
+                        onClick={() => setSelectedDay(prev => addDays(prev, 1))}
+                    >
+                        <ChevronRight className="h-5 w-5" />
+                    </Button>
+                </div>
+            )}
+
+            {/* WEEKLY VIEW */}
+            {viewMode === 'week' && (
+                <div className="grid grid-cols-1 lg:grid-cols-4 xl:grid-cols-7 gap-4">
+                    {isLoading && Array.from({ length: 7 }).map((_, i) => (
+                        <Card key={i} className="h-64 animate-pulse bg-muted/50"></Card>
+                    ))}
+                    {!isLoading && menusByDay.map(({ date, menus: dayMenus }, index) => (
+                        <Card key={index} className="flex flex-col">
+                            <CardHeader className="pb-2">
+                                <CardTitle
+                                    className="text-base capitalize cursor-pointer hover:text-blue-600 transition-colors"
+                                    onClick={() => { setSelectedDay(date); setViewMode('day'); }}
+                                >
+                                    {format(date, 'EEEE dd', { locale: es })}
+                                </CardTitle>
+                            </CardHeader>
+                            <CardContent className="flex-grow space-y-2">
+                                {dayMenus.length > 0 ? (
+                                    dayMenus.map(menu => (
+                                        <div key={menu.id}>
+                                            <MenuSummaryCard menu={menu} />
+                                            <DropdownMenu>
+                                                <DropdownMenuTrigger asChild>
+                                                    <Button variant="ghost" className="h-8 w-full mt-2 text-xs">
+                                                        Acciones <MoreVertical className="ml-auto h-4 w-4" />
+                                                    </Button>
+                                                </DropdownMenuTrigger>
+                                                <DropdownMenuContent align="end">
+                                                    <DropdownMenuItem onClick={() => handleEdit(menu)}>Editar</DropdownMenuItem>
+                                                    <DropdownMenuItem onClick={() => handleDelete(menu)} className="text-destructive">Eliminar</DropdownMenuItem>
+                                                </DropdownMenuContent>
+                                            </DropdownMenu>
+                                        </div>
+                                    ))
+                                ) : (
+                                    <div className="h-full flex items-center justify-center">
+                                        <Button variant="secondary" size="sm" onClick={() => { setEditingMenu(null); setDialogOpen(true); }}>
+                                            <Plus className="mr-2 h-4 w-4" /> Crear
+                                        </Button>
+                                    </div>
+                                )}
+                            </CardContent>
+                        </Card>
+                    ))}
+                </div>
+            )}
+
+            {/* DAILY VIEW */}
+            {viewMode === 'day' && (() => {
+                const selectedDayData = menusByDay.find(d => isSameDay(d.date, selectedDay));
+                const dayMenus = selectedDayData?.menus || [];
+                return (
+                    <div className="flex flex-col gap-4">
+                        <div className="flex items-center justify-between">
+                            <h2 className="text-xl font-bold capitalize">
+                                {format(selectedDay, 'EEEE, dd MMMM yyyy', { locale: es })}
+                            </h2>
+                            {dayMenus.length === 0 && (
+                                <Button onClick={() => { setEditingMenu(null); setDialogOpen(true); }} className="bg-blue-600 hover:bg-blue-700">
+                                    <Plus className="mr-2 h-4 w-4" /> Crear Menú para este día
+                                </Button>
+                            )}
+                        </div>
+                        {isLoading && (
+                            <Card className="h-64 animate-pulse bg-muted/50"></Card>
+                        )}
+                        {!isLoading && dayMenus.length > 0 ? (
+                            <div className="grid gap-4 md:grid-cols-1 lg:grid-cols-2">
+                                {dayMenus.map(menu => (
                                     <div key={menu.id}>
                                         <MenuCard menu={menu} inventoryItems={inventoryItems || []} />
-                                        <DropdownMenu>
-                                            <DropdownMenuTrigger asChild>
-                                                <Button variant="ghost" className="h-8 w-full mt-2 text-xs">
-                                                    Acciones <MoreVertical className="ml-auto h-4 w-4" />
-                                                </Button>
-                                            </DropdownMenuTrigger>
-                                            <DropdownMenuContent align="end">
-                                                <DropdownMenuItem onClick={() => handleEdit(menu)}>Editar</DropdownMenuItem>
-                                                <DropdownMenuItem onClick={() => handleDelete(menu)} className="text-destructive">Eliminar</DropdownMenuItem>
-                                            </DropdownMenuContent>
-                                        </DropdownMenu>
+                                        <div className="flex gap-2 mt-2">
+                                            <Button variant="outline" size="sm" onClick={() => handleEdit(menu)}>Editar</Button>
+                                            <Button variant="outline" size="sm" onClick={() => handleDelete(menu)} className="text-destructive border-destructive/50 hover:bg-destructive/10">Eliminar</Button>
+                                        </div>
                                     </div>
-                                ))
-                            ) : (
-                                <div className="h-full flex items-center justify-center">
-                                    <Button variant="secondary" size="sm" onClick={() => { setEditingMenu(null); setDialogOpen(true); }}>
-                                        <Plus className="mr-2 h-4 w-4" /> Crear
-                                    </Button>
+                                ))}
+                            </div>
+                        ) : !isLoading ? (
+                            <Card className="flex items-center justify-center h-48 border-2 border-dashed">
+                                <div className="text-center text-muted-foreground">
+                                    <Utensils className="h-10 w-10 mx-auto mb-2 opacity-40" />
+                                    <p className="font-medium">No hay menú planificado para este día</p>
+                                    <p className="text-sm">Haz clic en "Crear Menú" para empezar</p>
                                 </div>
-                            )}
-                        </CardContent>
-                    </Card>
-                ))}
-            </div>
+                            </Card>
+                        ) : null}
+                    </div>
+                );
+            })()}
 
             <MenuDialog
                 isOpen={dialogOpen}
