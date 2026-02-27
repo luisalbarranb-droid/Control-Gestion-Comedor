@@ -18,6 +18,16 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { useToast } from '@/components/ui/toast';
 import * as XLSX from 'xlsx';
 import { saveAs } from 'file-saver';
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogHeader,
+    DialogTitle,
+} from "@/components/ui/dialog";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Edit2, Loader2, Save } from 'lucide-react';
+import { writeBatch, doc } from 'firebase/firestore';
 
 // --- Types ---
 type PeriodType = 'semanal' | 'quincenal' | 'mensual' | 'custom';
@@ -65,6 +75,12 @@ export default function AttendanceReportPage() {
     const [dateRange, setDateRange] = useState<DateRange | undefined>();
     const [isClient, setIsClient] = useState(false);
     const [periodType, setPeriodType] = useState<PeriodType>('mensual');
+
+    // Edit Modal State
+    const [editingUserId, setEditingUserId] = useState<string | null>(null);
+    const [editingUserName, setEditingUserName] = useState<string | null>(null);
+    const [localDayEdits, setLocalDayEdits] = useState<Record<string, string>>({}); // Mapping 'yyyy-MM-dd' to status
+    const [savingEdits, setSavingEdits] = useState(false);
 
     useEffect(() => {
         setIsClient(true);
@@ -281,6 +297,110 @@ export default function AttendanceReportPage() {
         });
     };
 
+    // --- Edit Modal Handlers ---
+    const handleOpenEdit = (userId: string, userName: string) => {
+        setEditingUserId(userId);
+        setEditingUserName(userName);
+        if (!dateRange?.from || !dateRange?.to || !attendance) return;
+
+        // Cargar los registros existentes para este usuario en el rango localmente
+        const userRecs = attendance.filter(r => r.userId === userId);
+        const map: Record<string, string> = {};
+        userRecs.forEach(r => {
+            const dateStr = format(convertToDate(r.checkIn) || new Date(), 'yyyy-MM-dd');
+            map[dateStr] = r.status;
+        });
+        setLocalDayEdits(map);
+    };
+
+    const handleCloseEdit = () => {
+        setEditingUserId(null);
+        setEditingUserName(null);
+        setLocalDayEdits({});
+    };
+
+    const getDaysInPeriod = () => {
+        if (!dateRange?.from || !dateRange?.to) return [];
+        const days = [];
+        let current = new Date(dateRange.from);
+        current.setHours(0, 0, 0, 0);
+        const end = new Date(dateRange.to);
+        end.setHours(23, 59, 59, 999);
+
+        while (current <= end) {
+            // Ignorar sabado y domingo (opcional, pero para dias habiles ayuda)
+            // Si el cliente trabaja sabados, quitar este if. Asumo standard L-V business days por `differenceInBusinessDays`
+            if (current.getDay() !== 0 && current.getDay() !== 6) {
+                days.push(new Date(current));
+            }
+            current = addDays(current, 1);
+        }
+        return days;
+    };
+
+    const handleSaveEdits = async () => {
+        if (!firestore || !editingUserId || !dateRange?.from || !dateRange?.to) return;
+        setSavingEdits(true);
+        try {
+            const batch = writeBatch(firestore);
+            const days = getDaysInPeriod();
+            let updatesCount = 0;
+
+            for (const day of days) {
+                const dateStr = format(day, 'yyyy-MM-dd');
+                const newStatus = localDayEdits[dateStr];
+
+                // Buscar si existia un doc record para este dia
+                const startDay = new Date(day); startDay.setHours(0, 0, 0, 0);
+                const endDay = new Date(day); endDay.setHours(23, 59, 59, 999);
+
+                const existingRec = attendance?.find(r => {
+                    const recDate = convertToDate(r.checkIn);
+                    if (!recDate) return false;
+                    return r.userId === editingUserId && recDate >= startDay && recDate <= endDay;
+                });
+
+                if (existingRec && newStatus) {
+                    if (existingRec.status !== newStatus) {
+                        const ref = doc(firestore, 'attendance', existingRec.id);
+                        batch.update(ref, { status: newStatus });
+                        updatesCount++;
+                    }
+                } else if (existingRec && !newStatus) {
+                    // Si habia y lo limpiaron (volvio a nada) podriamos borrarlo, 
+                    // pero para simplicidad asumiremos que o se establece o no
+                } else if (!existingRec && newStatus) {
+                    // Crear nuevo
+                    const newRef = doc(collection(firestore, 'attendance'));
+                    const checkInDate = new Date(day);
+                    checkInDate.setHours(8, 0, 0, 0); // Default 8am checkin
+                    batch.set(newRef, {
+                        userId: editingUserId,
+                        checkIn: Timestamp.fromDate(checkInDate),
+                        status: newStatus,
+                        type: 'manual',
+                        createdAt: Timestamp.now()
+                    });
+                    updatesCount++;
+                }
+            }
+
+            if (updatesCount > 0) {
+                await batch.commit();
+                toast({ title: 'Guardado', description: 'Registros actualizados correctamente.' });
+            } else {
+                toast({ description: 'No hubo cambios.' });
+            }
+
+            handleCloseEdit();
+        } catch (error) {
+            console.error(error);
+            toast({ variant: 'destructive', title: 'Error', description: 'No se pudo guardar la asistencia.' });
+        } finally {
+            setSavingEdits(false);
+        }
+    };
+
     const isLoading = !isClient || isLoadingUsers || isLoadingAttendance || isLoadingDaysOff || !dateRange;
 
     if (!isClient) {
@@ -430,6 +550,7 @@ export default function AttendanceReportPage() {
                                         <TableHead className="w-8">#</TableHead>
                                         <TableHead>Trabajador</TableHead>
                                         <TableHead>Cargo</TableHead>
+                                        <TableHead className="text-center w-[60px]">Acciones</TableHead>
                                         <TableHead className="text-center">
                                             <div className="flex flex-col items-center">
                                                 <span>Días</span>
@@ -482,6 +603,11 @@ export default function AttendanceReportPage() {
                                             <TableCell className="text-muted-foreground text-xs">{index + 1}</TableCell>
                                             <TableCell className="font-medium">{record.userName}</TableCell>
                                             <TableCell className="text-muted-foreground text-sm">{record.cargo}</TableCell>
+                                            <TableCell className="text-center">
+                                                <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-primary" onClick={() => handleOpenEdit(record.userId, record.userName)}>
+                                                    <Edit2 className="h-4 w-4" />
+                                                </Button>
+                                            </TableCell>
                                             <TableCell className="text-center font-semibold text-green-700">{record.diasTrabajados}</TableCell>
                                             <TableCell className="text-center text-slate-500">{record.diasLibres}</TableCell>
                                             <TableCell className="text-center text-blue-600">{record.permisosJustificados}</TableCell>
@@ -491,8 +617,8 @@ export default function AttendanceReportPage() {
                                             <TableCell className="text-center font-mono text-sm">{record.totalHoras}h</TableCell>
                                             <TableCell className="text-center">
                                                 <span className={`inline-flex items-center justify-center rounded-full px-2 py-0.5 text-xs font-semibold ${record.porcentajeAsistencia >= 90 ? 'bg-green-100 text-green-700' :
-                                                        record.porcentajeAsistencia >= 70 ? 'bg-yellow-100 text-yellow-700' :
-                                                            'bg-red-100 text-red-700'
+                                                    record.porcentajeAsistencia >= 70 ? 'bg-yellow-100 text-yellow-700' :
+                                                        'bg-red-100 text-red-700'
                                                     }`}>
                                                     {record.porcentajeAsistencia}%
                                                 </span>
@@ -506,6 +632,7 @@ export default function AttendanceReportPage() {
                                             <TableCell></TableCell>
                                             <TableCell>TOTALES</TableCell>
                                             <TableCell></TableCell>
+                                            <TableCell></TableCell>
                                             <TableCell className="text-center text-green-700">{totals.diasTrabajados}</TableCell>
                                             <TableCell className="text-center">{totals.diasLibres}</TableCell>
                                             <TableCell className="text-center text-blue-600">{totals.permisosJustificados}</TableCell>
@@ -515,8 +642,8 @@ export default function AttendanceReportPage() {
                                             <TableCell className="text-center font-mono">{totals.totalHoras}h</TableCell>
                                             <TableCell className="text-center">
                                                 <span className={`inline-flex items-center justify-center rounded-full px-2 py-0.5 text-xs font-semibold ${totals.promedioAsistencia >= 90 ? 'bg-green-100 text-green-700' :
-                                                        totals.promedioAsistencia >= 70 ? 'bg-yellow-100 text-yellow-700' :
-                                                            'bg-red-100 text-red-700'
+                                                    totals.promedioAsistencia >= 70 ? 'bg-yellow-100 text-yellow-700' :
+                                                        'bg-red-100 text-red-700'
                                                     }`}>
                                                     {totals.promedioAsistencia}% prom.
                                                 </span>
@@ -529,6 +656,57 @@ export default function AttendanceReportPage() {
                     )}
                 </CardContent>
             </Card>
+
+            {/* Modal de Detalle / Edición Diaria */}
+            <Dialog open={!!editingUserId} onOpenChange={(open) => !open && handleCloseEdit()}>
+                <DialogContent className="max-w-2xl max-h-[90vh] flex flex-col">
+                    <DialogHeader>
+                        <DialogTitle>Detalle de Asistencia</DialogTitle>
+                        <DialogDescription>
+                            Editando la asistencia de <span className="font-semibold text-foreground">{editingUserName}</span> en el período seleccionado.
+                        </DialogDescription>
+                    </DialogHeader>
+
+                    <div className="flex-1 overflow-y-auto pr-2 py-4 space-y-2">
+                        {getDaysInPeriod().map((day) => {
+                            const dateStr = format(day, 'yyyy-MM-dd');
+                            const val = localDayEdits[dateStr] || "";
+                            return (
+                                <div key={dateStr} className="flex items-center justify-between p-2 rounded-md border text-sm hover:bg-muted/50">
+                                    <div className="font-medium capitalize w-32">
+                                        {format(day, 'EEEE dd/MM', { locale: es })}
+                                    </div>
+                                    <div className="flex-1 max-w-[200px]">
+                                        <Select value={val} onValueChange={(v) => setLocalDayEdits(prev => ({ ...prev, [dateStr]: v }))}>
+                                            <SelectTrigger className="h-8">
+                                                <SelectValue placeholder="Sin registro" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                <SelectItem value="presente">Presente</SelectItem>
+                                                <SelectItem value="ausente">Ausente</SelectItem>
+                                                <SelectItem value="justificado">Permiso Justificado</SelectItem>
+                                                <SelectItem value="no-justificado">Permiso Injustific.</SelectItem>
+                                                <SelectItem value="vacaciones">Vacaciones</SelectItem>
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
+                                </div>
+                            );
+                        })}
+                        {getDaysInPeriod().length === 0 && (
+                            <p className="text-sm text-muted-foreground text-center py-4">No hay días laborables en este período.</p>
+                        )}
+                    </div>
+
+                    <div className="flex items-center justify-end gap-2 pt-4 border-t">
+                        <Button variant="outline" onClick={handleCloseEdit} disabled={savingEdits}>Cancelar</Button>
+                        <Button onClick={handleSaveEdits} disabled={savingEdits}>
+                            {savingEdits ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Save className="h-4 w-4 mr-2" />}
+                            Guardar Cambios
+                        </Button>
+                    </div>
+                </DialogContent>
+            </Dialog>
 
             {/* Print View */}
             <style jsx global>{`

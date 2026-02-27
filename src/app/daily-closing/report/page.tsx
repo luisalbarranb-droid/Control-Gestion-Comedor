@@ -1,6 +1,6 @@
 'use client';
 
-import { Suspense } from 'react';
+import { Suspense, useMemo } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { format, isValid } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -111,7 +111,7 @@ function ReportContent() {
             entry = {
               ingredientId: invItem.id,
               ingredientName: invItem.nombre,
-              unit: invItem.unidad,
+              unit: invItem.unidadReceta,
               planned: 0,
               executed: 0,
               difference: 0

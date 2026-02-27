@@ -3,14 +3,14 @@ import type { User, Area, Task, AreaId, Role, InventoryItem, InventoryCategory, 
 import { addDays, startOfWeek, set, subDays } from 'date-fns';
 
 export const areas: Area[] = [
-  { id: 'servicio', nombre: 'Servicio', color: '#FF6B6B', responsable: 'user-admin-1', descripcion: 'Atención al cliente y servicio de mesas.', activa: true },
-  { id: 'cocina', nombre: 'Cocina', color: '#4ECDC4', responsable: 'user-admin-1', descripcion: 'Preparación de alimentos.', activa: true },
-  { id: 'limpieza', nombre: 'Limpieza', color: '#45B7D1', responsable: 'user-admin-2', descripcion: 'Mantenimiento y limpieza de instalaciones.', activa: true },
-  { id: 'almacen', nombre: 'Almacén', color: '#96CEB4', responsable: 'user-admin-2', descripcion: 'Gestión de inventario y suministros.', activa: true },
-  { id: 'equipos', nombre: 'Equipos', color: '#FFEAA7', responsable: 'user-admin-1', descripcion: 'Mantenimiento de equipos de cocina.', activa: true },
-  { id: 'administracion', nombre: 'Administración', color: '#DDA0DD', responsable: 'user-superadmin-1', descripcion: 'Gestión general y administrativa.', activa: true },
-  { id: 'operaciones', nombre: 'Operaciones', color: '#F79F79', responsable: 'user-superadmin-1', descripcion: 'Coordinación de operaciones diarias.', activa: true },
-  { id: 'rrhh', nombre: 'RRHH', color: '#A2D2FF', responsable: 'user-superadmin-1', descripcion: 'Gestión de Recursos Humanos.', activa: true },
+  { id: 'servicio', comedorId: 'comedor-1', nombre: 'Servicio', color: '#FF6B6B', responsable: 'user-admin-1', descripcion: 'Atención al cliente y servicio de mesas.', activa: true },
+  { id: 'cocina', comedorId: 'comedor-1', nombre: 'Cocina', color: '#4ECDC4', responsable: 'user-admin-1', descripcion: 'Preparación de alimentos.', activa: true },
+  { id: 'limpieza', comedorId: 'comedor-1', nombre: 'Limpieza', color: '#45B7D1', responsable: 'user-admin-2', descripcion: 'Mantenimiento y limpieza de instalaciones.', activa: true },
+  { id: 'almacen', comedorId: 'comedor-1', nombre: 'Almacén', color: '#96CEB4', responsable: 'user-admin-2', descripcion: 'Gestión de inventario y suministros.', activa: true },
+  { id: 'equipos', comedorId: 'comedor-1', nombre: 'Equipos', color: '#FFEAA7', responsable: 'user-admin-1', descripcion: 'Mantenimiento de equipos de cocina.', activa: true },
+  { id: 'administracion', comedorId: 'comedor-1', nombre: 'Administración', color: '#DDA0DD', responsable: 'user-superadmin-1', descripcion: 'Gestión general y administrativa.', activa: true },
+  { id: 'operaciones', comedorId: 'comedor-1', nombre: 'Operaciones', color: '#F79F79', responsable: 'user-superadmin-1', descripcion: 'Coordinación de operaciones diarias.', activa: true },
+  { id: 'rrhh', comedorId: 'comedor-1', nombre: 'RRHH', color: '#A2D2FF', responsable: 'user-superadmin-1', descripcion: 'Gestión de Recursos Humanos.', activa: true },
 ];
 
 export const users: User[] = [
@@ -123,7 +123,7 @@ export const users: User[] = [
 
 export const tasks: Task[] = [
   {
-    id: 'task-1',
+    id: 'task-1', comedorId: 'comedor-1',
     titulo: 'Limpieza profunda de la cocina',
     descripcion: 'Realizar una limpieza exhaustiva de todas las superficies, equipos y suelos de la cocina principal.',
     area: 'cocina',
@@ -146,7 +146,7 @@ export const tasks: Task[] = [
     recurrente: true,
   },
   {
-    id: 'task-2',
+    id: 'task-2', comedorId: 'comedor-1',
     titulo: 'Inventario de almacén seco',
     descripcion: 'Contar y registrar todas las existencias en el almacén de productos secos.',
     area: 'almacen',
@@ -165,7 +165,7 @@ export const tasks: Task[] = [
     recurrente: true,
   },
   {
-    id: 'task-3',
+    id: 'task-3', comedorId: 'comedor-1',
     titulo: 'Servir almuerzo',
     descripcion: 'Atender a los comensales durante el servicio de almuerzo.',
     area: 'servicio',
@@ -184,8 +184,8 @@ export const tasks: Task[] = [
     tags: ['servicio'],
     recurrente: true,
   },
-    {
-    id: 'task-4',
+  {
+    id: 'task-4', comedorId: 'comedor-1',
     titulo: 'Revisión de extintores',
     descripcion: 'Verificar la fecha de caducidad y la presión de todos los extintores del comedor.',
     area: 'equipos',
@@ -204,7 +204,7 @@ export const tasks: Task[] = [
     recurrente: true,
   },
   {
-    id: 'task-5',
+    id: 'task-5', comedorId: 'comedor-1',
     titulo: 'Preparar Mise en Place para cena',
     descripcion: 'Cortar vegetales, preparar salsas y aderezos para el servicio de la cena.',
     area: 'cocina',
@@ -256,125 +256,149 @@ export const inventoryCategories: InventoryCategory[] = [
 
 export const inventoryItems: InventoryItem[] = [
   {
-    id: 'inv-1',
+    id: 'inv-1', comedorId: 'comedor-1',
     nombre: 'Pechuga de Pollo',
     categoriaId: 'carnes',
     cantidad: 25,
     unidad: 'kg',
     stockMinimo: 10,
-    fechaCreacion: '2023-01-10T10:00:00Z',
-    ultimaActualizacion: '2024-05-30T12:30:00Z',
+    fechaCreacion: new Date('2023-01-10T10:00:00Z'),
+    ultimaActualizacion: new Date('2024-05-30T12:30:00Z'),
     proveedor: 'Avícola La Granja',
     costoUnitario: 5.50,
   },
   {
-    id: 'inv-2',
+    id: 'inv-2', comedorId: 'comedor-1',
     nombre: 'Arroz Grano Largo',
     categoriaId: 'viveres',
     cantidad: 50,
     unidad: 'kg',
     stockMinimo: 20,
-    fechaCreacion: '2023-01-10T10:00:00Z',
-    ultimaActualizacion: '2024-05-28T15:00:00Z',
+    fechaCreacion: new Date('2023-01-10T10:00:00Z'),
+    ultimaActualizacion: new Date('2024-05-28T15:00:00Z'),
     proveedor: 'Distribuidora 24/7',
     costoUnitario: 1.20,
   },
   {
-    id: 'inv-3',
+    id: 'inv-3', comedorId: 'comedor-1',
     nombre: 'Tomates',
     categoriaId: 'verduras',
     cantidad: 15,
     unidad: 'kg',
     stockMinimo: 5,
-    fechaCreacion: '2023-01-10T10:00:00Z',
-    ultimaActualizacion: '2024-05-31T09:00:00Z',
+    fechaCreacion: new Date('2023-01-10T10:00:00Z'),
+    ultimaActualizacion: new Date('2024-05-31T09:00:00Z'),
     proveedor: 'Finca El Sol',
     costoUnitario: 2.10,
   },
-    {
-    id: 'inv-3a',
+  {
+    id: 'inv-3a', comedorId: 'comedor-1',
     nombre: 'Cebolla',
     categoriaId: 'verduras',
     cantidad: 20,
     unidad: 'kg',
     stockMinimo: 8,
-    fechaCreacion: '2023-01-10T10:00:00Z',
-    ultimaActualizacion: '2024-05-31T09:05:00Z',
+    fechaCreacion: new Date('2023-01-10T10:00:00Z'),
+    ultimaActualizacion: new Date('2024-05-31T09:05:00Z'),
     proveedor: 'Finca El Sol',
     costoUnitario: 1.50,
   },
   {
-    id: 'inv-4',
+    id: 'inv-4', comedorId: 'comedor-1',
     nombre: 'Manzanas Fuji',
     categoriaId: 'frutas',
     cantidad: 30,
     unidad: 'kg',
     stockMinimo: 10,
-    fechaCreacion: '2023-01-10T10:00:00Z',
-    ultimaActualizacion: '2024-05-29T14:00:00Z',
+    fechaCreacion: new Date('2023-01-10T10:00:00Z'),
+    ultimaActualizacion: new Date('2024-05-29T14:00:00Z'),
     proveedor: 'Finca El Sol',
     costoUnitario: 1.80,
   },
   {
-    id: 'inv-5',
+    id: 'inv-5', comedorId: 'comedor-1',
     nombre: 'Servilletas de Papel',
     categoriaId: 'descartables',
     cantidad: 10,
     unidad: 'paquete',
     stockMinimo: 5,
-    fechaCreacion: '2023-01-10T10:00:00Z',
-    ultimaActualizacion: '2024-05-25T11:00:00Z',
+    fechaCreacion: new Date('2023-01-10T10:00:00Z'),
+    ultimaActualizacion: new Date('2024-05-25T11:00:00Z'),
     proveedor: 'Papelera Nacional',
     costoUnitario: 3.00,
   },
   {
-    id: 'inv-6',
+    id: 'inv-6', comedorId: 'comedor-1',
     nombre: 'Resma de Papel Bond',
     categoriaId: 'oficina',
     cantidad: 5,
     unidad: 'caja',
     stockMinimo: 2,
-    fechaCreacion: '2023-01-10T10:00:00Z',
-    ultimaActualizacion: '2024-05-20T10:00:00Z',
+    fechaCreacion: new Date('2023-01-10T10:00:00Z'),
+    ultimaActualizacion: new Date('2024-05-20T10:00:00Z'),
     proveedor: 'OficinaTotal',
     costoUnitario: 25.00,
   },
-   {
-    id: 'inv-7',
+  {
+    id: 'inv-7', comedorId: 'comedor-1',
     nombre: 'Carne Molida de Res',
     categoriaId: 'carnes',
     cantidad: 20,
     unidad: 'kg',
     stockMinimo: 8,
-    fechaCreacion: '2023-01-10T10:00:00Z',
-    ultimaActualizacion: '2024-05-30T13:00:00Z',
+    fechaCreacion: new Date('2023-01-10T10:00:00Z'),
+    ultimaActualizacion: new Date('2024-05-30T13:00:00Z'),
     proveedor: 'Carnicería Central',
     costoUnitario: 7.20,
+  },
+  {
+    id: 'inv-8', comedorId: 'comedor-1',
+    nombre: 'Chuleta de Cerdo',
+    categoriaId: 'carnes',
+    cantidad: 15,
+    unidad: 'kg',
+    stockMinimo: 10,
+    fechaCreacion: new Date('2023-02-15T10:00:00Z'),
+    ultimaActualizacion: new Date('2024-05-30T13:00:00Z'),
+    proveedor: 'Carnicería Central',
+    costoUnitario: 8.50,
+  },
+  {
+    id: 'inv-9', comedorId: 'comedor-1',
+    nombre: 'Filete de Pescado',
+    categoriaId: 'carnes',
+    cantidad: 12,
+    unidad: 'kg',
+    stockMinimo: 5,
+    fechaCreacion: new Date('2023-03-20T10:00:00Z'),
+    ultimaActualizacion: new Date('2024-05-30T13:00:00Z'),
+    proveedor: 'Pescadería del Puerto',
+    costoUnitario: 9.00,
   },
 ];
 
 export const inventoryTransactions: InventoryTransaction[] = [
-  { transactionId: 'txn-1', itemId: 'inv-1', type: 'salida', quantity: 5, date: new Date(), reason: 'Uso en Producción', destinationArea: 'cocina' },
-  { transactionId: 'txn-2', itemId: 'inv-2', type: 'salida', quantity: 10, date: new Date(), reason: 'Uso en Producción', destinationArea: 'cocina' },
-  { transactionId: 'txn-3', itemId: 'inv-3', type: 'salida', quantity: 8, date: new Date(), reason: 'Uso en Producción', destinationArea: 'cocina' },
-  { transactionId: 'txn-4', itemId: 'inv-1', type: 'salida', quantity: 3, date: new Date(), reason: 'Uso en Producción', destinationArea: 'cocina' },
-  { transactionId: 'txn-5', itemId: 'inv-5', type: 'salida', quantity: 2, date: new Date(), reason: 'Uso en Producción', destinationArea: 'servicio' },
-  { transactionId: 'txn-6', itemId: 'inv-7', type: 'salida', quantity: 10, date: new Date(), reason: 'Uso en Producción', destinationArea: 'cocina' },
-  { transactionId: 'txn-7', itemId: 'inv-2', type: 'salida', quantity: 15, date: new Date(), reason: 'Uso en Producción', destinationArea: 'cocina' },
-  { transactionId: 'txn-8', itemId: 'inv-3', type: 'salida', quantity: 5, date: new Date(), reason: 'Vencimiento' },
-  { transactionId: 'txn-9', itemId: 'inv-4', type: 'salida', quantity: 12, date: new Date(), reason: 'Uso en Producción', destinationArea: 'servicio' },
-  { transactionId: 'txn-10', itemId: 'inv-1', type: 'salida', quantity: 4, date: new Date(), reason: 'Uso en Producción', destinationArea: 'cocina' },
-  { transactionId: 'txn-11', itemId: 'inv-5', type: 'salida', quantity: 3, date: new Date(), reason: 'Uso en Producción', destinationArea: 'servicio' },
-  { transactionId: 'txn-12', itemId: 'inv-6', type: 'salida', quantity: 1, date: new Date(), reason: 'Uso en Producción', destinationArea: 'administracion' },
-  { transactionId: 'txn-13', itemId: 'inv-7', type: 'salida', quantity: 5, date: new Date(), reason: 'Uso en Producción', destinationArea: 'cocina' },
-  { transactionId: 'txn-14', itemId: 'inv-2', type: 'salida', quantity: 20, date: new Date(), reason: 'Uso en Producción', destinationArea: 'cocina' },
-  { transactionId: 'txn-15', itemId: 'inv-3', type: 'salida', quantity: 2, date: new Date(), reason: 'Mal Estado / Daño' },
+  { transactionId: 'txn-1', comedorId: 'comedor-1', itemId: 'inv-1', type: 'salida', quantity: 5, date: new Date(), reason: 'Uso en Producción', destinationArea: 'cocina' },
+  { transactionId: 'txn-2', comedorId: 'comedor-1', itemId: 'inv-2', type: 'salida', quantity: 10, date: new Date(), reason: 'Uso en Producción', destinationArea: 'cocina' },
+  { transactionId: 'txn-3', comedorId: 'comedor-1', itemId: 'inv-3', type: 'salida', quantity: 8, date: new Date(), reason: 'Uso en Producción', destinationArea: 'cocina' },
+  { transactionId: 'txn-4', comedorId: 'comedor-1', itemId: 'inv-1', type: 'salida', quantity: 3, date: new Date(), reason: 'Uso en Producción', destinationArea: 'cocina' },
+  { transactionId: 'txn-5', comedorId: 'comedor-1', itemId: 'inv-5', type: 'salida', quantity: 2, date: new Date(), reason: 'Uso en Producción', destinationArea: 'servicio' },
+  { transactionId: 'txn-6', comedorId: 'comedor-1', itemId: 'inv-7', type: 'salida', quantity: 10, date: new Date(), reason: 'Uso en Producción', destinationArea: 'cocina' },
+  { transactionId: 'txn-7', comedorId: 'comedor-1', itemId: 'inv-2', type: 'salida', quantity: 15, date: new Date(), reason: 'Uso en Producción', destinationArea: 'cocina' },
+  { transactionId: 'txn-8', comedorId: 'comedor-1', itemId: 'inv-3', type: 'salida', quantity: 5, date: new Date(), reason: 'Vencimiento' },
+  { transactionId: 'txn-9', comedorId: 'comedor-1', itemId: 'inv-4', type: 'salida', quantity: 12, date: new Date(), reason: 'Uso en Producción', destinationArea: 'servicio' },
+  { transactionId: 'txn-10', comedorId: 'comedor-1', itemId: 'inv-1', type: 'salida', quantity: 4, date: new Date(), reason: 'Uso en Producción', destinationArea: 'cocina' },
+  { transactionId: 'txn-11', comedorId: 'comedor-1', itemId: 'inv-5', type: 'salida', quantity: 3, date: new Date(), reason: 'Uso en Producción', destinationArea: 'servicio' },
+  { transactionId: 'txn-12', comedorId: 'comedor-1', itemId: 'inv-6', type: 'salida', quantity: 1, date: new Date(), reason: 'Uso en Producción', destinationArea: 'administracion' },
+  { transactionId: 'txn-13', comedorId: 'comedor-1', itemId: 'inv-7', type: 'salida', quantity: 5, date: new Date(), reason: 'Uso en Producción', destinationArea: 'cocina' },
+  { transactionId: 'txn-14', comedorId: 'comedor-1', itemId: 'inv-2', type: 'salida', quantity: 20, date: new Date(), reason: 'Uso en Producción', destinationArea: 'cocina' },
+  { transactionId: 'txn-15', comedorId: 'comedor-1', itemId: 'inv-3', type: 'salida', quantity: 2, date: new Date(), reason: 'Mal Estado / Daño' },
 ];
 
 
 export const inventoryOrders: InventoryOrder[] = [
   {
-    orderId: 'ord-1',
+    orderId: 'ord-1', comedorId: 'comedor-1',
     fechaPedido: new Date('2024-05-20'),
     fechaEntregaEstimada: new Date('2024-05-25'),
     proveedor: 'Avícola La Granja',
@@ -387,7 +411,7 @@ export const inventoryOrders: InventoryOrder[] = [
     creadoPor: 'user-admin-1',
   },
   {
-    orderId: 'ord-2',
+    orderId: 'ord-2', comedorId: 'comedor-1',
     fechaPedido: new Date('2024-05-28'),
     fechaEntregaEstimada: new Date('2024-06-02'),
     proveedor: 'Distribuidora 24/7',
@@ -402,71 +426,71 @@ export const inventoryOrders: InventoryOrder[] = [
 
 
 const menuItems: MenuItem[] = [
-    {
-        id: 'menu-item-1',
-        name: 'Sopa de Lentejas',
-        category: 'entrada',
-        ingredients: [
-            { inventoryItemId: 'inv-3a', quantity: 0.05, wasteFactor: 0.1 }, // Cebolla
-            { inventoryItemId: 'inv-3', quantity: 0.05, wasteFactor: 0.1 }, // Tomate
-        ],
-    },
-    {
-        id: 'menu-item-2',
-        name: 'Pollo al Horno',
-        category: 'proteico',
-        ingredients: [
-            { inventoryItemId: 'inv-1', quantity: 0.25, wasteFactor: 0.05 }, // Pechuga de Pollo
-        ],
-    },
-    {
-        id: 'menu-item-3',
-        name: 'Arroz Blanco',
-        category: 'acompanante1',
-        ingredients: [
-            { inventoryItemId: 'inv-2', quantity: 0.1, wasteFactor: 0 }, // Arroz
-        ],
-    },
-    {
-        id: 'menu-item-4',
-        name: 'Ensalada Fresca',
-        category: 'acompanante2',
-        ingredients: [
-            { inventoryItemId: 'inv-3', quantity: 0.08, wasteFactor: 0.15 }, // Tomates
-        ],
-    },
-    {
-        id: 'menu-item-5',
-        name: 'Plátano Maduro Frito',
-        category: 'acompanante3',
-        ingredients: [],
-    },
-    {
-        id: 'menu-item-6',
-        name: 'Jugo de Manzana',
-        category: 'bebida',
-        ingredients: [
-            { inventoryItemId: 'inv-4', quantity: 0.3, wasteFactor: 0.2 }, // Manzanas
-        ],
-    },
-    {
-        id: 'menu-item-7',
-        name: 'Fruta Picada',
-        category: 'postre',
-        ingredients: [
-            { inventoryItemId: 'inv-4', quantity: 0.1, wasteFactor: 0.2 }, // Manzanas
-        ],
-    },
+  {
+    id: 'menu-item-1',
+    name: 'Sopa de Lentejas',
+    category: 'entrada',
+    ingredients: [
+      { inventoryItemId: 'inv-3a', quantity: 0.05, wasteFactor: 0.1 }, // Cebolla
+      { inventoryItemId: 'inv-3', quantity: 0.05, wasteFactor: 0.1 }, // Tomate
+    ],
+  },
+  {
+    id: 'menu-item-2',
+    name: 'Pollo al Horno',
+    category: 'proteico',
+    ingredients: [
+      { inventoryItemId: 'inv-1', quantity: 0.25, wasteFactor: 0.05 }, // Pechuga de Pollo
+    ],
+  },
+  {
+    id: 'menu-item-3',
+    name: 'Arroz Blanco',
+    category: 'acompanante1',
+    ingredients: [
+      { inventoryItemId: 'inv-2', quantity: 0.1, wasteFactor: 0 }, // Arroz
+    ],
+  },
+  {
+    id: 'menu-item-4',
+    name: 'Ensalada Fresca',
+    category: 'acompanante2',
+    ingredients: [
+      { inventoryItemId: 'inv-3', quantity: 0.08, wasteFactor: 0.15 }, // Tomates
+    ],
+  },
+  {
+    id: 'menu-item-5',
+    name: 'Plátano Maduro Frito',
+    category: 'acompanante3',
+    ingredients: [],
+  },
+  {
+    id: 'menu-item-6',
+    name: 'Jugo de Manzana',
+    category: 'bebida',
+    ingredients: [
+      { inventoryItemId: 'inv-4', quantity: 0.3, wasteFactor: 0.2 }, // Manzanas
+    ],
+  },
+  {
+    id: 'menu-item-7',
+    name: 'Fruta Picada',
+    category: 'postre',
+    ingredients: [
+      { inventoryItemId: 'inv-4', quantity: 0.1, wasteFactor: 0.2 }, // Manzanas
+    ],
+  },
 ];
 
 const carneAsadaItems: MenuItem[] = [
-    { id: 'ca-1', name: 'Consomé de Pollo', category: 'entrada', ingredients: [] },
-    { id: 'ca-2', name: 'Carne Asada', category: 'proteico', ingredients: [{ inventoryItemId: 'inv-7', quantity: 0.28, wasteFactor: 0.1 }] },
-    { id: 'ca-3', name: 'Arroz con Maíz', category: 'acompanante1', ingredients: [{ inventoryItemId: 'inv-2', quantity: 0.1, wasteFactor: 0 }] },
-    { id: 'ca-4', name: 'Ensalada Rusa', category: 'acompanante2', ingredients: [] },
-    { id: 'ca-5', name: 'Papas Fritas', category: 'acompanante3', ingredients: [] },
-    { id: 'ca-6', name: 'Jugo de Papelón con Limón', category: 'bebida', ingredients: [] },
-    { id: 'ca-7', name: 'Quesillo', category: 'postre', ingredients: [] },
+  { id: 'ca-1', name: 'Consomé de Pollo', category: 'entrada', ingredients: [] },
+  { id: 'ca-2', name: 'Carne Asada', category: 'proteico', ingredients: [{ inventoryItemId: 'inv-7', quantity: 0.28, wasteFactor: 0.1 }] },
+  { id: 'ca-3', name: 'Arroz con Maíz', category: 'acompanante1', ingredients: [{ inventoryItemId: 'inv-2', quantity: 0.1, wasteFactor: 0 }] },
+  { id: 'ca-4', name: 'Ensalada Rusa', category: 'acompanante2', ingredients: [] },
+  { id: 'ca-5', name: 'Papas Fritas', category: 'acompanante3', ingredients: [] },
+  { id: 'ca-6', name: 'Jugo de Papelón con Limón', category: 'bebida', ingredients: [] },
+  { id: 'ca-7', name: 'Quesillo', category: 'postre', ingredients: [] },
 ];
 
 
@@ -474,31 +498,31 @@ const startOfThisWeek = startOfWeek(new Date(), { weekStartsOn: 1 }); // Monday
 
 export const weeklyMenus: Menu[] = [
   {
-    id: 'menu-1',
+    id: 'menu-1', comedorId: 'comedor-1',
     date: addDays(startOfThisWeek, 0), // Lunes
     pax: 150,
     items: menuItems,
   },
   {
-    id: 'menu-2',
+    id: 'menu-2', comedorId: 'comedor-1',
     date: addDays(startOfThisWeek, 1), // Martes
     pax: 160,
     items: carneAsadaItems,
   },
-    {
-    id: 'menu-3',
+  {
+    id: 'menu-3', comedorId: 'comedor-1',
     date: addDays(startOfThisWeek, 2), // Miércoles
     pax: 140,
     items: menuItems,
   },
-    {
-    id: 'menu-4',
+  {
+    id: 'menu-4', comedorId: 'comedor-1',
     date: addDays(startOfThisWeek, 3), // Jueves
     pax: 155,
     items: carneAsadaItems,
   },
-    {
-    id: 'menu-5',
+  {
+    id: 'menu-5', comedorId: 'comedor-1',
     date: addDays(startOfThisWeek, 4), // Viernes
     pax: 170,
     items: menuItems,
@@ -507,10 +531,10 @@ export const weeklyMenus: Menu[] = [
 
 
 export const dailyMenu: Menu = {
-    id: 'menu-1',
-    date: new Date(),
-    pax: 150,
-    items: menuItems,
+  id: 'menu-1', comedorId: 'comedor-1',
+  date: new Date(),
+  pax: 150,
+  items: menuItems,
 };
 
 
@@ -540,27 +564,27 @@ const threeDaysAgo = subDays(today, 3);
 
 
 export const attendanceRecords: AttendanceRecord[] = [
-    // Today
-    { id: 'att-1', userId: 'user-admin-1', checkIn: set(today, { hours: 7, minutes: 58, seconds: 10 }), checkOut: set(today, { hours: 17, minutes: 5, seconds: 2 }), status: 'presente' },
-    { id: 'att-2', userId: 'user-comun-1', checkIn: set(today, { hours: 8, minutes: 12, seconds: 45 }), status: 'retardo' },
-    { id: 'att-3', userId: 'user-comun-2', checkIn: set(today, { hours: 8, minutes: 3, seconds: 11 }), checkOut: set(today, { hours: 17, minutes: 1, seconds: 15 }), status: 'presente' },
-    { id: 'att-4', userId: 'user-comun-3', status: 'ausente', checkIn: set(today, { hours: 0, minutes: 0, seconds: 0 }) }, // Ausente
-    
-    // Yesterday
-    { id: 'att-5', userId: 'user-admin-1', checkIn: set(yesterday, { hours: 7, minutes: 55, seconds: 10 }), checkOut: set(yesterday, { hours: 17, minutes: 2, seconds: 2 }), status: 'presente' },
-    { id: 'att-6', userId: 'user-admin-2', status: 'ausente', checkIn: set(yesterday, { hours: 0, minutes: 0, seconds: 0 }) },
-    { id: 'att-7', userId: 'user-comun-1', checkIn: set(yesterday, { hours: 8, minutes: 1, seconds: 45 }), checkOut: set(yesterday, { hours: 17, minutes: 10, seconds: 12 }), status: 'presente' },
-    { id: 'att-8', userId: 'user-comun-2', checkIn: set(yesterday, { hours: 8, minutes: 20, seconds: 11 }), checkOut: set(yesterday, { hours: 17, minutes: 3, seconds: 15 }), status: 'retardo' },
-    { id: 'att-9', userId: 'user-comun-3', checkIn: set(yesterday, { hours: 7, minutes: 59, seconds: 50 }), checkOut: set(yesterday, { hours: 17, minutes: 0, seconds: 1 }), status: 'presente' },
-    
-    // Two days ago
-    { id: 'att-10', userId: 'user-admin-1', checkIn: set(twoDaysAgo, { hours: 8, minutes: 0, seconds: 10 }), checkOut: set(twoDaysAgo, { hours: 17, minutes: 1, seconds: 2 }), status: 'presente' },
-    { id: 'att-11', userId: 'user-admin-2', checkIn: set(twoDaysAgo, { hours: 8, minutes: 5, seconds: 10 }), checkOut: set(twoDaysAgo, { hours: 17, minutes: 8, seconds: 2 }), status: 'presente' },
-    { id: 'att-12', userId: 'user-comun-1', checkIn: set(twoDaysAgo, { hours: 8, minutes: 3, seconds: 45 }), checkOut: set(twoDaysAgo, { hours: 17, minutes: 0, seconds: 12 }), status: 'presente' },
-    { id: 'att-13', userId: 'user-comun-2', checkIn: set(twoDaysAgo, { hours: 8, minutes: 0, seconds: 11 }), checkOut: set(twoDaysAgo, { hours: 16, minutes: 55, seconds: 15 }), status: 'presente' },
-    { id: 'att-14', userId: 'user-comun-3', status: 'ausente', checkIn: set(twoDaysAgo, { hours: 0, minutes: 0, seconds: 0 }) },
+  // Today
+  { id: 'att-1', comedorId: 'comedor-1', userId: 'user-admin-1', checkIn: set(today, { hours: 7, minutes: 58, seconds: 10 }), checkOut: set(today, { hours: 17, minutes: 5, seconds: 2 }), status: 'presente' },
+  { id: 'att-2', comedorId: 'comedor-1', userId: 'user-comun-1', checkIn: set(today, { hours: 8, minutes: 12, seconds: 45 }), status: 'retardo' },
+  { id: 'att-3', comedorId: 'comedor-1', userId: 'user-comun-2', checkIn: set(today, { hours: 8, minutes: 3, seconds: 11 }), checkOut: set(today, { hours: 17, minutes: 1, seconds: 15 }), status: 'presente' },
+  { id: 'att-4', comedorId: 'comedor-1', userId: 'user-comun-3', status: 'ausente', checkIn: set(today, { hours: 0, minutes: 0, seconds: 0 }) }, // Ausente
 
-    // Three days ago
-    { id: 'att-15', userId: 'user-admin-2', checkIn: set(threeDaysAgo, { hours: 8, minutes: 25, seconds: 10 }), checkOut: set(threeDaysAgo, { hours: 17, minutes: 8, seconds: 2 }), status: 'retardo' },
-    { id: 'att-16', userId: 'user-comun-1', status: 'ausente', checkIn: set(threeDaysAgo, { hours: 0, minutes: 0, seconds: 0 }) },
+  // Yesterday
+  { id: 'att-5', comedorId: 'comedor-1', userId: 'user-admin-1', checkIn: set(yesterday, { hours: 7, minutes: 55, seconds: 10 }), checkOut: set(yesterday, { hours: 17, minutes: 2, seconds: 2 }), status: 'presente' },
+  { id: 'att-6', comedorId: 'comedor-1', userId: 'user-admin-2', status: 'ausente', checkIn: set(yesterday, { hours: 0, minutes: 0, seconds: 0 }) },
+  { id: 'att-7', comedorId: 'comedor-1', userId: 'user-comun-1', checkIn: set(yesterday, { hours: 8, minutes: 1, seconds: 45 }), checkOut: set(yesterday, { hours: 17, minutes: 10, seconds: 12 }), status: 'presente' },
+  { id: 'att-8', comedorId: 'comedor-1', userId: 'user-comun-2', checkIn: set(yesterday, { hours: 8, minutes: 20, seconds: 11 }), checkOut: set(yesterday, { hours: 17, minutes: 3, seconds: 15 }), status: 'retardo' },
+  { id: 'att-9', comedorId: 'comedor-1', userId: 'user-comun-3', checkIn: set(yesterday, { hours: 7, minutes: 59, seconds: 50 }), checkOut: set(yesterday, { hours: 17, minutes: 0, seconds: 1 }), status: 'presente' },
+
+  // Two days ago
+  { id: 'att-10', comedorId: 'comedor-1', userId: 'user-admin-1', checkIn: set(twoDaysAgo, { hours: 8, minutes: 0, seconds: 10 }), checkOut: set(twoDaysAgo, { hours: 17, minutes: 1, seconds: 2 }), status: 'presente' },
+  { id: 'att-11', comedorId: 'comedor-1', userId: 'user-admin-2', checkIn: set(twoDaysAgo, { hours: 8, minutes: 5, seconds: 10 }), checkOut: set(twoDaysAgo, { hours: 17, minutes: 8, seconds: 2 }), status: 'presente' },
+  { id: 'att-12', comedorId: 'comedor-1', userId: 'user-comun-1', checkIn: set(twoDaysAgo, { hours: 8, minutes: 3, seconds: 45 }), checkOut: set(twoDaysAgo, { hours: 17, minutes: 0, seconds: 12 }), status: 'presente' },
+  { id: 'att-13', comedorId: 'comedor-1', userId: 'user-comun-2', checkIn: set(twoDaysAgo, { hours: 8, minutes: 0, seconds: 11 }), checkOut: set(twoDaysAgo, { hours: 16, minutes: 55, seconds: 15 }), status: 'presente' },
+  { id: 'att-14', comedorId: 'comedor-1', userId: 'user-comun-3', status: 'ausente', checkIn: set(twoDaysAgo, { hours: 0, minutes: 0, seconds: 0 }) },
+
+  // Three days ago
+  { id: 'att-15', comedorId: 'comedor-1', userId: 'user-admin-2', checkIn: set(threeDaysAgo, { hours: 8, minutes: 25, seconds: 10 }), checkOut: set(threeDaysAgo, { hours: 17, minutes: 8, seconds: 2 }), status: 'retardo' },
+  { id: 'att-16', comedorId: 'comedor-1', userId: 'user-comun-1', status: 'ausente', checkIn: set(threeDaysAgo, { hours: 0, minutes: 0, seconds: 0 }) },
 ];

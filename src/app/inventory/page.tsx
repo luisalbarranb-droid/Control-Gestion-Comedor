@@ -491,8 +491,8 @@ export default function InventoryPage() {
                 </TableHead>
                 <TableHead>Producto</TableHead>
                 <TableHead>Categoría</TableHead>
-                <TableHead className="text-center">Cant. (Un. Receta)</TableHead>
-                <TableHead className="text-center">Stock Mínimo (Un. Receta)</TableHead>
+                <TableHead className="text-center">Cant. (Un. Compra)</TableHead>
+                <TableHead className="text-center">Stock Mínimo (Un. Compra)</TableHead>
                 {isAdmin && <TableHead className="text-right">Acciones</TableHead>}
               </TableRow>
             </TableHeader>
@@ -512,12 +512,12 @@ export default function InventoryPage() {
                     <TableCell className="font-medium">{item.nombre}</TableCell>
                     <TableCell><Badge variant="secondary">{getCategoryName(item.categoriaId)}</Badge></TableCell>
                     <TableCell className={cn("text-center font-bold", isLowStock ? 'text-red-500' : 'text-current')}>
-                      {(item.cantidad || 0).toFixed(2)}
-                      <span className="text-xs text-muted-foreground ml-1 uppercase">{item.unidadReceta}</span>
+                      {((item.cantidad || 0) / (item.factorConversion || 1)).toFixed(2)}
+                      <span className="text-xs text-muted-foreground ml-1 uppercase">{item.unidadCompra || item.unidadReceta}</span>
                     </TableCell>
                     <TableCell className="text-center">
-                      {(item.stockMinimo || 0).toFixed(2)}
-                      <span className="text-xs text-muted-foreground ml-1 uppercase">{item.unidadReceta}</span>
+                      {((item.stockMinimo || 0) / (item.factorConversion || 1)).toFixed(2)}
+                      <span className="text-xs text-muted-foreground ml-1 uppercase">{item.unidadCompra || item.unidadReceta}</span>
                     </TableCell>
                     {isAdmin && <TableCell className="text-right">
                       <DropdownMenu>

@@ -16,6 +16,13 @@ const attendanceModules = [
     cta: 'Ver Dashboard'
   },
   {
+    title: 'Toma de Asistencia Manual',
+    description: 'Pasa lista diariamente a todo el personal de forma rápida y masiva.',
+    link: '/attendance/manual',
+    icon: ClipboardEdit,
+    cta: 'Tomar Asistencia'
+  },
+  {
     title: 'Registro por QR',
     description: 'Abre el quiosco para que los empleados registren su entrada y salida.',
     link: '/attendance/scanner',

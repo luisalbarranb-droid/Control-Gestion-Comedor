@@ -31,11 +31,12 @@ export function calculateIngredientSummary(plan: WeeklyPlan, inventory: Inventor
 
         const wasteFactor = Math.max(0, Math.min(1, ingredient.wasteFactor || 0));
         const netQuantityPerPax = ingredient.quantity;
-        const grossQuantityPerPax = wasteFactor === 1 ? netQuantityPerPax : netQuantityPerPax / (1-wasteFactor)
-        
+        const grossQuantityPerPax = wasteFactor === 1 ? netQuantityPerPax : netQuantityPerPax / (1 - wasteFactor)
+
         const totalNetQuantity = netQuantityPerPax * menu.pax;
         const totalGrossQuantity = grossQuantityPerPax * menu.pax;
-        const cost = totalGrossQuantity * (inventoryItem.costoUnitario || 0);
+        const costPerRecipeUnit = (inventoryItem.costoUnitario || 0) / (inventoryItem.factorConversion || 1);
+        const cost = totalGrossQuantity * costPerRecipeUnit;
 
         const existing = summary.get(inventoryItem.id);
         if (existing) {
